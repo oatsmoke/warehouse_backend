@@ -37,37 +37,16 @@ func (h *Handler) signIn(c *gin.Context) {
 
 func (h *Handler) userIdentity(c *gin.Context) {
 	token, err := c.Cookie("token")
-	if err == nil {
-		userId, err := h.service.Employee.ParseToken(token)
-		if err == nil {
-			c.Set("userId", userId)
-			return
-		}
-	} else {
-		hash, err := c.Cookie("hash")
-		if err != nil {
-			newErrorResponse(c, http.StatusUnauthorized, "no authorization hash")
-			return
-		}
-		id, err := h.service.Employee.FindByHash(hash)
-		if err != nil {
-			newErrorResponse(c, http.StatusUnauthorized, err.Error())
-			return
-		}
-		newToken, err := h.service.Employee.GenerateToken(id)
-		if err != nil {
-			newErrorResponse(c, http.StatusInternalServerError, err.Error())
-			return
-		}
-		newHash, err := h.service.Employee.GenerateHash(id)
-		if err != nil {
-			newErrorResponse(c, http.StatusInternalServerError, err.Error())
-			return
-		}
-		c.Set("token", newToken)
-		c.Set("hash", newHash)
-		c.Set("userId", strconv.Itoa(id))
+	if err != nil {
+		h.refresh(c)
+		return
 	}
+	userId, err := h.service.Employee.ParseToken(token)
+	if err != nil {
+		h.refresh(c)
+		return
+	}
+	c.Set("userId", userId)
 }
 
 func (h *Handler) getUser(c *gin.Context) {
@@ -85,6 +64,32 @@ func (h *Handler) getUser(c *gin.Context) {
 	c.JSON(http.StatusOK, employee)
 }
 
+func (h *Handler) refresh(c *gin.Context) {
+	hash, err := c.Cookie("hash")
+	if err != nil {
+		newErrorResponse(c, http.StatusUnauthorized, "no authorization hash")
+		return
+	}
+	id, err := h.service.Employee.FindByHash(hash)
+	if err != nil {
+		newErrorResponse(c, http.StatusUnauthorized, err.Error())
+		return
+	}
+	newToken, err := h.service.Employee.GenerateToken(id)
+	if err != nil {
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	newHash, err := h.service.Employee.GenerateHash(id)
+	if err != nil {
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	c.Set("token", newToken)
+	c.Set("hash", newHash)
+	c.Set("userId", strconv.Itoa(id))
+}
+
 func getUserId(c *gin.Context) (int, error) {
 	id, ok := c.Get("userId")
 	if !ok {
@@ -100,10 +105,10 @@ func getUserId(c *gin.Context) (int, error) {
 func setCookie(c *gin.Context) {
 	token, ok := c.Get("token")
 	if ok {
-		c.SetCookie("token", token.(string), 3600, "/", "", true, true)
+		c.SetCookie("token", token.(string), 3600, "/", "", false, true)
 	}
 	hash, ok := c.Get("hash")
 	if ok {
-		c.SetCookie("hash", hash.(string), 604800, "/", "", true, true)
+		c.SetCookie("hash", hash.(string), 604800, "/", "", false, true)
 	}
 }

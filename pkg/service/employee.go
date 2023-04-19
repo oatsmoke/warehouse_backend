@@ -188,8 +188,8 @@ func generatePasswordHash(password string) string {
 }
 
 func sendMail(recipient, phone, password string) error {
-	authEmail := ""
-	authPassword := ""
+	authEmail := "oatsmoke@yandex.ru"
+	authPassword := "kbbaojsmxlnboajk"
 	host := "smtp.yandex.ru"
 	port := "465"
 	subject := "Authorization data"

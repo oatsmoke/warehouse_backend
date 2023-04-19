@@ -15,7 +15,7 @@ func NewEquipmentRepository(db *pgxpool.Pool) *EquipmentRepository {
 	return &EquipmentRepository{db: db}
 }
 
-func (r *EquipmentRepository) Create(date int64, serialNumber string, profile int, userId int) (int, error) {
+func (r *EquipmentRepository) Create(date int64, company int, serialNumber string, profile int, userId int) (int, error) {
 	ctx := context.Background()
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
@@ -43,9 +43,9 @@ func (r *EquipmentRepository) Create(date int64, serialNumber string, profile in
 	}
 	tm := time.Unix(date, 0)
 	queryLocationRecord := `
-			INSERT INTO locations (date, code, equipment, employee) 
-			VALUES ($1, $2, $3, $4);`
-	_, err = tx.Exec(ctx, queryLocationRecord, tm, "STORAGE_ADD", id, userId)
+			INSERT INTO locations (date, code, equipment, employee, company, transfer_type, price) 
+			VALUES ($1, $2, $3, $4, $5, $6, $7);`
+	_, err = tx.Exec(ctx, queryLocationRecord, tm, "STORAGE_ADD", id, userId, company, "", "")
 	if err != nil {
 		return 0, err
 	}
@@ -59,6 +59,7 @@ func (r *EquipmentRepository) GetById(id int) (model.Location, error) {
 			SELECT equipments.id, equipments.serial_number, 
 			       profiles.id, profiles.title, 
 			       categories.id, categories.title,
+			       companies.id, companies.title,
 			       to_department.id,
 			       to_employee.id,
 			       to_contract.id
@@ -66,6 +67,7 @@ func (r *EquipmentRepository) GetById(id int) (model.Location, error) {
 			LEFT JOIN equipments ON equipments.id = locations.equipment    
 			LEFT JOIN profiles ON profiles.id = equipments.profile
 			LEFT JOIN categories ON categories.id = profiles.category
+			LEFT JOIN companies ON companies.id = locations.company
 			LEFT JOIN departments to_department ON to_department.id = locations.to_department
 			LEFT JOIN employees to_employee ON to_employee.id = locations.to_employee
 			LEFT JOIN contracts to_contract ON to_contract.id = locations.to_contract
@@ -81,6 +83,8 @@ func (r *EquipmentRepository) GetById(id int) (model.Location, error) {
 		&equipmentByLoc.Equipment.Profile.Title,
 		&equipmentByLoc.Equipment.Profile.Category.Id,
 		&equipmentByLoc.Equipment.Profile.Category.Title,
+		&equipmentByLoc.Company.Id,
+		&equipmentByLoc.Company.Title,
 		&toD,
 		&toE,
 		&toC)
@@ -123,11 +127,13 @@ func (r *EquipmentRepository) GetByLocationStorage() ([]model.Location, error) {
 	query := `
 			SELECT equipments.id, equipments.serial_number, 
 			       profiles.title, 
-			       categories.title
+			       categories.title,
+			       companies.id, companies.title
 			FROM locations
 			LEFT JOIN equipments ON equipments.id = locations.equipment
 			LEFT JOIN profiles ON profiles.id = equipments.profile
 			LEFT JOIN categories ON categories.id = profiles.category
+			LEFT JOIN companies ON companies.id = locations.company
 			WHERE locations.id IN 
 			(SELECT MAX(locations.id)
 			 FROM locations
@@ -145,7 +151,9 @@ func (r *EquipmentRepository) GetByLocationStorage() ([]model.Location, error) {
 			&equipmentByLoc.Equipment.Id,
 			&equipmentByLoc.Equipment.SerialNumber,
 			&equipmentByLoc.Equipment.Profile.Title,
-			&equipmentByLoc.Equipment.Profile.Category.Title)
+			&equipmentByLoc.Equipment.Profile.Category.Title,
+			&equipmentByLoc.Company.Id,
+			&equipmentByLoc.Company.Title)
 		if err != nil {
 			return nil, err
 		}
@@ -161,13 +169,15 @@ func (r *EquipmentRepository) GetByLocationDepartment(toDepartment int) ([]model
 	query := `
 			SELECT equipments.id, equipments.serial_number, 
 			       profiles.title, 
-			       categories.title, 
+			       categories.title,
+			       companies.id, companies.title,
 			       to_department.title,
 			       to_employee.name
 			FROM locations
 			LEFT JOIN equipments ON equipments.id = locations.equipment
 			LEFT JOIN profiles ON profiles.id = equipments.profile
 			LEFT JOIN categories ON categories.id = profiles.category
+			LEFT JOIN companies ON companies.id = locations.company
 			LEFT JOIN departments to_department ON to_department.id = locations.to_department
 			LEFT JOIN employees to_employee ON to_employee.id = locations.to_employee
 			WHERE locations.id IN 
@@ -186,6 +196,8 @@ func (r *EquipmentRepository) GetByLocationDepartment(toDepartment int) ([]model
 			&equipmentByLoc.Equipment.SerialNumber,
 			&equipmentByLoc.Equipment.Profile.Title,
 			&equipmentByLoc.Equipment.Profile.Category.Title,
+			&equipmentByLoc.Company.Id,
+			&equipmentByLoc.Company.Title,
 			&equipmentByLoc.ToDepartment.Title,
 			&toE)
 		equipmentByLoc.ToEmployee.Name = InterfaceToString(toE)
@@ -205,12 +217,14 @@ func (r *EquipmentRepository) GetByLocationEmployee(toEmployee int) ([]model.Loc
 			SELECT equipments.id, equipments.serial_number, 
 			       profiles.title, 
 			       categories.title,
+			       companies.id, companies.title,
 			       to_department.title,
 			       to_employee.name
 			FROM locations
 			LEFT JOIN equipments ON equipments.id = locations.equipment
 			LEFT JOIN profiles ON profiles.id = equipments.profile
 			LEFT JOIN categories ON categories.id = profiles.category
+			LEFT JOIN companies ON companies.id = locations.company
 			LEFT JOIN departments to_department ON to_department.id = locations.to_department
 			LEFT JOIN employees to_employee ON to_employee.id = locations.to_employee
 			WHERE locations.id IN 
@@ -229,6 +243,8 @@ func (r *EquipmentRepository) GetByLocationEmployee(toEmployee int) ([]model.Loc
 			&equipmentByLoc.Equipment.SerialNumber,
 			&equipmentByLoc.Equipment.Profile.Title,
 			&equipmentByLoc.Equipment.Profile.Category.Title,
+			&equipmentByLoc.Company.Id,
+			&equipmentByLoc.Company.Title,
 			&toD,
 			&equipmentByLoc.ToEmployee.Name)
 		equipmentByLoc.ToDepartment.Title = InterfaceToString(toD)
@@ -244,11 +260,15 @@ func (r *EquipmentRepository) GetByLocationContract(toContract int) ([]model.Loc
 	var equipmentsByLoc []model.Location
 	var equipmentByLoc model.Location
 	query := `
-			SELECT equipments.id, equipments.serial_number, profiles.title, categories.title
+			SELECT equipments.id, equipments.serial_number, 
+			       profiles.title, 
+			       categories.title,
+			       companies.id, companies.title
 			FROM locations
 			LEFT JOIN equipments ON equipments.id = locations.equipment
 			LEFT JOIN profiles ON profiles.id = equipments.profile
 			LEFT JOIN categories ON categories.id = profiles.category
+			LEFT JOIN companies ON companies.id = locations.company
 			LEFT JOIN departments ON departments.id = locations.to_department
 			LEFT JOIN employees ON employees.id = locations.to_employee
 			LEFT JOIN contracts ON contracts.id = locations.to_contract
@@ -269,7 +289,9 @@ func (r *EquipmentRepository) GetByLocationContract(toContract int) ([]model.Loc
 			&equipmentByLoc.Equipment.Id,
 			&equipmentByLoc.Equipment.SerialNumber,
 			&equipmentByLoc.Equipment.Profile.Title,
-			&equipmentByLoc.Equipment.Profile.Category.Title)
+			&equipmentByLoc.Equipment.Profile.Category.Title,
+			&equipmentByLoc.Company.Id,
+			&equipmentByLoc.Company.Title)
 		if err != nil {
 			return nil, err
 		}
@@ -285,12 +307,14 @@ func (r *EquipmentRepository) GetByLocationDepartmentEmployee(toDepartment, toEm
 			SELECT equipments.id, equipments.serial_number, 
 			       profiles.title, 
 			       categories.title,
+			       companies.id, companies.title,
 			       to_department.title,
 			       to_employee.name
 			FROM locations
 			LEFT JOIN equipments ON equipments.id = locations.equipment
 			LEFT JOIN profiles ON profiles.id = equipments.profile
 			LEFT JOIN categories ON categories.id = profiles.category
+			LEFT JOIN companies ON companies.id = locations.company
 			LEFT JOIN departments to_department ON to_department.id = locations.to_department
 			LEFT JOIN employees to_employee ON to_employee.id = locations.to_employee
 			WHERE locations.id IN 
@@ -310,6 +334,8 @@ func (r *EquipmentRepository) GetByLocationDepartmentEmployee(toDepartment, toEm
 			&equipmentByLoc.Equipment.SerialNumber,
 			&equipmentByLoc.Equipment.Profile.Title,
 			&equipmentByLoc.Equipment.Profile.Category.Title,
+			&equipmentByLoc.Company.Id,
+			&equipmentByLoc.Company.Title,
 			&equipmentByLoc.ToDepartment.Title,
 			&equipmentByLoc.ToEmployee.Name)
 		if err != nil {

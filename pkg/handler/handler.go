@@ -100,12 +100,20 @@ func (h *Handler) InitRoutes(cfg ConfigClient) *gin.Engine {
 			contract.POST("/update", h.updateContract)
 			contract.POST("/delete", h.deleteContract)
 		}
+		company := api.Group("/company")
+		{
+			company.POST("/create", h.createCompany)
+			company.POST("/getById", h.getByIdCompany)
+			company.GET("/getAll", h.getAllCompany)
+			company.POST("/update", h.updateCompany)
+			company.POST("/delete", h.deleteCompany)
+		}
 	}
 	return router
 }
 
 func CORSMiddleware(cfg ConfigClient) gin.HandlerFunc {
-	clientStr := fmt.Sprintf("%s://%s:%s", cfg.Protocol, cfg.Ip, cfg.Port)
+	clientStr := fmt.Sprintf("%s://%s%s", cfg.Protocol, cfg.Ip, cfg.Port)
 	return func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", clientStr)
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")

@@ -13,6 +13,7 @@ type Service struct {
 	Equipment
 	Location
 	Contract
+	Company
 }
 
 func NewService(repository *repository.Repository) *Service {
@@ -24,6 +25,7 @@ func NewService(repository *repository.Repository) *Service {
 		Equipment:  NewEquipmentService(repository.Equipment),
 		Location:   NewLocationService(repository.Location),
 		Contract:   NewContractService(repository.Contract, repository.Equipment),
+		Company:    NewCompanyService(repository.Company),
 	}
 }
 
@@ -74,7 +76,7 @@ type Profile interface {
 }
 
 type Equipment interface {
-	Create(date int64, serialNumber string, profile int, userId int) (int, error)
+	Create(date int64, company int, serialNumber string, profile int, userId int) (int, error)
 	GetById(id int) (model.Location, error)
 	GetByIds(ids []int) ([]model.Location, error)
 	GetByLocation(toDepartment, toEmployee, toContract int) ([]model.Location, error)
@@ -93,5 +95,13 @@ type Contract interface {
 	GetById(id int) (model.Contract, error)
 	GetAll() ([]model.Contract, error)
 	Update(id int, number, address string) error
+	Delete(id int) error
+}
+
+type Company interface {
+	Create(title string) error
+	GetById(id int) (model.Company, error)
+	GetAll() ([]model.Company, error)
+	Update(id int, title string) error
 	Delete(id int) error
 }

@@ -13,6 +13,7 @@ type Repository struct {
 	Equipment
 	Location
 	Contract
+	Company
 }
 
 func NewRepository(db *pgxpool.Pool) *Repository {
@@ -24,6 +25,7 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 		Equipment:  NewEquipmentRepository(db),
 		Location:   NewLocationRepository(db),
 		Contract:   NewContractRepository(db),
+		Company:    NewCompanyRepository(db),
 	}
 }
 
@@ -77,7 +79,7 @@ type Profile interface {
 }
 
 type Equipment interface {
-	Create(date int64, serialNumber string, profile int, userId int) (int, error)
+	Create(date int64, company int, serialNumber string, profile int, userId int) (int, error)
 	GetByProfile(id int) ([]model.Equipment, error)
 	GetById(id int) (model.Location, error)
 	GetByLocationStorage() ([]model.Location, error)
@@ -92,11 +94,11 @@ type Equipment interface {
 }
 
 type Location interface {
-	TransferToStorage(date int64, code string, equipment, employee int) error
-	TransferToDepartment(date int64, code string, equipment, employee, toDepartment int) error
-	TransferToEmployee(date int64, code string, equipment, employee, toEmployee int) error
-	TransferToEmployeeInDepartment(date int64, code string, equipment, employee, toDepartment, toEmployee int) error
-	TransferToContract(date int64, code string, equipment, employee, toContract int) error
+	TransferToStorage(date int64, code string, equipment, employee, company int) error
+	TransferToDepartment(date int64, code string, equipment, employee, company, toDepartment int) error
+	TransferToEmployee(date int64, code string, equipment, employee, company, toEmployee int) error
+	TransferToEmployeeInDepartment(date int64, code string, equipment, employee, company, toDepartment, toEmployee int) error
+	TransferToContract(date int64, code string, equipment, employee, company, toContract int, transferType, price string) error
 	GetHistory(id int) ([]model.Location, error)
 	Delete(id int) error
 }
@@ -110,12 +112,22 @@ type Contract interface {
 	Delete(id int) error
 }
 
+type Company interface {
+	Create(title string) error
+	GetById(id int) (model.Company, error)
+	GetAll() ([]model.Company, error)
+	FindByTitle(title string) (int, error)
+	Update(id int, title string) error
+	Delete(id int) error
+}
+
 func InterfaceToInt(value interface{}) int {
 	if value != nil {
 		return int(value.(int32))
 	}
 	return 0
 }
+
 func InterfaceToString(value interface{}) string {
 	if value != nil {
 		return value.(string)

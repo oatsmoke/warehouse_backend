@@ -1,28 +1,28 @@
-CREATE TABLE categories
+create table categories
 (
     id    serial       not null primary key,
     title varchar(100) not null unique
 );
-CREATE TABLE profiles
+create table profiles
 (
     id       serial                             not null primary key,
     title    varchar(100)                       not null unique,
     category integer references categories (id) not null
 );
-CREATE TABLE equipments
+create table equipments
 (
     id            serial                           not null primary key,
     serial_number varchar(100)                     not null unique,
     profile       integer references profiles (id) not null,
     is_deleted    boolean                          not null default false
 );
-CREATE TABLE departments
+create table departments
 (
     id         serial       not null primary key,
     title      varchar(100) not null unique,
     is_deleted boolean      not null default false
 );
-CREATE TABLE employees
+create table employees
 (
     id                 serial                   not null primary key,
     name               varchar(100)             not null,
@@ -38,25 +38,34 @@ CREATE TABLE employees
     role               varchar(100)             not null default 'USER',
     is_deleted         boolean                  not null default false
 );
-CREATE TABLE contracts
+create table contracts
 (
     id         serial       not null primary key,
     number     varchar(100) not null unique,
     address    varchar(100) not null,
     is_deleted boolean      not null default false
 );
-CREATE TABLE locations
+create table companies
+(
+    id         serial       not null primary key,
+    title      varchar(100) not null unique,
+    is_deleted boolean      not null default false
+);
+create table locations
 (
     id            serial                             not null primary key,
     date          timestamp with time zone           not null,
     code          varchar(100)                       not null,
     equipment     integer references equipments (id) not null,
     employee      integer references employees (id)  not null,
+    company       integer references companies (id)  not null,
     to_department integer references departments (id),
     to_employee   integer references employees (id),
-    to_contract   integer references contracts (id)
+    to_contract   integer references contracts (id),
+    transfer_type varchar(100)                       not null,
+    price         varchar(100)                       not null
 );
-INSERT INTO employees (name,
+insert into employees (name,
                        phone,
                        email,
                        password,
@@ -66,7 +75,7 @@ INSERT INTO employees (name,
                        activate,
                        hidden,
                        role)
-VALUES ('Администратор',
+values ('Администратор',
         'root',
         'root@root.ru',
         '313233343536373840bd001563085fc35165329ea1ff5c5ecbdbbeef',

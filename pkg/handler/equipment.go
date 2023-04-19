@@ -19,6 +19,7 @@ func (h *Handler) createEquipment(c *gin.Context) {
 	}
 	equipmentId, err := h.service.Equipment.Create(
 		request.Location.Date,
+		request.Location.Company.Id,
 		request.Location.Equipment.SerialNumber,
 		request.Location.Equipment.Profile.Id,
 		userId)

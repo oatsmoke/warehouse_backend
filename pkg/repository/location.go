@@ -15,60 +15,60 @@ func NewLocationRepository(db *pgxpool.Pool) *LocationRepository {
 	return &LocationRepository{db: db}
 }
 
-func (r *LocationRepository) TransferToStorage(date int64, code string, equipment, employee int) error {
+func (r *LocationRepository) TransferToStorage(date int64, code string, equipment, employee, company int) error {
 	query := `
-			INSERT INTO locations (date, code, equipment, employee) 
-			VALUES ($1, $2, $3, $4);`
+			INSERT INTO locations (date, code, equipment, employee, company, transfer_type, price) 
+			VALUES ($1, $2, $3, $4, $5, $6, $7);`
 	tm := time.Unix(date, 0)
-	_, err := r.db.Exec(context.Background(), query, tm, code, equipment, employee)
+	_, err := r.db.Exec(context.Background(), query, tm, code, equipment, employee, company, "", "")
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *LocationRepository) TransferToDepartment(date int64, code string, equipment, employee, toDepartment int) error {
+func (r *LocationRepository) TransferToDepartment(date int64, code string, equipment, employee, company, toDepartment int) error {
 	query := `
-			INSERT INTO locations (date, code, equipment, employee, to_department) 
-			VALUES ($1, $2, $3, $4, $5);`
+			INSERT INTO locations (date, code, equipment, employee, company, to_department, transfer_type, price) 
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8);`
 	tm := time.Unix(date, 0)
-	_, err := r.db.Exec(context.Background(), query, tm, code, equipment, employee, toDepartment)
+	_, err := r.db.Exec(context.Background(), query, tm, code, equipment, employee, company, toDepartment, "", "")
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *LocationRepository) TransferToEmployee(date int64, code string, equipment, employee, toEmployee int) error {
+func (r *LocationRepository) TransferToEmployee(date int64, code string, equipment, employee, company, toEmployee int) error {
 	query := `
-			INSERT INTO locations (date, code, equipment, employee, to_employee) 
-			VALUES ($1, $2, $3, $4, $5);`
+			INSERT INTO locations (date, code, equipment, employee, company, to_employee, transfer_type, price) 
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8);`
 	tm := time.Unix(date, 0)
-	_, err := r.db.Exec(context.Background(), query, tm, code, equipment, employee, toEmployee)
+	_, err := r.db.Exec(context.Background(), query, tm, code, equipment, employee, company, toEmployee, "", "")
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *LocationRepository) TransferToEmployeeInDepartment(date int64, code string, equipment, employee, toDepartment, toEmployee int) error {
+func (r *LocationRepository) TransferToEmployeeInDepartment(date int64, code string, equipment, employee, company, toDepartment, toEmployee int) error {
 	query := `
-			INSERT INTO locations (date, code, equipment, employee, to_department, to_employee) 
-			VALUES ($1, $2, $3, $4, $5, $6);`
+			INSERT INTO locations (date, code, equipment, employee, company, to_department, to_employee, transfer_type, price) 
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);`
 	tm := time.Unix(date, 0)
-	_, err := r.db.Exec(context.Background(), query, tm, code, equipment, employee, toDepartment, toEmployee)
+	_, err := r.db.Exec(context.Background(), query, tm, code, equipment, employee, company, toDepartment, toEmployee, "", "")
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *LocationRepository) TransferToContract(date int64, code string, equipment, employee, toContract int) error {
+func (r *LocationRepository) TransferToContract(date int64, code string, equipment, employee, company, toContract int, transferType, price string) error {
 	query := `
-			INSERT INTO locations (date, code, equipment, employee, to_contract) 
-			VALUES ($1, $2, $3, $4, $5);`
+			INSERT INTO locations (date, code, equipment, employee, company, to_contract, transfer_type, price) 
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8);`
 	tm := time.Unix(date, 0)
-	_, err := r.db.Exec(context.Background(), query, tm, code, equipment, employee, toContract)
+	_, err := r.db.Exec(context.Background(), query, tm, code, equipment, employee, company, toContract, transferType, price)
 	if err != nil {
 		return err
 	}
@@ -81,13 +81,15 @@ func (r *LocationRepository) GetHistory(id int) ([]model.Location, error) {
 	var toD, toE, toCNumber, toCAddress interface{}
 	var date time.Time
 	query := `
-			SELECT locations.id, locations.date, locations.code,
+			SELECT locations.id, locations.date, locations.code, locations.transfer_type, locations.price,
 				employees.name,
+				companies.title,
 				to_department.title,
 				to_employee.name,
 				to_contract.number, to_contract.address
 			FROM locations
-			LEFT JOIN employees on employees.id = locations.employee
+			LEFT JOIN employees ON employees.id = locations.employee
+			LEFT JOIN companies ON companies.id = locations.company
 			LEFT JOIN departments to_department ON to_department.id = locations.to_department
 			LEFT JOIN employees to_employee ON to_employee.id = locations.to_employee
 			LEFT JOIN contracts to_contract ON to_contract.id = locations.to_contract
@@ -102,7 +104,10 @@ func (r *LocationRepository) GetHistory(id int) ([]model.Location, error) {
 			&history.Id,
 			&date,
 			&history.Code,
+			&history.TransferType,
+			&history.Price,
 			&history.Employee.Name,
+			&history.Company.Title,
 			&toD,
 			&toE,
 			&toCNumber,

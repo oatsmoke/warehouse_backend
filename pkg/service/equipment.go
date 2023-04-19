@@ -15,12 +15,12 @@ func NewEquipmentService(repositoryEquipment repository.Equipment) *EquipmentSer
 	return &EquipmentService{repositoryEquipment: repositoryEquipment}
 }
 
-func (s *EquipmentService) Create(date int64, serialNumber string, profile int, userId int) (int, error) {
+func (s *EquipmentService) Create(date int64, company int, serialNumber string, profile int, userId int) (int, error) {
 	serialNumber = strings.ToUpper(serialNumber)
 	if _, err := s.repositoryEquipment.FindBySerialNumber(serialNumber); err == nil {
 		return 0, errors.New("serial number already exists")
 	}
-	return s.repositoryEquipment.Create(date, serialNumber, profile, userId)
+	return s.repositoryEquipment.Create(date, company, serialNumber, profile, userId)
 }
 
 func (s *EquipmentService) GetById(id int) (model.Location, error) {
