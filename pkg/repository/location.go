@@ -15,64 +15,74 @@ func NewLocationRepository(db *pgxpool.Pool) *LocationRepository {
 	return &LocationRepository{db: db}
 }
 
-func (r *LocationRepository) TransferToStorage(date int64, code string, equipment, employee, company int) error {
+func (r *LocationRepository) TransferToStorage(date int64, code string, equipment, employee, company int) (int, error) {
 	query := `
 			INSERT INTO locations (date, code, equipment, employee, company, transfer_type, price) 
-			VALUES ($1, $2, $3, $4, $5, $6, $7);`
+			VALUES ($1, $2, $3, $4, $5, $6, $7)
+			RETURNING id;`
 	tm := time.Unix(date, 0)
-	_, err := r.db.Exec(context.Background(), query, tm, code, equipment, employee, company, "", "")
+	id := 0
+	err := r.db.QueryRow(context.Background(), query, tm, code, equipment, employee, company, "", "").Scan(&id)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	return nil
+	return id, nil
 }
 
-func (r *LocationRepository) TransferToDepartment(date int64, code string, equipment, employee, company, toDepartment int) error {
+func (r *LocationRepository) TransferToDepartment(date int64, code string, equipment, employee, company, toDepartment int) (int, error) {
 	query := `
 			INSERT INTO locations (date, code, equipment, employee, company, to_department, transfer_type, price) 
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8);`
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+			RETURNING id;`
 	tm := time.Unix(date, 0)
-	_, err := r.db.Exec(context.Background(), query, tm, code, equipment, employee, company, toDepartment, "", "")
+	id := 0
+	err := r.db.QueryRow(context.Background(), query, tm, code, equipment, employee, company, toDepartment, "", "").Scan(&id)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	return nil
+	return id, nil
 }
 
-func (r *LocationRepository) TransferToEmployee(date int64, code string, equipment, employee, company, toEmployee int) error {
+func (r *LocationRepository) TransferToEmployee(date int64, code string, equipment, employee, company, toEmployee int) (int, error) {
 	query := `
 			INSERT INTO locations (date, code, equipment, employee, company, to_employee, transfer_type, price) 
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8);`
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+			RETURNING id;`
 	tm := time.Unix(date, 0)
-	_, err := r.db.Exec(context.Background(), query, tm, code, equipment, employee, company, toEmployee, "", "")
+	id := 0
+	err := r.db.QueryRow(context.Background(), query, tm, code, equipment, employee, company, toEmployee, "", "").Scan(&id)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	return nil
+	return id, nil
 }
 
-func (r *LocationRepository) TransferToEmployeeInDepartment(date int64, code string, equipment, employee, company, toDepartment, toEmployee int) error {
+func (r *LocationRepository) TransferToEmployeeInDepartment(date int64, code string, equipment, employee, company, toDepartment, toEmployee int) (int, error) {
 	query := `
 			INSERT INTO locations (date, code, equipment, employee, company, to_department, to_employee, transfer_type, price) 
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);`
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+			RETURNING id;`
 	tm := time.Unix(date, 0)
-	_, err := r.db.Exec(context.Background(), query, tm, code, equipment, employee, company, toDepartment, toEmployee, "", "")
+	id := 0
+	err := r.db.QueryRow(context.Background(), query, tm, code, equipment, employee, company, toDepartment, toEmployee, "", "").Scan(&id)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	return nil
+	return id, nil
 }
 
-func (r *LocationRepository) TransferToContract(date int64, code string, equipment, employee, company, toContract int, transferType, price string) error {
+func (r *LocationRepository) TransferToContract(date int64, code string, equipment, employee, company, toContract int, transferType, price string) (int, error) {
 	query := `
 			INSERT INTO locations (date, code, equipment, employee, company, to_contract, transfer_type, price) 
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8);`
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+			RETURNING id;`
 	tm := time.Unix(date, 0)
-	_, err := r.db.Exec(context.Background(), query, tm, code, equipment, employee, company, toContract, transferType, price)
+	id := 0
+	err := r.db.QueryRow(context.Background(), query, tm, code, equipment, employee, company, toContract, transferType, price).Scan(&id)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	return nil
+	return id, nil
 }
 
 func (r *LocationRepository) GetHistory(id int) ([]model.Location, error) {

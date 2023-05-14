@@ -45,7 +45,7 @@ func (r *EquipmentRepository) Create(date int64, company int, serialNumber strin
 	queryLocationRecord := `
 			INSERT INTO locations (date, code, equipment, employee, company, transfer_type, price) 
 			VALUES ($1, $2, $3, $4, $5, $6, $7);`
-	_, err = tx.Exec(ctx, queryLocationRecord, tm, "STORAGE_ADD", id, userId, company, "", "")
+	_, err = tx.Exec(ctx, queryLocationRecord, tm, "ADD_TO_STORAGE", id, userId, company, "", "")
 	if err != nil {
 		return 0, err
 	}
@@ -54,9 +54,10 @@ func (r *EquipmentRepository) Create(date int64, company int, serialNumber strin
 
 func (r *EquipmentRepository) GetById(id int) (model.Location, error) {
 	var equipmentByLoc model.Location
-	var toD, toE, toC interface{}
+	var transferType, price, toD, toE, toC interface{}
 	query := `
-			SELECT equipments.id, equipments.serial_number, 
+			SELECT locations.transfer_type, locations.price,
+			       equipments.id, equipments.serial_number, 
 			       profiles.id, profiles.title, 
 			       categories.id, categories.title,
 			       companies.id, companies.title,
@@ -77,6 +78,8 @@ func (r *EquipmentRepository) GetById(id int) (model.Location, error) {
 			 GROUP BY locations.equipment)
 			AND equipments.id = $1;`
 	err := r.db.QueryRow(context.Background(), query, id).Scan(
+		&transferType,
+		&price,
 		&equipmentByLoc.Equipment.Id,
 		&equipmentByLoc.Equipment.SerialNumber,
 		&equipmentByLoc.Equipment.Profile.Id,
@@ -88,6 +91,8 @@ func (r *EquipmentRepository) GetById(id int) (model.Location, error) {
 		&toD,
 		&toE,
 		&toC)
+	equipmentByLoc.TransferType = InterfaceToString(transferType)
+	equipmentByLoc.Price = InterfaceToString(price)
 	equipmentByLoc.ToDepartment.Id = InterfaceToInt(toD)
 	equipmentByLoc.ToEmployee.Id = InterfaceToInt(toE)
 	equipmentByLoc.ToContract.Id = InterfaceToInt(toC)
@@ -165,14 +170,14 @@ func (r *EquipmentRepository) GetByLocationStorage() ([]model.Location, error) {
 func (r *EquipmentRepository) GetByLocationDepartment(toDepartment int) ([]model.Location, error) {
 	var equipmentsByLoc []model.Location
 	var equipmentByLoc model.Location
-	var toE interface{}
+	var toEId, toEName interface{}
 	query := `
 			SELECT equipments.id, equipments.serial_number, 
 			       profiles.title, 
 			       categories.title,
 			       companies.id, companies.title,
-			       to_department.title,
-			       to_employee.name
+			       to_department.id, to_department.title,
+			       to_employee.id, to_employee.name
 			FROM locations
 			LEFT JOIN equipments ON equipments.id = locations.equipment
 			LEFT JOIN profiles ON profiles.id = equipments.profile
@@ -198,9 +203,12 @@ func (r *EquipmentRepository) GetByLocationDepartment(toDepartment int) ([]model
 			&equipmentByLoc.Equipment.Profile.Category.Title,
 			&equipmentByLoc.Company.Id,
 			&equipmentByLoc.Company.Title,
+			&equipmentByLoc.ToDepartment.Id,
 			&equipmentByLoc.ToDepartment.Title,
-			&toE)
-		equipmentByLoc.ToEmployee.Name = InterfaceToString(toE)
+			&toEId,
+			&toEName)
+		equipmentByLoc.ToEmployee.Id = InterfaceToInt(toEId)
+		equipmentByLoc.ToEmployee.Name = InterfaceToString(toEName)
 		if err != nil {
 			return nil, err
 		}

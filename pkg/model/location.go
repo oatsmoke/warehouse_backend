@@ -15,9 +15,10 @@ type Location struct {
 }
 
 type RequestLocation struct {
-	EquipmentId  int    `json:"equipmentId,omitempty"`
-	ThisLocation string `json:"thisLocation,omitempty"`
 	Date         int64  `json:"date,omitempty"`
+	EquipmentId  int    `json:"equipmentId,omitempty"`
+	Way          string `json:"way,omitempty"`
+	ThisLocation string `json:"thisLocation,omitempty"`
 	Where        string `json:"where,omitempty"`
 	InDepartment bool   `json:"inDepartment,omitempty"`
 	Company      int    `json:"company,omitempty"`

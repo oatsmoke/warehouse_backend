@@ -1,7 +1,6 @@
 package service
 
 import (
-	"fmt"
 	"strings"
 	"warehouse_backend/pkg/model"
 	"warehouse_backend/pkg/repository"
@@ -9,51 +8,90 @@ import (
 
 type LocationService struct {
 	repositoryLocation repository.Location
+	repositoryReplace  repository.Replace
 }
 
-func NewLocationService(repositoryLocation repository.Location) *LocationService {
-	return &LocationService{repositoryLocation: repositoryLocation}
+func NewLocationService(repositoryLocation repository.Location,
+	repositoryReplace repository.Replace) *LocationService {
+	return &LocationService{repositoryLocation: repositoryLocation,
+		repositoryReplace: repositoryReplace,
+	}
 }
 
 func (s *LocationService) TransferTo(id int, requests []model.RequestLocation) error {
 	var code string
+	replace := []int{0, 0}
 	for _, request := range requests {
-		fmt.Println(requests)
 		switch {
 		case request.ToDepartment == 0 && request.ToEmployee == 0 && request.ToContract == 0:
-			code = strings.ToUpper(request.ThisLocation + "_to_storage")
-			err := s.repositoryLocation.TransferToStorage(request.Date, code, request.EquipmentId, id, request.Company)
+			code = strings.ToUpper(request.Way + "_" + request.ThisLocation + "_to_storage")
+			transferId, err := s.repositoryLocation.TransferToStorage(request.Date, code, request.EquipmentId, id, request.Company)
 			if err != nil {
 				return err
+			}
+			if request.Way == "replace" && replace[0] == 0 {
+				replace[0] = transferId
+			} else if request.Way == "replace" && replace[1] == 0 {
+				replace[1] = transferId
 			}
 		case request.ToDepartment != 0 && request.ToEmployee == 0 && request.ToContract == 0:
 			if request.InDepartment {
-				code = strings.ToUpper(request.ThisLocation + "_to_" + request.Where + "_in_department")
+				code = strings.ToUpper(request.Way + "_" + request.ThisLocation + "_to_" + request.Where + "_in_department")
 			} else {
-				code = strings.ToUpper(request.ThisLocation + "_to_" + request.Where)
+				code = strings.ToUpper(request.Way + "_" + request.ThisLocation + "_to_" + request.Where)
 			}
-			err := s.repositoryLocation.TransferToDepartment(request.Date, code, request.EquipmentId, id, request.Company, request.ToDepartment)
+			transferId, err := s.repositoryLocation.TransferToDepartment(request.Date, code, request.EquipmentId, id, request.Company, request.ToDepartment)
 			if err != nil {
 				return err
+			}
+			if request.Way == "replace" && replace[0] == 0 {
+				replace[0] = transferId
+			} else if request.Way == "replace" && replace[1] == 0 {
+				replace[1] = transferId
 			}
 		case request.ToDepartment == 0 && request.ToEmployee != 0 && request.ToContract == 0:
-			code = strings.ToUpper(request.ThisLocation + "_to_" + request.Where)
-			err := s.repositoryLocation.TransferToEmployee(request.Date, code, request.EquipmentId, id, request.Company, request.ToEmployee)
+			code = strings.ToUpper(request.Way + "_" + request.ThisLocation + "_to_" + request.Where)
+			transferId, err := s.repositoryLocation.TransferToEmployee(request.Date, code, request.EquipmentId, id, request.Company, request.ToEmployee)
 			if err != nil {
 				return err
+			}
+			if request.Way == "replace" && replace[0] == 0 {
+				replace[0] = transferId
+			} else if request.Way == "replace" && replace[1] == 0 {
+				replace[1] = transferId
 			}
 		case request.ToDepartment != 0 && request.ToEmployee != 0 && request.ToContract == 0:
-			code = strings.ToUpper(request.ThisLocation + "_to_" + request.Where + "_in_department")
-			err := s.repositoryLocation.TransferToEmployeeInDepartment(request.Date, code, request.EquipmentId, id, request.Company, request.ToDepartment, request.ToEmployee)
+			if request.InDepartment {
+				code = strings.ToUpper(request.Way + "_" + request.ThisLocation + "_to_" + request.Where + "_in_department")
+			} else {
+				code = strings.ToUpper(request.Way + "_" + request.ThisLocation + "_to_" + request.Where)
+			}
+			transferId, err := s.repositoryLocation.TransferToEmployeeInDepartment(request.Date, code, request.EquipmentId, id, request.Company, request.ToDepartment, request.ToEmployee)
 			if err != nil {
 				return err
+			}
+			if request.Way == "replace" && replace[0] == 0 {
+				replace[0] = transferId
+			} else if request.Way == "replace" && replace[1] == 0 {
+				replace[1] = transferId
 			}
 		case request.ToDepartment == 0 && request.ToEmployee == 0 && request.ToContract != 0:
-			code = strings.ToUpper(request.ThisLocation + "_to_" + request.Where)
-			err := s.repositoryLocation.TransferToContract(request.Date, code, request.EquipmentId, id, request.Company, request.ToContract, request.TransferType, request.Price)
+			code = strings.ToUpper(request.Way + "_" + request.ThisLocation + "_to_" + request.Where)
+			transferId, err := s.repositoryLocation.TransferToContract(request.Date, code, request.EquipmentId, id, request.Company, request.ToContract, request.TransferType, request.Price)
 			if err != nil {
 				return err
 			}
+			if request.Way == "replace" && replace[0] == 0 {
+				replace[0] = transferId
+			} else if request.Way == "replace" && replace[1] == 0 {
+				replace[1] = transferId
+			}
+		}
+	}
+	if requests[0].Way == "replace" {
+		err := s.repositoryReplace.Create(replace)
+		if err != nil {
+			return err
 		}
 	}
 	return nil
@@ -63,5 +101,11 @@ func (s *LocationService) GetHistory(id int) ([]model.Location, error) {
 }
 
 func (s *LocationService) Delete(id int) error {
-	return s.repositoryLocation.Delete(id)
+	replace, err := s.repositoryReplace.FindByLocationId(id)
+	if err != nil {
+		return s.repositoryLocation.Delete(id)
+	}
+	err = s.repositoryLocation.Delete(replace.TransferFrom)
+	err = s.repositoryLocation.Delete(replace.TransferTo)
+	return err
 }

@@ -14,6 +14,7 @@ type Repository struct {
 	Location
 	Contract
 	Company
+	Replace
 }
 
 func NewRepository(db *pgxpool.Pool) *Repository {
@@ -26,6 +27,7 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 		Location:   NewLocationRepository(db),
 		Contract:   NewContractRepository(db),
 		Company:    NewCompanyRepository(db),
+		Replace:    NewReplaceRepository(db),
 	}
 }
 
@@ -94,11 +96,11 @@ type Equipment interface {
 }
 
 type Location interface {
-	TransferToStorage(date int64, code string, equipment, employee, company int) error
-	TransferToDepartment(date int64, code string, equipment, employee, company, toDepartment int) error
-	TransferToEmployee(date int64, code string, equipment, employee, company, toEmployee int) error
-	TransferToEmployeeInDepartment(date int64, code string, equipment, employee, company, toDepartment, toEmployee int) error
-	TransferToContract(date int64, code string, equipment, employee, company, toContract int, transferType, price string) error
+	TransferToStorage(date int64, code string, equipment, employee, company int) (int, error)
+	TransferToDepartment(date int64, code string, equipment, employee, company, toDepartment int) (int, error)
+	TransferToEmployee(date int64, code string, equipment, employee, company, toEmployee int) (int, error)
+	TransferToEmployeeInDepartment(date int64, code string, equipment, employee, company, toDepartment, toEmployee int) (int, error)
+	TransferToContract(date int64, code string, equipment, employee, company, toContract int, transferType, price string) (int, error)
 	GetHistory(id int) ([]model.Location, error)
 	Delete(id int) error
 }
@@ -119,6 +121,11 @@ type Company interface {
 	FindByTitle(title string) (int, error)
 	Update(id int, title string) error
 	Delete(id int) error
+}
+
+type Replace interface {
+	Create(ids []int) error
+	FindByLocationId(id int) (model.Replace, error)
 }
 
 func InterfaceToInt(value interface{}) int {

@@ -23,7 +23,7 @@ func NewService(repository *repository.Repository) *Service {
 		Category:   NewCategoryService(repository.Category, repository.Profile),
 		Profile:    NewProfileService(repository.Profile, repository.Equipment),
 		Equipment:  NewEquipmentService(repository.Equipment),
-		Location:   NewLocationService(repository.Location),
+		Location:   NewLocationService(repository.Location, repository.Replace),
 		Contract:   NewContractService(repository.Contract, repository.Equipment),
 		Company:    NewCompanyService(repository.Company),
 	}
