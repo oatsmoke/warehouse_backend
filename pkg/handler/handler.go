@@ -50,6 +50,7 @@ func (h *Handler) InitRoutes(cfg ConfigClient) *gin.Engine {
 			employee.POST("/activate", h.activateEmployee)
 			employee.POST("/deactivate", h.deactivateEmployee)
 			employee.POST("/resetPassword", h.resetPasswordEmployee)
+			employee.POST("/changeRole", h.changeRoleEmployee)
 		}
 		department := api.Group("/department")
 		{

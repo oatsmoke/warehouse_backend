@@ -49,13 +49,15 @@ type Employee interface {
 	Activate(id int, password string) error
 	Deactivate(id int) error
 	ResetPassword(id int, password string) error
+	ChangeRole(id int, role string) error
 }
 
 type Department interface {
 	Create(title string) error
 	GetById(id int) (model.Department, error)
 	GetAll() ([]model.Department, error)
-	GetAllButOne(id int) ([]model.Department, error)
+	GetAllButOne(id, employeeId int) ([]model.Department, error)
+	GetAllButOneForAdmin(id int) ([]model.Department, error)
 	FindByTitle(title string) (int, error)
 	Update(id int, title string) error
 	Delete(id int) error

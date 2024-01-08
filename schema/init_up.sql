@@ -65,6 +65,12 @@ create table locations
     transfer_type varchar(100)                       not null,
     price         varchar(100)                       not null
 );
+create table replaces
+(
+    id            serial                                         not null primary key,
+    transfer_from integer references locations on delete cascade not null,
+    transfer_to   integer references locations on delete cascade not null
+);
 insert into employees (name,
                        phone,
                        email,

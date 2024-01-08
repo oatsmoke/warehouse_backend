@@ -61,7 +61,7 @@ func (h *Handler) getAllDepartment(c *gin.Context) {
 }
 
 func (h *Handler) getAllButOneDepartment(c *gin.Context) {
-	_, err := getUserId(c)
+	employeeId, err := getUserId(c)
 	if err != nil {
 		newErrorResponse(c, http.StatusUnauthorized, err.Error())
 		return
@@ -71,7 +71,7 @@ func (h *Handler) getAllButOneDepartment(c *gin.Context) {
 		newErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	departments, err := h.service.Department.GetAllButOne(department.Id)
+	departments, err := h.service.Department.GetAllButOne(department.Id, employeeId)
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return

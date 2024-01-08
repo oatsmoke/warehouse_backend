@@ -31,8 +31,9 @@ func (r *EmployeeRepository) Create(name, phone, email string) error {
 func (r *EmployeeRepository) GetById(id int) (model.Employee, error) {
 	var employee model.Employee
 	var rDate, aDate time.Time
+	var department interface{}
 	query := `
-			SELECT name, phone, email, registration_date, authorization_date, activate
+			SELECT name, phone, email, registration_date, authorization_date, activate,department, role
 			FROM employees 
 			WHERE id = $1;`
 	err := r.db.QueryRow(context.Background(), query, id).Scan(
@@ -41,9 +42,12 @@ func (r *EmployeeRepository) GetById(id int) (model.Employee, error) {
 		&employee.Email,
 		&rDate,
 		&aDate,
-		&employee.Activate)
+		&employee.Activate,
+		&department,
+		&employee.Role)
 	employee.RegistrationDate = rDate.Unix()
 	employee.AuthorizationDate = aDate.Unix()
+	employee.Department.Id = InterfaceToInt(department)
 	if err != nil {
 		return model.Employee{}, err
 	}
@@ -135,7 +139,7 @@ func (r *EmployeeRepository) GetAllButOne(id int) ([]model.Employee, error) {
 	var employee model.Employee
 	var rDate, aDate time.Time
 	query := `
-			SELECT id, name, phone, email, registration_date, authorization_date, activate
+			SELECT id, name, phone, email, registration_date, authorization_date, activate, role
 			FROM employees
 			WHERE hidden = false AND id != $1
 			ORDER BY name;`
@@ -151,7 +155,8 @@ func (r *EmployeeRepository) GetAllButOne(id int) ([]model.Employee, error) {
 			&employee.Email,
 			&rDate,
 			&aDate,
-			&employee.Activate)
+			&employee.Activate,
+			&employee.Role)
 		employee.RegistrationDate = rDate.Unix()
 		employee.AuthorizationDate = aDate.Unix()
 		if err != nil {
@@ -291,6 +296,18 @@ func (r *EmployeeRepository) ResetPassword(id int, password string) error {
 			SET password = $2
 			WHERE id = $1;`
 	_, err := r.db.Exec(context.Background(), query, id, password)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *EmployeeRepository) ChangeRole(id int, role string) error {
+	query := `
+			UPDATE employees 
+			SET role = $2
+			WHERE id = $1;`
+	_, err := r.db.Exec(context.Background(), query, id, role)
 	if err != nil {
 		return err
 	}

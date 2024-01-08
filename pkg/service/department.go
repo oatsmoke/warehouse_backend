@@ -12,10 +12,7 @@ type DepartmentService struct {
 	repositoryEmployee   repository.Employee
 }
 
-func NewDepartmentService(
-	repositoryDepartment repository.Department,
-	repositoryEquipment repository.Equipment,
-	repositoryEmployee repository.Employee) *DepartmentService {
+func NewDepartmentService(repositoryDepartment repository.Department, repositoryEquipment repository.Equipment, repositoryEmployee repository.Employee) *DepartmentService {
 	return &DepartmentService{
 		repositoryDepartment: repositoryDepartment,
 		repositoryEquipment:  repositoryEquipment,
@@ -41,8 +38,15 @@ func (s *DepartmentService) GetAll() ([]model.Department, error) {
 	return s.repositoryDepartment.GetAll()
 }
 
-func (s *DepartmentService) GetAllButOne(id int) ([]model.Department, error) {
-	return s.repositoryDepartment.GetAllButOne(id)
+func (s *DepartmentService) GetAllButOne(id, employeeId int) ([]model.Department, error) {
+	employee, err := s.repositoryEmployee.GetById(employeeId)
+	if err != nil {
+		return []model.Department{}, err
+	}
+	if employee.Role == "ADMIN" {
+		return s.repositoryDepartment.GetAllButOneForAdmin(id)
+	}
+	return s.repositoryDepartment.GetAllButOne(id, employeeId)
 }
 
 func (s *DepartmentService) Update(id int, title string) error {

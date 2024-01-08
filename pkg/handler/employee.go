@@ -262,3 +262,22 @@ func (h *Handler) resetPasswordEmployee(c *gin.Context) {
 	setCookie(c)
 	c.JSON(http.StatusOK, "")
 }
+
+func (h *Handler) changeRoleEmployee(c *gin.Context) {
+	_, err := getUserId(c)
+	if err != nil {
+		newErrorResponse(c, http.StatusUnauthorized, err.Error())
+		return
+	}
+	var employee model.Employee
+	if err := c.BindJSON(&employee); err != nil {
+		newErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := h.service.Employee.ChangeRole(employee.Id, employee.Role); err != nil {
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	setCookie(c)
+	c.JSON(http.StatusOK, "")
+}

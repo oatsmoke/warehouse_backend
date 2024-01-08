@@ -171,6 +171,10 @@ func (s *EmployeeService) ResetPassword(id int) error {
 	return nil
 }
 
+func (s *EmployeeService) ChangeRole(id int, role string) error {
+	return s.repositoryEmployee.ChangeRole(id, role)
+}
+
 func generateString() string {
 	rand.Seed(time.Now().UnixNano())
 	chars := []rune(dictionary)

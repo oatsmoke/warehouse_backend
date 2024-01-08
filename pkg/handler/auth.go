@@ -29,10 +29,15 @@ func (h *Handler) signIn(c *gin.Context) {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
+	employee, err := h.service.Employee.GetById(id)
+	if err != nil {
+		newErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
 	c.Set("token", token)
 	c.Set("hash", hash)
 	setCookie(c)
-	c.JSON(http.StatusOK, map[string]interface{}{"token": token, "hash": hash})
+	c.JSON(http.StatusOK, employee)
 }
 
 func (h *Handler) userIdentity(c *gin.Context) {
