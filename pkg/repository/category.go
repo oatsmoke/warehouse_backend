@@ -2,7 +2,7 @@ package repository
 
 import (
 	"context"
-	"github.com/jackc/pgx/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"warehouse_backend/pkg/model"
 )
 

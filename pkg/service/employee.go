@@ -5,7 +5,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 	"math/rand"
 	"net/smtp"
 	"strconv"
@@ -107,12 +107,16 @@ func (s *EmployeeService) Delete(id int) error {
 }
 
 func (s *EmployeeService) GenerateToken(id int) (string, error) {
-	claims := &jwt.RegisteredClaims{
-		Subject:   strconv.Itoa(id),
-		ExpiresAt: jwt.NewNumericDate(time.Unix(time.Now().Add(tokenTTL).Unix(), 0)),
-		IssuedAt:  jwt.NewNumericDate(time.Unix(time.Now().Unix(), 0)),
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	//claims := &jwt.RegisteredClaims{
+	//	Subject:   strconv.Itoa(id),
+	//	ExpiresAt: jwt.NewNumericDate(time.Unix(time.Now().Add(tokenTTL).Unix(), 0)),
+	//	IssuedAt:  jwt.NewNumericDate(time.Unix(time.Now().Unix(), 0)),
+	//}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub": strconv.Itoa(id),
+		"exp": jwt.NewNumericDate(time.Unix(time.Now().Add(tokenTTL).Unix(), 0)),
+		"iat": jwt.NewNumericDate(time.Unix(time.Now().Unix(), 0)),
+	})
 	signedString, err := token.SignedString([]byte(signingKey))
 	if err != nil {
 		return "", err

@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
-	"github.com/jackc/pgx/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type ConfigDB struct {
