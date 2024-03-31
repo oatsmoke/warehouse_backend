@@ -42,14 +42,14 @@ func (r *EquipmentRepository) Create(date int64, company int, serialNumber strin
 		return 0, err
 	}
 	tm := time.Unix(date, 0)
-	queryLocationRecord := `
-			INSERT INTO locations (date, code, equipment, employee, company, transfer_type, price) 
-			VALUES ($1, $2, $3, $4, $5, $6, $7);`
-	_, err = tx.Exec(ctx, queryLocationRecord, tm, "ADD_TO_STORAGE", id, userId, company, "", "")
+	queryLocationRecord := `	
+			INSERT INTO locations (date, code, equipment, employee, company) 
+			VALUES ($1, $2, $3, $4, $5);`
+	_, err = tx.Exec(ctx, queryLocationRecord, tm, "ADD_TO_STORAGE", id, userId, company)
 	if err != nil {
 		return 0, err
 	}
-	return id, err
+	return id, nil
 }
 
 func (r *EquipmentRepository) GetById(id int) (model.Location, error) {
@@ -77,29 +77,16 @@ func (r *EquipmentRepository) GetById(id int) (model.Location, error) {
 			 FROM locations
 			 GROUP BY locations.equipment)
 			AND equipments.id = $1;`
-	err := r.db.QueryRow(context.Background(), query, id).Scan(
-		&transferType,
-		&price,
-		&equipmentByLoc.Equipment.Id,
-		&equipmentByLoc.Equipment.SerialNumber,
-		&equipmentByLoc.Equipment.Profile.Id,
-		&equipmentByLoc.Equipment.Profile.Title,
-		&equipmentByLoc.Equipment.Profile.Category.Id,
-		&equipmentByLoc.Equipment.Profile.Category.Title,
-		&equipmentByLoc.Company.Id,
-		&equipmentByLoc.Company.Title,
-		&toD,
-		&toE,
-		&toC)
+	err := r.db.QueryRow(context.Background(), query, id).Scan(&transferType, &price, &equipmentByLoc.Equipment.Id, &equipmentByLoc.Equipment.SerialNumber, &equipmentByLoc.Equipment.Profile.Id, &equipmentByLoc.Equipment.Profile.Title, &equipmentByLoc.Equipment.Profile.Category.Id, &equipmentByLoc.Equipment.Profile.Category.Title, &equipmentByLoc.Company.Id, &equipmentByLoc.Company.Title, &toD, &toE, &toC)
 	equipmentByLoc.TransferType = InterfaceToString(transferType)
-	equipmentByLoc.Price = InterfaceToString(price)
+	equipmentByLoc.Price = InterfaceToInt(price)
 	equipmentByLoc.ToDepartment.Id = InterfaceToInt(toD)
 	equipmentByLoc.ToEmployee.Id = InterfaceToInt(toE)
 	equipmentByLoc.ToContract.Id = InterfaceToInt(toC)
 	if err != nil {
 		return model.Location{}, err
 	}
-	return equipmentByLoc, err
+	return equipmentByLoc, nil
 }
 
 func (r *EquipmentRepository) GetByProfile(id int) ([]model.Equipment, error) {
@@ -115,15 +102,13 @@ func (r *EquipmentRepository) GetByProfile(id int) ([]model.Equipment, error) {
 		return nil, err
 	}
 	for rows.Next() {
-		err = rows.Scan(
-			&equipment.Id,
-			&equipment.SerialNumber)
+		err = rows.Scan(&equipment.Id, &equipment.SerialNumber)
 		if err != nil {
 			return nil, err
 		}
 		equipments = append(equipments, equipment)
 	}
-	return equipments, err
+	return equipments, nil
 }
 
 func (r *EquipmentRepository) GetByLocationStorage() ([]model.Location, error) {
@@ -152,19 +137,13 @@ func (r *EquipmentRepository) GetByLocationStorage() ([]model.Location, error) {
 		return nil, err
 	}
 	for rows.Next() {
-		err = rows.Scan(
-			&equipmentByLoc.Equipment.Id,
-			&equipmentByLoc.Equipment.SerialNumber,
-			&equipmentByLoc.Equipment.Profile.Title,
-			&equipmentByLoc.Equipment.Profile.Category.Title,
-			&equipmentByLoc.Company.Id,
-			&equipmentByLoc.Company.Title)
+		err = rows.Scan(&equipmentByLoc.Equipment.Id, &equipmentByLoc.Equipment.SerialNumber, &equipmentByLoc.Equipment.Profile.Title, &equipmentByLoc.Equipment.Profile.Category.Title, &equipmentByLoc.Company.Id, &equipmentByLoc.Company.Title)
 		if err != nil {
 			return nil, err
 		}
 		equipmentsByLoc = append(equipmentsByLoc, equipmentByLoc)
 	}
-	return equipmentsByLoc, err
+	return equipmentsByLoc, nil
 }
 
 func (r *EquipmentRepository) GetByLocationDepartment(toDepartment int) ([]model.Location, error) {
@@ -196,17 +175,7 @@ func (r *EquipmentRepository) GetByLocationDepartment(toDepartment int) ([]model
 		return nil, err
 	}
 	for rows.Next() {
-		err = rows.Scan(
-			&equipmentByLoc.Equipment.Id,
-			&equipmentByLoc.Equipment.SerialNumber,
-			&equipmentByLoc.Equipment.Profile.Title,
-			&equipmentByLoc.Equipment.Profile.Category.Title,
-			&equipmentByLoc.Company.Id,
-			&equipmentByLoc.Company.Title,
-			&equipmentByLoc.ToDepartment.Id,
-			&equipmentByLoc.ToDepartment.Title,
-			&toEId,
-			&toEName)
+		err = rows.Scan(&equipmentByLoc.Equipment.Id, &equipmentByLoc.Equipment.SerialNumber, &equipmentByLoc.Equipment.Profile.Title, &equipmentByLoc.Equipment.Profile.Category.Title, &equipmentByLoc.Company.Id, &equipmentByLoc.Company.Title, &equipmentByLoc.ToDepartment.Id, &equipmentByLoc.ToDepartment.Title, &toEId, &toEName)
 		equipmentByLoc.ToEmployee.Id = InterfaceToInt(toEId)
 		equipmentByLoc.ToEmployee.Name = InterfaceToString(toEName)
 		if err != nil {
@@ -214,7 +183,7 @@ func (r *EquipmentRepository) GetByLocationDepartment(toDepartment int) ([]model
 		}
 		equipmentsByLoc = append(equipmentsByLoc, equipmentByLoc)
 	}
-	return equipmentsByLoc, err
+	return equipmentsByLoc, nil
 }
 
 func (r *EquipmentRepository) GetByLocationEmployee(toEmployee int) ([]model.Location, error) {
@@ -246,22 +215,14 @@ func (r *EquipmentRepository) GetByLocationEmployee(toEmployee int) ([]model.Loc
 		return nil, err
 	}
 	for rows.Next() {
-		err = rows.Scan(
-			&equipmentByLoc.Equipment.Id,
-			&equipmentByLoc.Equipment.SerialNumber,
-			&equipmentByLoc.Equipment.Profile.Title,
-			&equipmentByLoc.Equipment.Profile.Category.Title,
-			&equipmentByLoc.Company.Id,
-			&equipmentByLoc.Company.Title,
-			&toD,
-			&equipmentByLoc.ToEmployee.Name)
+		err = rows.Scan(&equipmentByLoc.Equipment.Id, &equipmentByLoc.Equipment.SerialNumber, &equipmentByLoc.Equipment.Profile.Title, &equipmentByLoc.Equipment.Profile.Category.Title, &equipmentByLoc.Company.Id, &equipmentByLoc.Company.Title, &toD, &equipmentByLoc.ToEmployee.Name)
 		equipmentByLoc.ToDepartment.Title = InterfaceToString(toD)
 		if err != nil {
 			return nil, err
 		}
 		equipmentsByLoc = append(equipmentsByLoc, equipmentByLoc)
 	}
-	return equipmentsByLoc, err
+	return equipmentsByLoc, nil
 }
 
 func (r *EquipmentRepository) GetByLocationContract(toContract int) ([]model.Location, error) {
@@ -293,19 +254,13 @@ func (r *EquipmentRepository) GetByLocationContract(toContract int) ([]model.Loc
 		return nil, err
 	}
 	for rows.Next() {
-		err = rows.Scan(
-			&equipmentByLoc.Equipment.Id,
-			&equipmentByLoc.Equipment.SerialNumber,
-			&equipmentByLoc.Equipment.Profile.Title,
-			&equipmentByLoc.Equipment.Profile.Category.Title,
-			&equipmentByLoc.Company.Id,
-			&equipmentByLoc.Company.Title)
+		err = rows.Scan(&equipmentByLoc.Equipment.Id, &equipmentByLoc.Equipment.SerialNumber, &equipmentByLoc.Equipment.Profile.Title, &equipmentByLoc.Equipment.Profile.Category.Title, &equipmentByLoc.Company.Id, &equipmentByLoc.Company.Title)
 		if err != nil {
 			return nil, err
 		}
 		equipmentsByLoc = append(equipmentsByLoc, equipmentByLoc)
 	}
-	return equipmentsByLoc, err
+	return equipmentsByLoc, nil
 }
 
 func (r *EquipmentRepository) GetByLocationDepartmentEmployee(toDepartment, toEmployee int) ([]model.Location, error) {
@@ -337,21 +292,13 @@ func (r *EquipmentRepository) GetByLocationDepartmentEmployee(toDepartment, toEm
 		return nil, err
 	}
 	for rows.Next() {
-		err = rows.Scan(
-			&equipmentByLoc.Equipment.Id,
-			&equipmentByLoc.Equipment.SerialNumber,
-			&equipmentByLoc.Equipment.Profile.Title,
-			&equipmentByLoc.Equipment.Profile.Category.Title,
-			&equipmentByLoc.Company.Id,
-			&equipmentByLoc.Company.Title,
-			&equipmentByLoc.ToDepartment.Title,
-			&equipmentByLoc.ToEmployee.Name)
+		err = rows.Scan(&equipmentByLoc.Equipment.Id, &equipmentByLoc.Equipment.SerialNumber, &equipmentByLoc.Equipment.Profile.Title, &equipmentByLoc.Equipment.Profile.Category.Title, &equipmentByLoc.Company.Id, &equipmentByLoc.Company.Title, &equipmentByLoc.ToDepartment.Title, &equipmentByLoc.ToEmployee.Name)
 		if err != nil {
 			return nil, err
 		}
 		equipmentsByLoc = append(equipmentsByLoc, equipmentByLoc)
 	}
-	return equipmentsByLoc, err
+	return equipmentsByLoc, nil
 }
 
 func (r *EquipmentRepository) GetAll() ([]model.Equipment, error) {
@@ -369,19 +316,13 @@ func (r *EquipmentRepository) GetAll() ([]model.Equipment, error) {
 		return nil, err
 	}
 	for rows.Next() {
-		err = rows.Scan(
-			&equipment.Id,
-			&equipment.SerialNumber,
-			&equipment.Profile.Id,
-			&equipment.Profile.Title,
-			&equipment.Profile.Category.Id,
-			&equipment.Profile.Category.Title)
+		err = rows.Scan(&equipment.Id, &equipment.SerialNumber, &equipment.Profile.Id, &equipment.Profile.Title, &equipment.Profile.Category.Id, &equipment.Profile.Category.Title)
 		if err != nil {
 			return nil, err
 		}
 		equipments = append(equipments, equipment)
 	}
-	return equipments, err
+	return equipments, nil
 }
 
 func (r *EquipmentRepository) FindBySerialNumber(serialNumber string) (int, error) {
@@ -419,4 +360,151 @@ func (r *EquipmentRepository) Delete(id int) error {
 		return err
 	}
 	return nil
+}
+
+func (r *EquipmentRepository) RemainderByCategory(categoryId, departmentId int, date time.Time) ([]model.Location, error) {
+	var locations []model.Location
+	var location model.Location
+	var dateLoc time.Time
+	query := `
+			SELECT locations.date, profiles.title, equipments.serial_number
+			FROM locations
+			         LEFT JOIN equipments ON locations.equipment = equipments.id
+			         LEFT JOIN profiles ON equipments.profile = profiles.id
+			         LEFT JOIN departments ON departments.id = locations.to_department
+			WHERE locations.id IN
+			      (SELECT MAX(locations.id)
+				   FROM locations
+				   WHERE locations.date < $3
+				   GROUP BY locations.equipment)
+			  AND profiles.category = $1
+			  AND locations.to_department = $2
+			  AND locations.date < $3;`
+	rows, err := r.db.Query(context.Background(), query, categoryId, departmentId, date)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		err = rows.Scan(&dateLoc, &location.Equipment.Profile.Title, &location.Equipment.SerialNumber)
+		location.Date = dateLoc.Unix()
+		if err != nil {
+			return nil, err
+		}
+		locations = append(locations, location)
+	}
+	return locations, nil
+}
+
+func (r *EquipmentRepository) TransferByCategory(categoryId, departmentId int, fromDate, toDate time.Time, code string) ([]model.Location, error) {
+	var locations []model.Location
+	var location model.Location
+	var dateLoc time.Time
+	query := ""
+	switch {
+	case code == "STORAGE_TO_DEPARTMENT" || code == "CONTRACT_TO_DEPARTMENT":
+		query = `
+			SELECT locations.date, profiles.title, equipments.serial_number
+			FROM locations
+			         LEFT JOIN equipments ON locations.equipment = equipments.id
+			         LEFT JOIN profiles ON equipments.profile = profiles.id
+			WHERE profiles.category = $1
+			  AND locations.to_department = $2
+			  AND locations.code = $3
+			  AND locations.date >= $4
+			  AND locations.date < $5;`
+	case code == "DEPARTMENT_TO_STORAGE" || code == "DEPARTMENT_TO_CONTRACT":
+		query = `
+			SELECT locations.date, profiles.title, equipments.serial_number
+			FROM locations
+			         LEFT JOIN equipments ON locations.equipment = equipments.id
+			         LEFT JOIN profiles ON equipments.profile = profiles.id
+			WHERE profiles.category = $1
+			  AND locations.from_department = $2
+			  AND locations.code = $3
+			  AND locations.date >= $4
+			  AND locations.date < $5;`
+	}
+	rows, err := r.db.Query(context.Background(), query, categoryId, departmentId, code, fromDate, toDate)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		err = rows.Scan(&dateLoc, &location.Equipment.Profile.Title, &location.Equipment.SerialNumber)
+		location.Date = dateLoc.Unix()
+		if err != nil {
+			return nil, err
+		}
+		locations = append(locations, location)
+	}
+	return locations, nil
+}
+
+func (r *EquipmentRepository) ToDepartmentTransferByCategory(categoryId, departmentId int, fromDate, toDate time.Time) ([]model.Location, error) {
+	var locations []model.Location
+	var location model.Location
+	var dateLoc time.Time
+	query := `
+			SELECT locations.date, profiles.title, equipments.serial_number, departments.id, departments.title
+			FROM locations
+			         LEFT JOIN equipments ON locations.equipment = equipments.id
+			         LEFT JOIN profiles ON equipments.profile = profiles.id
+			         LEFT JOIN departments on departments.id = locations.from_department
+			WHERE profiles.category = $1
+			  AND locations.to_department = $2
+			  AND locations.code = 'DEPARTMENT_TO_DEPARTMENT'
+			  AND locations.date >= $3
+			  AND locations.date < $4;`
+	rows, err := r.db.Query(context.Background(), query, categoryId, departmentId, fromDate, toDate)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		err = rows.Scan(
+			&dateLoc,
+			&location.Equipment.Profile.Title,
+			&location.Equipment.SerialNumber,
+			&location.ToDepartment.Id,
+			&location.ToDepartment.Title)
+		location.Date = dateLoc.Unix()
+		if err != nil {
+			return nil, err
+		}
+		locations = append(locations, location)
+	}
+	return locations, nil
+}
+
+func (r *EquipmentRepository) FromDepartmentTransferByCategory(categoryId, departmentId int, fromDate, toDate time.Time) ([]model.Location, error) {
+	var locations []model.Location
+	var location model.Location
+	var dateLoc time.Time
+	query := `
+			SELECT locations.date, profiles.title, equipments.serial_number, departments.id, departments.title
+			FROM locations
+			         LEFT JOIN equipments ON locations.equipment = equipments.id
+			         LEFT JOIN profiles ON equipments.profile = profiles.id
+			         LEFT JOIN departments on departments.id = locations.to_department
+			WHERE profiles.category = $1
+			  AND locations.from_department = $2
+			  AND locations.code = 'DEPARTMENT_TO_DEPARTMENT'
+			  AND locations.date >= $3
+			  AND locations.date < $4;`
+	rows, err := r.db.Query(context.Background(), query, categoryId, departmentId, fromDate, toDate)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		err = rows.Scan(
+			&dateLoc,
+			&location.Equipment.Profile.Title,
+			&location.Equipment.SerialNumber,
+			&location.FromDepartment.Id,
+			&location.FromDepartment.Title)
+		location.Date = dateLoc.Unix()
+		if err != nil {
+			return nil, err
+		}
+		locations = append(locations, location)
+	}
+	return locations, nil
 }

@@ -17,12 +17,7 @@ func (h *Handler) createEquipment(c *gin.Context) {
 		newErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	equipmentId, err := h.service.Equipment.Create(
-		request.Location.Date,
-		request.Location.Company.Id,
-		request.Location.Equipment.SerialNumber,
-		request.Location.Equipment.Profile.Id,
-		userId)
+	equipmentId, err := h.service.Equipment.Create(request.Location.Date, request.Location.Company.Id, request.Location.Equipment.SerialNumber, request.Location.Equipment.Profile.Id, userId)
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -150,4 +145,27 @@ func (h *Handler) deleteEquipment(c *gin.Context) {
 	}
 	setCookie(c)
 	c.JSON(http.StatusOK, "")
+}
+
+func (h *Handler) reportByCategory(c *gin.Context) {
+	_, err := getUserId(c)
+	if err != nil {
+		newErrorResponse(c, http.StatusUnauthorized, err.Error())
+		return
+	}
+	request := struct {
+		DepartmentId int   `json:"departmentId"`
+		Date         int64 `json:"date"`
+	}{}
+	if err := c.BindJSON(&request); err != nil {
+		newErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	report, err := h.service.Equipment.ReportByCategory(request.DepartmentId, request.Date)
+	if err != nil {
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	setCookie(c)
+	c.JSON(http.StatusOK, report)
 }

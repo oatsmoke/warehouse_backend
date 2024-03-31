@@ -53,17 +53,20 @@ create table companies
 );
 create table locations
 (
-    id            serial                             not null primary key,
-    date          timestamp with time zone           not null,
-    code          varchar(100)                       not null,
-    equipment     integer references equipments (id) not null,
-    employee      integer references employees (id)  not null,
-    company       integer references companies (id)  not null,
-    to_department integer references departments (id),
-    to_employee   integer references employees (id),
-    to_contract   integer references contracts (id),
-    transfer_type varchar(100)                       not null,
-    price         varchar(100)                       not null
+    id              serial                             not null primary key,
+    date            timestamp with time zone           not null,
+    code            varchar(100)                       not null,
+    equipment       integer references equipments (id) not null,
+    employee        integer references employees (id)  not null,
+    company         integer references companies (id)  not null,
+    from_department integer references departments (id),
+    from_employee   integer references employees (id),
+    from_contract   integer references contracts (id),
+    to_department   integer references departments (id),
+    to_employee     integer references employees (id),
+    to_contract     integer references contracts (id),
+    transfer_type   varchar(100),
+    price           integer
 );
 create table replaces
 (

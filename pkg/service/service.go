@@ -22,7 +22,7 @@ func NewService(repository *repository.Repository) *Service {
 		Department: NewDepartmentService(repository.Department, repository.Equipment, repository.Employee),
 		Category:   NewCategoryService(repository.Category, repository.Profile),
 		Profile:    NewProfileService(repository.Profile, repository.Equipment),
-		Equipment:  NewEquipmentService(repository.Equipment),
+		Equipment:  NewEquipmentService(repository.Equipment, repository.Category),
 		Location:   NewLocationService(repository.Location, repository.Replace),
 		Contract:   NewContractService(repository.Contract, repository.Equipment),
 		Company:    NewCompanyService(repository.Company),
@@ -84,6 +84,7 @@ type Equipment interface {
 	GetAll() ([]model.Equipment, error)
 	Update(id int, serialNumber string, profile int) error
 	Delete(id int) error
+	ReportByCategory(departmentId int, date int64) (model.Report, error)
 }
 type Location interface {
 	TransferTo(id int, request []model.RequestLocation) error

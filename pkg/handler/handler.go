@@ -86,6 +86,7 @@ func (h *Handler) InitRoutes(cfg ConfigClient) *gin.Engine {
 			equipment.GET("/getAll", h.getAllEquipment)
 			equipment.POST("/update", h.updateEquipment)
 			equipment.POST("/delete", h.deleteEquipment)
+			equipment.POST("/reportByCategory", h.reportByCategory)
 		}
 		location := api.Group("/location")
 		{

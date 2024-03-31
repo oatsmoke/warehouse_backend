@@ -24,18 +24,18 @@ func main() {
 	logrus.SetFormatter(new(logrus.JSONFormatter))
 	config, err := initConfig()
 	if err != nil {
-		logrus.Fatalf("Ошибка инициальзации конфига:%s", err.Error())
+		logrus.Fatalf("Ошибка инициальзации конфига:%v", err)
 	}
-	db, errDB := repository.NewPostgresDB(config.DB)
-	if errDB != nil {
-		logrus.Fatalf("Ошибка инициальзации базы данных:%s", err.Error())
+	db, err := repository.NewPostgresDB(config.DB)
+	if err != nil {
+		logrus.Fatalf("Ошибка инициальзации базы данных:%v", err)
 	}
 	repos := repository.NewRepository(db)
 	services := service.NewService(repos)
 	handlers := handler.NewHandler(services)
 	srv := new(Server)
 	if err := srv.Run(config.Port, handlers.InitRoutes(config.Client)); err != nil {
-		logrus.Fatalf("Ошибка запуска сервера:%s", err.Error())
+		logrus.Fatalf("Ошибка запуска сервера:%v", err)
 	}
 }
 

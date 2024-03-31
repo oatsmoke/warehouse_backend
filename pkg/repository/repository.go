@@ -2,6 +2,7 @@ package repository
 
 import (
 	"github.com/jackc/pgx/v5/pgxpool"
+	"time"
 	"warehouse_backend/pkg/model"
 )
 
@@ -95,15 +96,20 @@ type Equipment interface {
 	FindBySerialNumber(serialNumber string) (int, error)
 	Update(id int, serialNumber string, profile int) error
 	Delete(id int) error
+	RemainderByCategory(categoryId, departmentId int, date time.Time) ([]model.Location, error)
+	TransferByCategory(categoryId, departmentId int, fromDate, toDate time.Time, code string) ([]model.Location, error)
+	ToDepartmentTransferByCategory(categoryId, departmentId int, fromDate, toDate time.Time) ([]model.Location, error)
+	FromDepartmentTransferByCategory(categoryId, departmentId int, fromDate, toDate time.Time) ([]model.Location, error)
 }
 
 type Location interface {
-	TransferToStorage(date int64, code string, equipment, employee, company int) (int, error)
-	TransferToDepartment(date int64, code string, equipment, employee, company, toDepartment int) (int, error)
-	TransferToEmployee(date int64, code string, equipment, employee, company, toEmployee int) (int, error)
-	TransferToEmployeeInDepartment(date int64, code string, equipment, employee, company, toDepartment, toEmployee int) (int, error)
-	TransferToContract(date int64, code string, equipment, employee, company, toContract int, transferType, price string) (int, error)
+	TransferToStorage(date int64, code string, equipment, employee, company int, nowLocation []interface{}) (int, error)
+	TransferToDepartment(date int64, code string, equipment, employee, company, toDepartment int, nowLocation []interface{}) (int, error)
+	TransferToEmployee(date int64, code string, equipment, employee, company, toEmployee int, nowLocation []interface{}) (int, error)
+	TransferToEmployeeInDepartment(date int64, code string, equipment, employee, company, toDepartment, toEmployee int, nowLocation []interface{}) (int, error)
+	TransferToContract(date int64, code string, equipment, employee, company, toContract int, transferType string, price int, nowLocation []interface{}) (int, error)
 	GetHistory(id int) ([]model.Location, error)
+	GetLocationNow(id int) ([]interface{}, error)
 	Delete(id int) error
 }
 
