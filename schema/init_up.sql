@@ -1,61 +1,63 @@
 create table categories
 (
-    id    serial       not null primary key,
-    title varchar(100) not null unique
+    id         bigserial not null primary key,
+    title      varchar   not null unique,
+    is_deleted boolean   not null default false
 );
 create table profiles
 (
-    id       serial                             not null primary key,
-    title    varchar(100)                       not null unique,
-    category integer references categories (id) not null
+    id         bigserial                          not null primary key,
+    title      varchar                            not null unique,
+    category   integer references categories (id) not null,
+    is_deleted boolean                            not null default false
 );
 create table equipments
 (
-    id            serial                           not null primary key,
-    serial_number varchar(100)                     not null unique,
+    id            bigserial                        not null primary key,
+    serial_number varchar                          not null unique,
     profile       integer references profiles (id) not null,
     is_deleted    boolean                          not null default false
 );
 create table departments
 (
-    id         serial       not null primary key,
-    title      varchar(100) not null unique,
-    is_deleted boolean      not null default false
+    id         bigserial not null primary key,
+    title      varchar   not null unique,
+    is_deleted boolean   not null default false
 );
 create table employees
 (
-    id                 serial                   not null primary key,
-    name               varchar(100)             not null,
-    phone              varchar(100)             not null unique,
-    email              varchar(100)             not null,
-    password           varchar(100)             not null,
-    hash               varchar(100)             not null,
+    id                 bigserial                not null primary key,
+    name               varchar                  not null,
+    phone              varchar                  not null unique,
+    email              varchar                  not null,
+    password           varchar                  not null,
+    hash               varchar                  not null,
     registration_date  timestamp with time zone not null,
     authorization_date timestamp with time zone not null,
     activate           boolean                  not null default false,
     hidden             boolean                  not null default false,
     department         integer references departments (id),
-    role               varchar(100)             not null default 'USER',
+    role               varchar                  not null default 'USER',
     is_deleted         boolean                  not null default false
 );
 create table contracts
 (
-    id         serial       not null primary key,
-    number     varchar(100) not null unique,
-    address    varchar(100) not null,
-    is_deleted boolean      not null default false
+    id         bigserial not null primary key,
+    number     varchar   not null unique,
+    address    varchar   not null,
+    is_deleted boolean   not null default false
 );
 create table companies
 (
-    id         serial       not null primary key,
-    title      varchar(100) not null unique,
-    is_deleted boolean      not null default false
+    id         bigserial not null primary key,
+    title      varchar   not null unique,
+    is_deleted boolean   not null default false
 );
 create table locations
 (
-    id              serial                             not null primary key,
+    id              bigserial                          not null primary key,
     date            timestamp with time zone           not null,
-    code            varchar(100)                       not null,
+    code            varchar                            not null,
     equipment       integer references equipments (id) not null,
     employee        integer references employees (id)  not null,
     company         integer references companies (id)  not null,
@@ -65,12 +67,12 @@ create table locations
     to_department   integer references departments (id),
     to_employee     integer references employees (id),
     to_contract     integer references contracts (id),
-    transfer_type   varchar(100),
+    transfer_type   varchar,
     price           integer
 );
 create table replaces
 (
-    id            serial                                         not null primary key,
+    id            bigserial                                      not null primary key,
     transfer_from integer references locations on delete cascade not null,
     transfer_to   integer references locations on delete cascade not null
 );
@@ -87,7 +89,7 @@ insert into employees (name,
 values ('Администратор',
         'root',
         'root@root.ru',
-        '313233343536373840bd001563085fc35165329ea1ff5c5ecbdbbeef',
+        '$2a$10$sYMtJhDQzFKHk6169kJ4ru8t0phSYEF6NTKjhS9vEewtnXTVcdoIi',
         '',
         now(),
         now(),
