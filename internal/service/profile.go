@@ -2,56 +2,85 @@ package service
 
 import (
 	"context"
-	"errors"
+	"warehouse_backend/internal/lib/logger"
 	"warehouse_backend/internal/model"
 	"warehouse_backend/internal/repository"
 )
 
 type ProfileService struct {
-	repositoryProfile   repository.Profile
-	repositoryEquipment repository.Equipment
+	ProfileRepository repository.Profile
 }
 
-func NewProfileService(repositoryProfile repository.Profile,
-	repositoryEquipment repository.Equipment) *ProfileService {
-	return &ProfileService{repositoryProfile: repositoryProfile,
-		repositoryEquipment: repositoryEquipment,
+func NewProfileService(profileRepository repository.Profile) *ProfileService {
+	return &ProfileService{
+		ProfileRepository: profileRepository,
 	}
 }
 
+// Create is profile create
 func (s *ProfileService) Create(ctx context.Context, title string, category int64) error {
-	if _, err := s.repositoryProfile.FindByTitle(ctx, title); err == nil {
-		return errors.New("title already exists")
+	const fn = "service.Profile.Create"
+
+	if err := s.ProfileRepository.Create(ctx, title, category); err != nil {
+		return logger.Err(err, "", fn)
 	}
 
-	return s.repositoryProfile.Create(ctx, title, category)
+	return nil
 }
 
-func (s *ProfileService) GetById(ctx context.Context, id int64) (*model.Profile, error) {
-	return s.repositoryProfile.GetById(ctx, id)
-}
-func (s *ProfileService) GetAll(ctx context.Context) ([]*model.Profile, error) {
-	return s.repositoryProfile.GetAll(ctx)
-}
-
+// Update is a profile update
 func (s *ProfileService) Update(ctx context.Context, id int64, title string, category int64) error {
-	findId, err := s.repositoryProfile.FindByTitle(ctx, title)
-	if findId != id && err == nil {
-		return errors.New("title already exists")
+	const fn = "service.Profile.Update"
+
+	if err := s.ProfileRepository.Update(ctx, id, title, category); err != nil {
+		return logger.Err(err, "", fn)
 	}
 
-	return s.repositoryProfile.Update(ctx, id, title, category)
+	return nil
 }
 
+// Delete is a profile delete
 func (s *ProfileService) Delete(ctx context.Context, id int64) error {
-	equipments, err := s.repositoryEquipment.GetByProfile(ctx, id)
+	const fn = "service.Profile.Delete"
+
+	if err := s.ProfileRepository.Delete(ctx, id); err != nil {
+		return logger.Err(err, "", fn)
+	}
+
+	return nil
+}
+
+// Restore is a profile restore
+func (s *ProfileService) Restore(ctx context.Context, id int64) error {
+	const fn = "service.Profile.Restore"
+
+	if err := s.ProfileRepository.Restore(ctx, id); err != nil {
+		return logger.Err(err, "", fn)
+	}
+
+	return nil
+}
+
+// GetAll is to get all profiles
+func (s *ProfileService) GetAll(ctx context.Context, deleted bool) ([]*model.Profile, error) {
+	const fn = "service.Profile.GetAll"
+
+	profiles, err := s.ProfileRepository.GetAll(ctx, deleted)
 	if err != nil {
-		return err
+		return nil, logger.Err(err, "", fn)
 	}
 
-	if len(equipments) > 0 {
-		return errors.New("used in equipment")
+	return profiles, nil
+}
+
+// GetById is to get profile by id
+func (s *ProfileService) GetById(ctx context.Context, id int64) (*model.Profile, error) {
+	const fn = "service.Profile.GetById"
+
+	category, err := s.ProfileRepository.GetById(ctx, &model.Profile{ID: id})
+	if err != nil {
+		return nil, logger.Err(err, "", fn)
 	}
 
-	return s.repositoryProfile.Delete(ctx, id)
+	return category, nil
 }

@@ -24,7 +24,7 @@ func NewService(repository *repository.Repository) *Service {
 		Employee:   NewEmployeeService(repository.Employee, repository.Equipment, repository.Auth),
 		Department: NewDepartmentService(repository.Department, repository.Equipment, repository.Employee),
 		Category:   NewCategoryService(repository.Category),
-		Profile:    NewProfileService(repository.Profile, repository.Equipment),
+		Profile:    NewProfileService(repository.Profile),
 		Equipment:  NewEquipmentService(repository.Equipment, repository.Category),
 		Location:   NewLocationService(repository.Location, repository.Replace),
 		Contract:   NewContractService(repository.Contract, repository.Equipment),
@@ -69,16 +69,17 @@ type Category interface {
 	Update(ctx context.Context, id int64, title string) error
 	Delete(ctx context.Context, id int64) error
 	Restore(ctx context.Context, id int64) error
-	GetAll(ctx context.Context, isDeleted bool) ([]*model.Category, error)
+	GetAll(ctx context.Context, deleted bool) ([]*model.Category, error)
 	GetById(ctx context.Context, id int64) (*model.Category, error)
 }
 
 type Profile interface {
-	Create(ctx context.Context, title string, category int64) error
-	GetById(ctx context.Context, id int64) (*model.Profile, error)
-	GetAll(ctx context.Context) ([]*model.Profile, error)
-	Update(ctx context.Context, id int64, title string, category int64) error
+	Create(ctx context.Context, title string, categoryId int64) error
+	Update(ctx context.Context, id int64, title string, categoryId int64) error
 	Delete(ctx context.Context, id int64) error
+	Restore(ctx context.Context, id int64) error
+	GetAll(ctx context.Context, deleted bool) ([]*model.Profile, error)
+	GetById(ctx context.Context, id int64) (*model.Profile, error)
 }
 
 type Equipment interface {

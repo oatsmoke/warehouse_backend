@@ -11,14 +11,14 @@ import (
 )
 
 type AuthHandler struct {
-	ServiceAuth     service.Auth
-	ServiceEmployee service.Employee
+	AuthService     service.Auth
+	EmployeeService service.Employee
 }
 
-func NewAuthHandler(serviceAuth service.Auth, serviceEmployee service.Employee) *AuthHandler {
+func NewAuthHandler(authService service.Auth, employeeService service.Employee) *AuthHandler {
 	return &AuthHandler{
-		ServiceAuth:     serviceAuth,
-		ServiceEmployee: serviceEmployee,
+		AuthService:     authService,
+		EmployeeService: employeeService,
 	}
 }
 
@@ -32,7 +32,7 @@ func (h *AuthHandler) SignIn(ctx *gin.Context) {
 		return
 	}
 
-	id, err := h.ServiceAuth.AuthUser(ctx, req["login"], req["password"])
+	id, err := h.AuthService.AuthUser(ctx, req["login"], req["password"])
 	if err != nil {
 		logger.ErrResponse(ctx, err, http.StatusUnauthorized, fn)
 		return
@@ -44,13 +44,13 @@ func (h *AuthHandler) SignIn(ctx *gin.Context) {
 		return
 	}
 
-	hash, err := h.ServiceAuth.GenerateHash(ctx, id)
+	hash, err := h.AuthService.GenerateHash(ctx, id)
 	if err != nil {
 		logger.ErrResponse(ctx, err, http.StatusInternalServerError, fn)
 		return
 	}
 
-	employee, err := h.ServiceEmployee.GetById(ctx, id)
+	employee, err := h.EmployeeService.GetById(ctx, id)
 	if err != nil {
 		logger.ErrResponse(ctx, err, http.StatusBadRequest, fn)
 		return
@@ -77,7 +77,7 @@ func (h *AuthHandler) GetUser(ctx *gin.Context) {
 		return
 	}
 
-	employee, err := h.ServiceEmployee.GetById(ctx, id)
+	employee, err := h.EmployeeService.GetById(ctx, id)
 	if err != nil {
 		logger.ErrResponse(ctx, err, http.StatusBadRequest, fn)
 		return
@@ -119,7 +119,7 @@ func (h *AuthHandler) Refresh(ctx *gin.Context) {
 		return
 	}
 
-	userId, err := h.ServiceAuth.FindByHash(ctx, hash)
+	userId, err := h.AuthService.FindByHash(ctx, hash)
 	if err != nil {
 		logger.ErrResponse(ctx, err, http.StatusUnauthorized, fn)
 		return
@@ -131,7 +131,7 @@ func (h *AuthHandler) Refresh(ctx *gin.Context) {
 		return
 	}
 
-	newHash, err := h.ServiceAuth.GenerateHash(ctx, userId)
+	newHash, err := h.AuthService.GenerateHash(ctx, userId)
 	if err != nil {
 		logger.ErrResponse(ctx, err, http.StatusInternalServerError, fn)
 		return

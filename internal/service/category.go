@@ -39,7 +39,6 @@ func (s *CategoryService) Update(ctx context.Context, id int64, title string) er
 	return nil
 }
 
-// Delete is a category delete
 func (s *CategoryService) Delete(ctx context.Context, id int64) error {
 	const fn = "service.Category.Delete"
 
@@ -62,10 +61,10 @@ func (s *CategoryService) Restore(ctx context.Context, id int64) error {
 }
 
 // GetAll is to get all categories
-func (s *CategoryService) GetAll(ctx context.Context, isDeleted bool) ([]*model.Category, error) {
+func (s *CategoryService) GetAll(ctx context.Context, deleted bool) ([]*model.Category, error) {
 	const fn = "service.Category.GetAll"
 
-	categories, err := s.CategoryRepository.GetAll(ctx, isDeleted)
+	categories, err := s.CategoryRepository.GetAll(ctx, deleted)
 	if err != nil {
 		return nil, logger.Err(err, "", fn)
 	}

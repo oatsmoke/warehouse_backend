@@ -74,19 +74,20 @@ type Category interface {
 	Update(ctx context.Context, id int64, title string) error
 	Delete(ctx context.Context, id int64) error
 	Restore(ctx context.Context, id int64) error
-	GetAll(ctx context.Context, isDeleted bool) ([]*model.Category, error)
+	GetAll(ctx context.Context, deleted bool) ([]*model.Category, error)
 	GetById(ctx context.Context, category *model.Category) (*model.Category, error)
 	//FindByTitle(ctx context.Context, title string) (int64, error)
 }
 
 type Profile interface {
-	Create(ctx context.Context, title string, category int64) error
-	GetByCategory(ctx context.Context, id int64) ([]*model.Profile, error)
-	GetById(ctx context.Context, id int64) (*model.Profile, error)
-	GetAll(ctx context.Context) ([]*model.Profile, error)
-	FindByTitle(ctx context.Context, title string) (int64, error)
-	Update(ctx context.Context, id int64, title string, category int64) error
+	Create(ctx context.Context, title string, categoryId int64) error
+	Update(ctx context.Context, id int64, title string, categoryId int64) error
 	Delete(ctx context.Context, id int64) error
+	Restore(ctx context.Context, id int64) error
+	GetAll(ctx context.Context, deleted bool) ([]*model.Profile, error)
+	GetById(ctx context.Context, profile *model.Profile) (*model.Profile, error)
+	//GetByCategory(ctx context.Context, categoryId int64) ([]*model.Profile, error)
+	//FindByTitle(ctx context.Context, title string) (int64, error)
 }
 
 type Equipment interface {

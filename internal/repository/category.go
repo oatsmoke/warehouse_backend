@@ -70,11 +70,11 @@ func (r *CategoryRepository) Restore(ctx context.Context, id int64) error {
 }
 
 // GetAll is to get all categories
-func (r *CategoryRepository) GetAll(ctx context.Context, isDeleted bool) ([]*model.Category, error) {
+func (r *CategoryRepository) GetAll(ctx context.Context, deleted bool) ([]*model.Category, error) {
 	var categories []*model.Category
 	query := ""
 
-	if isDeleted {
+	if deleted {
 		query = `
 			SELECT id, title, deleted
 			FROM categories
@@ -110,11 +110,14 @@ func (r *CategoryRepository) GetAll(ctx context.Context, isDeleted bool) ([]*mod
 // GetById is to get category by id
 func (r *CategoryRepository) GetById(ctx context.Context, category *model.Category) (*model.Category, error) {
 	const query = `
-		SELECT title
+		SELECT title, deleted
 		FROM categories 
 		WHERE id = $1;`
 
-	if err := r.DB.QueryRow(ctx, query, category.ID).Scan(&category.Title); err != nil {
+	if err := r.DB.QueryRow(ctx, query, category.ID).Scan(
+		&category.Title,
+		&category.Deleted,
+	); err != nil {
 		return nil, err
 	}
 

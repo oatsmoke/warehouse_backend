@@ -10,12 +10,12 @@ import (
 )
 
 type CategoryHandler struct {
-	serviceCategory service.Category
+	CategoryService service.Category
 }
 
-func NewCategoryHandler(serviceCategory service.Category) *CategoryHandler {
+func NewCategoryHandler(categoryService service.Category) *CategoryHandler {
 	return &CategoryHandler{
-		serviceCategory: serviceCategory,
+		CategoryService: categoryService,
 	}
 }
 
@@ -28,7 +28,8 @@ func (h *CategoryHandler) Create(ctx *gin.Context) {
 		logger.ErrResponse(ctx, err, http.StatusBadRequest, fn)
 		return
 	}
-	if err := h.serviceCategory.Create(ctx, category.Title); err != nil {
+
+	if err := h.CategoryService.Create(ctx, category.Title); err != nil {
 		logger.ErrResponse(ctx, err, http.StatusInternalServerError, fn)
 		return
 	}
@@ -46,7 +47,8 @@ func (h *CategoryHandler) Update(ctx *gin.Context) {
 		logger.ErrResponse(ctx, err, http.StatusBadRequest, fn)
 		return
 	}
-	if err := h.serviceCategory.Update(ctx, category.ID, category.Title); err != nil {
+
+	if err := h.CategoryService.Update(ctx, category.ID, category.Title); err != nil {
 		logger.ErrResponse(ctx, err, http.StatusInternalServerError, fn)
 		return
 	}
@@ -64,7 +66,8 @@ func (h *CategoryHandler) Delete(ctx *gin.Context) {
 		logger.ErrResponse(ctx, err, http.StatusBadRequest, fn)
 		return
 	}
-	if err := h.serviceCategory.Delete(ctx, category.ID); err != nil {
+
+	if err := h.CategoryService.Delete(ctx, category.ID); err != nil {
 		logger.ErrResponse(ctx, err, http.StatusInternalServerError, fn)
 		return
 	}
@@ -82,7 +85,8 @@ func (h *CategoryHandler) Restore(ctx *gin.Context) {
 		logger.ErrResponse(ctx, err, http.StatusBadRequest, fn)
 		return
 	}
-	if err := h.serviceCategory.Restore(ctx, category.ID); err != nil {
+
+	if err := h.CategoryService.Restore(ctx, category.ID); err != nil {
 		logger.ErrResponse(ctx, err, http.StatusInternalServerError, fn)
 		return
 	}
@@ -95,19 +99,19 @@ func (h *CategoryHandler) Restore(ctx *gin.Context) {
 func (h *CategoryHandler) GetAll(ctx *gin.Context) {
 	const fn = "handler.Category.GetAll"
 
-	var isDeleted bool
-	if err := ctx.BindJSON(&isDeleted); err != nil {
+	var deleted bool
+	if err := ctx.BindJSON(&deleted); err != nil {
 		logger.ErrResponse(ctx, err, http.StatusBadRequest, fn)
 		return
 	}
 
-	res, err := h.serviceCategory.GetAll(ctx, isDeleted)
+	res, err := h.CategoryService.GetAll(ctx, deleted)
 	if err != nil {
 		logger.ErrResponse(ctx, err, http.StatusInternalServerError, fn)
 		return
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("categories list sended (isDeleted = %t)", isDeleted), fn)
+	logger.InfoInConsole(fmt.Sprintf("categories list sended (isDeleted = %t)", deleted), fn)
 	ctx.JSON(http.StatusOK, res)
 }
 
@@ -120,7 +124,8 @@ func (h *CategoryHandler) GetById(ctx *gin.Context) {
 		logger.ErrResponse(ctx, err, http.StatusBadRequest, fn)
 		return
 	}
-	res, err := h.serviceCategory.GetById(ctx, category.ID)
+
+	res, err := h.CategoryService.GetById(ctx, category.ID)
 	if err != nil {
 		logger.ErrResponse(ctx, err, http.StatusInternalServerError, fn)
 		return
