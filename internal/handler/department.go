@@ -1,130 +1,161 @@
 package handler
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"warehouse_backend/internal/lib/logger"
 	"warehouse_backend/internal/model"
 	"warehouse_backend/internal/service"
 )
 
 type DepartmentHandler struct {
-	serviceDepartment service.Department
+	DepartmentService service.Department
 }
 
-func NewDepartmentHandler(serviceDepartment service.Department) *DepartmentHandler {
+func NewDepartmentHandler(departmentService service.Department) *DepartmentHandler {
 	return &DepartmentHandler{
-		serviceDepartment: serviceDepartment,
+		DepartmentService: departmentService,
 	}
 }
 
-func (h *DepartmentHandler) createDepartment(ctx *gin.Context) {
-	_, err := getUserId(ctx)
-	if err != nil {
-		newErrorResponse(ctx, http.StatusUnauthorized, err.Error())
-		return
-	}
+// Create is department create
+func (h *DepartmentHandler) Create(ctx *gin.Context) {
+	const fn = "handler.Department.Create"
+
 	var department *model.Department
 	if err := ctx.BindJSON(&department); err != nil {
-		newErrorResponse(ctx, http.StatusBadRequest, err.Error())
+		logger.ErrResponse(ctx, err, http.StatusBadRequest, fn)
 		return
 	}
-	if err := h.serviceDepartment.Create(ctx, department.Title); err != nil {
-		newErrorResponse(ctx, http.StatusInternalServerError, err.Error())
+
+	if err := h.DepartmentService.Create(ctx, department.Title); err != nil {
+		logger.ErrResponse(ctx, err, http.StatusInternalServerError, fn)
 		return
 	}
-	setCookie(ctx)
+
+	logger.InfoInConsole(fmt.Sprintf("%s created", department.Title), fn)
 	ctx.JSON(http.StatusOK, "")
 }
 
-func (h *DepartmentHandler) getByIdDepartment(ctx *gin.Context) {
-	_, err := getUserId(ctx)
-	if err != nil {
-		newErrorResponse(ctx, http.StatusUnauthorized, err.Error())
+// Update is department update
+func (h *DepartmentHandler) Update(ctx *gin.Context) {
+	const fn = "handler.Department.Update"
+
+	var department *model.Department
+	if err := ctx.BindJSON(&department); err != nil {
+		logger.ErrResponse(ctx, err, http.StatusBadRequest, fn)
 		return
 	}
-	var d *model.Department
-	if err := ctx.BindJSON(&d); err != nil {
-		newErrorResponse(ctx, http.StatusBadRequest, err.Error())
+
+	if err := h.DepartmentService.Update(ctx, department.ID, department.Title); err != nil {
+		logger.ErrResponse(ctx, err, http.StatusInternalServerError, fn)
 		return
 	}
-	department, err := h.serviceDepartment.GetById(ctx, d.ID)
-	if err != nil {
-		newErrorResponse(ctx, http.StatusInternalServerError, err.Error())
-		return
-	}
-	setCookie(ctx)
-	ctx.JSON(http.StatusOK, department)
+
+	logger.InfoInConsole(fmt.Sprintf("%s updated", department.Title), fn)
+	ctx.JSON(http.StatusOK, "")
 }
 
-func (h *DepartmentHandler) getAllDepartment(ctx *gin.Context) {
-	_, err := getUserId(ctx)
-	if err != nil {
-		newErrorResponse(ctx, http.StatusUnauthorized, err.Error())
+// Delete is department delete
+func (h *DepartmentHandler) Delete(ctx *gin.Context) {
+	const fn = "handler.Department.Delete"
+
+	var department *model.Department
+	if err := ctx.BindJSON(&department); err != nil {
+		logger.ErrResponse(ctx, err, http.StatusBadRequest, fn)
 		return
 	}
-	departments, err := h.serviceDepartment.GetAll(ctx)
-	if err != nil {
-		newErrorResponse(ctx, http.StatusInternalServerError, err.Error())
+
+	if err := h.DepartmentService.Delete(ctx, department.ID); err != nil {
+		logger.ErrResponse(ctx, err, http.StatusInternalServerError, fn)
 		return
 	}
-	setCookie(ctx)
-	ctx.JSON(http.StatusOK, departments)
+
+	logger.InfoInConsole(fmt.Sprintf("%d deleted", department.ID), fn)
+	ctx.JSON(http.StatusOK, "")
 }
 
-func (h *DepartmentHandler) getAllButOneDepartment(ctx *gin.Context) {
+// Restore is department restore
+func (h *DepartmentHandler) Restore(ctx *gin.Context) {
+	const fn = "handler.Department.Restore"
+
+	var department *model.Department
+	if err := ctx.BindJSON(&department); err != nil {
+		logger.ErrResponse(ctx, err, http.StatusBadRequest, fn)
+		return
+	}
+
+	if err := h.DepartmentService.Restore(ctx, department.ID); err != nil {
+		logger.ErrResponse(ctx, err, http.StatusInternalServerError, fn)
+		return
+	}
+
+	logger.InfoInConsole(fmt.Sprintf("%d restored", department.ID), fn)
+	ctx.JSON(http.StatusOK, "")
+}
+
+// GetAll is to get all departments
+func (h *DepartmentHandler) GetAll(ctx *gin.Context) {
+	const fn = "handler.Department.GetAll"
+
+	var deleted bool
+	if err := ctx.BindJSON(&deleted); err != nil {
+		logger.ErrResponse(ctx, err, http.StatusBadRequest, fn)
+		return
+	}
+
+	res, err := h.DepartmentService.GetAll(ctx, deleted)
+	if err != nil {
+		logger.ErrResponse(ctx, err, http.StatusInternalServerError, fn)
+		return
+	}
+
+	logger.InfoInConsole(fmt.Sprintf("departments list sended (isDeleted = %t)", deleted), fn)
+	ctx.JSON(http.StatusOK, res)
+}
+
+// GetById is to get department by id
+func (h *DepartmentHandler) GetById(ctx *gin.Context) {
+	const fn = "handler.Department.GetById"
+
+	var department *model.Department
+	if err := ctx.BindJSON(&department); err != nil {
+		logger.ErrResponse(ctx, err, http.StatusBadRequest, fn)
+		return
+	}
+
+	res, err := h.DepartmentService.GetById(ctx, department.ID)
+	if err != nil {
+		logger.ErrResponse(ctx, err, http.StatusInternalServerError, fn)
+		return
+	}
+
+	logger.InfoInConsole(fmt.Sprintf("department %s found", res.Title), fn)
+	ctx.JSON(http.StatusOK, res)
+}
+
+// GetAllButOne is to get all departments but one
+func (h *DepartmentHandler) GetAllButOne(ctx *gin.Context) {
+	const fn = "handler.Department.GetAllButOne"
+
 	employeeId, err := getUserId(ctx)
 	if err != nil {
-		newErrorResponse(ctx, http.StatusUnauthorized, err.Error())
+		logger.ErrResponse(ctx, err, http.StatusUnauthorized, fn)
 		return
 	}
-	var department *model.Department
-	if err := ctx.BindJSON(&department); err != nil {
-		newErrorResponse(ctx, http.StatusBadRequest, err.Error())
-		return
-	}
-	departments, err := h.serviceDepartment.GetAllButOne(ctx, department.ID, employeeId)
-	if err != nil {
-		newErrorResponse(ctx, http.StatusInternalServerError, err.Error())
-		return
-	}
-	setCookie(ctx)
-	ctx.JSON(http.StatusOK, departments)
-}
 
-func (h *DepartmentHandler) updateDepartment(ctx *gin.Context) {
-	_, err := getUserId(ctx)
-	if err != nil {
-		newErrorResponse(ctx, http.StatusUnauthorized, err.Error())
-		return
-	}
 	var department *model.Department
 	if err := ctx.BindJSON(&department); err != nil {
-		newErrorResponse(ctx, http.StatusBadRequest, err.Error())
+		logger.ErrResponse(ctx, err, http.StatusBadRequest, fn)
 		return
 	}
-	if err := h.serviceDepartment.Update(ctx, department.ID, department.Title); err != nil {
-		newErrorResponse(ctx, http.StatusInternalServerError, err.Error())
+	res, err := h.DepartmentService.GetAllButOne(ctx, department.ID, employeeId)
+	if err != nil {
+		logger.ErrResponse(ctx, err, http.StatusInternalServerError, fn)
 		return
 	}
-	setCookie(ctx)
-	ctx.JSON(http.StatusOK, "")
-}
 
-func (h *DepartmentHandler) deleteDepartment(ctx *gin.Context) {
-	_, err := getUserId(ctx)
-	if err != nil {
-		newErrorResponse(ctx, http.StatusUnauthorized, err.Error())
-		return
-	}
-	var department *model.Department
-	if err := ctx.BindJSON(&department); err != nil {
-		newErrorResponse(ctx, http.StatusBadRequest, err.Error())
-		return
-	}
-	if err := h.serviceDepartment.Delete(ctx, department.ID); err != nil {
-		newErrorResponse(ctx, http.StatusInternalServerError, err.Error())
-		return
-	}
-	setCookie(ctx)
-	ctx.JSON(http.StatusOK, "")
+	logger.InfoInConsole(fmt.Sprintf("departments list sended (except = %d)", department.ID), fn)
+	ctx.JSON(http.StatusOK, res)
 }

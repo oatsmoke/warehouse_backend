@@ -7,56 +7,98 @@ import (
 )
 
 type DepartmentRepository struct {
-	db *pgxpool.Pool
+	DB *pgxpool.Pool
 }
 
 func NewDepartmentRepository(db *pgxpool.Pool) *DepartmentRepository {
-	return &DepartmentRepository{db: db}
+	return &DepartmentRepository{DB: db}
 }
 
+// Create is department create
 func (r *DepartmentRepository) Create(ctx context.Context, title string) error {
-	query := `
-			INSERT INTO departments (title) 
-			VALUES ($1);`
+	const query = `
+		INSERT INTO departments (title) 
+		VALUES ($1);`
 
-	if _, err := r.db.Exec(ctx, query, title); err != nil {
+	if _, err := r.DB.Exec(ctx, query, title); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (r *DepartmentRepository) GetById(ctx context.Context, id int64) (*model.Department, error) {
-	department := new(model.Department)
+// Update is department update
+func (r *DepartmentRepository) Update(ctx context.Context, id int64, title string) error {
+	const query = `
+		UPDATE departments 
+		SET title = $2
+		WHERE id = $1;`
 
-	query := `
-			SELECT id, title
-			FROM departments 
-			WHERE id = $1;`
-
-	if err := r.db.QueryRow(ctx, query, id).Scan(&department.ID, &department.Title); err != nil {
-		return nil, err
+	if _, err := r.DB.Exec(ctx, query, id, title); err != nil {
+		return err
 	}
-	return department, nil
+
+	return nil
 }
 
-func (r *DepartmentRepository) GetAll(ctx context.Context) ([]*model.Department, error) {
+// Delete is department delete
+func (r *DepartmentRepository) Delete(ctx context.Context, id int64) error {
+	const query = `
+		UPDATE departments 
+		SET deleted = true
+       	WHERE id = $1;`
+
+	if _, err := r.DB.Exec(ctx, query, id); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Restore is department restore
+func (r *DepartmentRepository) Restore(ctx context.Context, id int64) error {
+	const query = `
+		UPDATE departments 
+		SET deleted = false
+       	WHERE id = $1;`
+
+	if _, err := r.DB.Exec(ctx, query, id); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// GetAll is department get all
+func (r *DepartmentRepository) GetAll(ctx context.Context, deleted bool) ([]*model.Department, error) {
 	var departments []*model.Department
-	department := new(model.Department)
+	query := ""
 
-	query := `
-			SELECT id, title
+	if deleted {
+		query = `
+			SELECT id, title, deleted
 			FROM departments
-			WHERE is_deleted = false
 			ORDER BY title;`
+	} else {
+		query = `
+			SELECT id, title, deleted
+			FROM departments
+			WHERE deleted = false
+			ORDER BY title;`
+	}
 
-	rows, err := r.db.Query(ctx, query)
+	rows, err := r.DB.Query(ctx, query)
 	if err != nil {
 		return nil, err
 	}
 
 	for rows.Next() {
-		if err := rows.Scan(&department.ID, &department.Title); err != nil {
+		department := new(model.Department)
+		if err := rows.Scan(
+			&department.ID,
+			&department.Title,
+			&department.Deleted,
+		); err != nil {
 			return nil, err
 		}
 		departments = append(departments, department)
@@ -65,27 +107,47 @@ func (r *DepartmentRepository) GetAll(ctx context.Context) ([]*model.Department,
 	return departments, err
 }
 
+// GetById is department get by id
+func (r *DepartmentRepository) GetById(ctx context.Context, department *model.Department) (*model.Department, error) {
+	const query = `
+		SELECT title, deleted
+		FROM departments 
+		WHERE id = $1;`
+
+	if err := r.DB.QueryRow(ctx, query, department.ID).Scan(
+		&department.Title,
+		&department.Deleted,
+	); err != nil {
+		return nil, err
+	}
+	return department, nil
+}
+
+// GetAllButOne is department get all but one
 func (r *DepartmentRepository) GetAllButOne(ctx context.Context, id, employeeId int64) ([]*model.Department, error) {
 	var departments []*model.Department
-	department := new(model.Department)
 
-	query := `
-			SELECT departments.id, departments.title
-			FROM departments
-         	LEFT JOIN employees on departments.id = employees.department
-			WHERE departments.id != $1
-  			AND departments.is_deleted = false
-  			AND employees.id = $2
-			AND departments.id = employees.department
-			ORDER BY title;`
+	const query = `
+		SELECT departments.id, departments.title
+		FROM departments
+        LEFT JOIN employees on departments.id = employees.department
+		WHERE departments.id != $1
+  		AND departments.deleted = false
+  		AND employees.id = $2
+		AND departments.id = employees.department
+		ORDER BY title;`
 
-	rows, err := r.db.Query(ctx, query, id, employeeId)
+	rows, err := r.DB.Query(ctx, query, id, employeeId)
 	if err != nil {
 		return nil, err
 	}
 
 	for rows.Next() {
-		if err := rows.Scan(&department.ID, &department.Title); err != nil {
+		department := new(model.Department)
+		if err := rows.Scan(
+			&department.ID,
+			&department.Title,
+		); err != nil {
 			return nil, err
 		}
 		departments = append(departments, department)
@@ -94,24 +156,28 @@ func (r *DepartmentRepository) GetAllButOne(ctx context.Context, id, employeeId 
 	return departments, nil
 }
 
+// GetAllButOneForAdmin is department get all but one for admin
 func (r *DepartmentRepository) GetAllButOneForAdmin(ctx context.Context, id int64) ([]*model.Department, error) {
 	var departments []*model.Department
-	department := new(model.Department)
 
-	query := `
-			SELECT departments.id, departments.title
-			FROM departments
-			WHERE departments.id != $1
-  			AND departments.is_deleted = false
-			ORDER BY title;`
+	const query = `
+		SELECT departments.id, departments.title
+		FROM departments
+		WHERE departments.id != $1
+  		AND departments.deleted = false
+		ORDER BY title;`
 
-	rows, err := r.db.Query(ctx, query, id)
+	rows, err := r.DB.Query(ctx, query, id)
 	if err != nil {
 		return nil, err
 	}
 
 	for rows.Next() {
-		if err := rows.Scan(&department.ID, &department.Title); err != nil {
+		department := new(model.Department)
+		if err := rows.Scan(
+			&department.ID,
+			&department.Title,
+		); err != nil {
 			return nil, err
 		}
 		departments = append(departments, department)
@@ -120,43 +186,17 @@ func (r *DepartmentRepository) GetAllButOneForAdmin(ctx context.Context, id int6
 	return departments, nil
 }
 
-func (r *DepartmentRepository) FindByTitle(ctx context.Context, title string) (int64, error) {
-	department := new(model.Department)
-
-	query := `
-			SELECT id 
-			FROM departments 
-			WHERE title = $1;`
-
-	if err := r.db.QueryRow(ctx, query, title).Scan(&department.ID); err != nil {
-		return 0, err
-	}
-
-	return department.ID, nil
-}
-
-func (r *DepartmentRepository) Update(ctx context.Context, id int64, title string) error {
-	query := `
-			UPDATE departments 
-			SET title = $2
-			WHERE id = $1;`
-
-	if _, err := r.db.Exec(ctx, query, id, title); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (r *DepartmentRepository) Delete(ctx context.Context, id int64) error {
-	query := `
-			UPDATE departments 
-			SET is_deleted = true
-       		WHERE id = $1;`
-
-	if _, err := r.db.Exec(ctx, query, id); err != nil {
-		return err
-	}
-
-	return nil
-}
+//func (r *DepartmentRepository) FinDByTitle(ctx context.Context, title string) (int64, error) {
+//	department := new(model.Department)
+//
+//	query := `
+//			SELECT id
+//			FROM departments
+//			WHERE title = $1;`
+//
+//	if err := r.DB.QueryRow(ctx, query, title).Scan(&department.ID); err != nil {
+//		return 0, err
+//	}
+//
+//	return department.ID, nil
+//}

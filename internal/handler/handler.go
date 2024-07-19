@@ -72,12 +72,13 @@ func (h *Handler) InitRoutes(cfg *config.Client) *gin.Engine {
 		}
 		department := api.Group("/department")
 		{
-			department.POST("/create", h.Department.createDepartment)
-			department.POST("/getById", h.Department.getByIdDepartment)
-			department.GET("/getAll", h.Department.getAllDepartment)
-			department.POST("/getAllButOne", h.Department.getAllButOneDepartment)
-			department.POST("/update", h.Department.updateDepartment)
-			department.POST("/delete", h.Department.deleteDepartment)
+			department.POST("/create", h.Department.Create)
+			department.POST("/update", h.Department.Update)
+			department.POST("/delete", h.Department.Delete)
+			department.POST("/restore", h.Department.Restore)
+			department.GET("/getAll", h.Department.GetAll)
+			department.POST("/getById", h.Department.GetById)
+			department.POST("/getAllButOne", h.Department.GetAllButOne)
 		}
 		category := api.Group("/category")
 		{

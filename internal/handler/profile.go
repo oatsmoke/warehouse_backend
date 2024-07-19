@@ -111,7 +111,7 @@ func (h *ProfileHandler) GetAll(ctx *gin.Context) {
 		return
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("profiles list sended (isDeleted = %t)", deleted), fn)
+	logger.InfoInConsole(fmt.Sprintf("profiles list sended (deleted = %t)", deleted), fn)
 	ctx.JSON(http.StatusOK, res)
 }
 

@@ -20,9 +20,9 @@ create table equipments
 );
 create table departments
 (
-    id         bigserial not null primary key,
-    title      varchar   not null unique,
-    is_deleted boolean   not null default false
+    id      bigserial not null primary key,
+    title   varchar   not null unique,
+    deleted boolean   not null default false
 );
 create table employees
 (

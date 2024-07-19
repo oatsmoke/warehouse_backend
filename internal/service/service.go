@@ -22,7 +22,7 @@ func NewService(repository *repository.Repository) *Service {
 	return &Service{
 		Auth:       NewAuthService(repository.Auth),
 		Employee:   NewEmployeeService(repository.Employee, repository.Equipment, repository.Auth),
-		Department: NewDepartmentService(repository.Department, repository.Equipment, repository.Employee),
+		Department: NewDepartmentService(repository.Department, repository.Employee),
 		Category:   NewCategoryService(repository.Category),
 		Profile:    NewProfileService(repository.Profile),
 		Equipment:  NewEquipmentService(repository.Equipment, repository.Category),
@@ -57,11 +57,12 @@ type Employee interface {
 
 type Department interface {
 	Create(ctx context.Context, title string) error
-	GetById(ctx context.Context, id int64) (*model.Department, error)
-	GetAll(ctx context.Context) ([]*model.Department, error)
-	GetAllButOne(ctx context.Context, id, employeeId int64) ([]*model.Department, error)
 	Update(ctx context.Context, id int64, title string) error
 	Delete(ctx context.Context, id int64) error
+	Restore(ctx context.Context, id int64) error
+	GetAll(ctx context.Context, deleted bool) ([]*model.Department, error)
+	GetById(ctx context.Context, id int64) (*model.Department, error)
+	GetAllButOne(ctx context.Context, id, employeeId int64) ([]*model.Department, error)
 }
 
 type Category interface {

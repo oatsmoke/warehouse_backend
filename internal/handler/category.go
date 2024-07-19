@@ -111,7 +111,7 @@ func (h *CategoryHandler) GetAll(ctx *gin.Context) {
 		return
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("categories list sended (isDeleted = %t)", deleted), fn)
+	logger.InfoInConsole(fmt.Sprintf("categories list sended (deleted = %t)", deleted), fn)
 	ctx.JSON(http.StatusOK, res)
 }
 
