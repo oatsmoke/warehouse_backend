@@ -38,7 +38,7 @@ func (h *ProfileHandler) Create(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, "")
 }
 
-// Update is a profile update
+// Update is profile update
 func (h *ProfileHandler) Update(ctx *gin.Context) {
 	const fn = "handler.Profile.Update"
 
@@ -57,7 +57,7 @@ func (h *ProfileHandler) Update(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, "")
 }
 
-// Delete is a profile delete
+// Delete is profile delete
 func (h *ProfileHandler) Delete(ctx *gin.Context) {
 	const fn = "handler.Profile.Delete"
 
@@ -76,7 +76,7 @@ func (h *ProfileHandler) Delete(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, "")
 }
 
-// Restore is a profile restore
+// Restore is profile restore
 func (h *ProfileHandler) Restore(ctx *gin.Context) {
 	const fn = "handler.Profile.Restore"
 

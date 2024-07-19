@@ -27,7 +27,7 @@ func (r *CategoryRepository) Create(ctx context.Context, title string) error {
 	return nil
 }
 
-// Update is a category update
+// Update is category update
 func (r *CategoryRepository) Update(ctx context.Context, id int64, title string) error {
 	const query = `
 		UPDATE categories 
@@ -41,7 +41,7 @@ func (r *CategoryRepository) Update(ctx context.Context, id int64, title string)
 	return nil
 }
 
-// Delete is a category delete
+// Delete is category delete
 func (r *CategoryRepository) Delete(ctx context.Context, id int64) error {
 	const query = `
 		UPDATE categories 
@@ -55,7 +55,7 @@ func (r *CategoryRepository) Delete(ctx context.Context, id int64) error {
 	return nil
 }
 
-// Restore is a category restore
+// Restore is category restore
 func (r *CategoryRepository) Restore(ctx context.Context, id int64) error {
 	const query = `
 		UPDATE categories 

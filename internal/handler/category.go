@@ -38,7 +38,7 @@ func (h *CategoryHandler) Create(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, "")
 }
 
-// Update is a category update
+// Update is category update
 func (h *CategoryHandler) Update(ctx *gin.Context) {
 	const fn = "handler.Category.Update"
 
@@ -57,7 +57,7 @@ func (h *CategoryHandler) Update(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, "")
 }
 
-// Delete is a category delete
+// Delete is category delete
 func (h *CategoryHandler) Delete(ctx *gin.Context) {
 	const fn = "handler.Category.Delete"
 
@@ -76,7 +76,7 @@ func (h *CategoryHandler) Delete(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, "")
 }
 
-// Restore is a category restore
+// Restore is category restore
 func (h *CategoryHandler) Restore(ctx *gin.Context) {
 	const fn = "handler.Category.Restore"
 

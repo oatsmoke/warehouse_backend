@@ -108,8 +108,9 @@ type Contract interface {
 
 type Company interface {
 	Create(ctx context.Context, title string) error
-	GetById(ctx context.Context, id int64) (*model.Company, error)
-	GetAll(ctx context.Context) ([]*model.Company, error)
 	Update(ctx context.Context, id int64, title string) error
 	Delete(ctx context.Context, id int64) error
+	Restore(ctx context.Context, id int64) error
+	GetAll(ctx context.Context, deleted bool) ([]*model.Company, error)
+	GetById(ctx context.Context, id int64) (*model.Company, error)
 }

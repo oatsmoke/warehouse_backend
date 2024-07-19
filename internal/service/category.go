@@ -28,7 +28,7 @@ func (s *CategoryService) Create(ctx context.Context, title string) error {
 	return nil
 }
 
-// Update is a category update
+// Update is category update
 func (s *CategoryService) Update(ctx context.Context, id int64, title string) error {
 	const fn = "service.Category.Update"
 
@@ -39,6 +39,7 @@ func (s *CategoryService) Update(ctx context.Context, id int64, title string) er
 	return nil
 }
 
+// Delete is category delete
 func (s *CategoryService) Delete(ctx context.Context, id int64) error {
 	const fn = "service.Category.Delete"
 
@@ -49,7 +50,7 @@ func (s *CategoryService) Delete(ctx context.Context, id int64) error {
 	return nil
 }
 
-// Restore is a category restore
+// Restore is category restore
 func (s *CategoryService) Restore(ctx context.Context, id int64) error {
 	const fn = "service.Category.Restore"
 

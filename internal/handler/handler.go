@@ -90,11 +90,12 @@ func (h *Handler) InitRoutes(cfg *config.Client) *gin.Engine {
 		}
 		profile := api.Group("/profile")
 		{
-			profile.POST("/create", h.Profile.createProfile)
-			profile.POST("/getById", h.Profile.getByIdProfile)
-			profile.GET("/getAll", h.Profile.getAllProfile)
-			profile.POST("/update", h.Profile.updateProfile)
-			profile.POST("/delete", h.Profile.deleteProfile)
+			profile.POST("/create", h.Profile.Create)
+			profile.POST("/update", h.Profile.Update)
+			profile.POST("/delete", h.Profile.Delete)
+			profile.POST("/restore", h.Profile.Restore)
+			profile.POST("/getAll", h.Profile.GetAll)
+			profile.POST("/getById", h.Profile.GetById)
 		}
 		equipment := api.Group("/equipment")
 		{
@@ -123,11 +124,12 @@ func (h *Handler) InitRoutes(cfg *config.Client) *gin.Engine {
 		}
 		company := api.Group("/company")
 		{
-			company.POST("/create", h.Company.createCompany)
-			company.POST("/getById", h.Company.getByIdCompany)
-			company.GET("/getAll", h.Company.getAllCompany)
-			company.POST("/update", h.Company.updateCompany)
-			company.POST("/delete", h.Company.deleteCompany)
+			company.POST("/create", h.Company.Create)
+			company.POST("/update", h.Company.Update)
+			company.POST("/delete", h.Company.Delete)
+			company.POST("/restore", h.Company.Restore)
+			company.POST("/getAll", h.Company.GetAll)
+			company.POST("/getById", h.Company.GetById)
 		}
 	}
 	return router

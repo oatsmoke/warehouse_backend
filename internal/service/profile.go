@@ -28,7 +28,7 @@ func (s *ProfileService) Create(ctx context.Context, title string, category int6
 	return nil
 }
 
-// Update is a profile update
+// Update is profile update
 func (s *ProfileService) Update(ctx context.Context, id int64, title string, category int64) error {
 	const fn = "service.Profile.Update"
 
@@ -39,7 +39,7 @@ func (s *ProfileService) Update(ctx context.Context, id int64, title string, cat
 	return nil
 }
 
-// Delete is a profile delete
+// Delete is profile delete
 func (s *ProfileService) Delete(ctx context.Context, id int64) error {
 	const fn = "service.Profile.Delete"
 
@@ -50,7 +50,7 @@ func (s *ProfileService) Delete(ctx context.Context, id int64) error {
 	return nil
 }
 
-// Restore is a profile restore
+// Restore is profile restore
 func (s *ProfileService) Restore(ctx context.Context, id int64) error {
 	const fn = "service.Profile.Restore"
 

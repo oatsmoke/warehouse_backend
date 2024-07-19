@@ -27,7 +27,7 @@ func (r *ProfileRepository) Create(ctx context.Context, title string, categoryId
 	return nil
 }
 
-// Update is a profile update
+// Update is profile update
 func (r *ProfileRepository) Update(ctx context.Context, id int64, title string, categoryId int64) error {
 	const query = `
 		UPDATE profiles 
@@ -41,7 +41,7 @@ func (r *ProfileRepository) Update(ctx context.Context, id int64, title string, 
 	return nil
 }
 
-// Delete is a profile delete
+// Delete is profile delete
 func (r *ProfileRepository) Delete(ctx context.Context, id int64) error {
 	const query = `
 		UPDATE profiles 
@@ -55,7 +55,7 @@ func (r *ProfileRepository) Delete(ctx context.Context, id int64) error {
 	return nil
 }
 
-// Restore is a profile restore
+// Restore is profile restore
 func (r *ProfileRepository) Restore(ctx context.Context, id int64) error {
 	const query = `
 		UPDATE profiles 
