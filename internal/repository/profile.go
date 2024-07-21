@@ -76,18 +76,18 @@ func (r *ProfileRepository) GetAll(ctx context.Context, deleted bool) ([]*model.
 
 	if deleted {
 		query = `
-			SELECT profiles.id, profiles.title, 
+			SELECT profiles.id, profiles.title, profiles.deleted,
 			       categories.id, categories.title
 			FROM profiles
 			LEFT JOIN categories ON categories.id = profiles.category
 			ORDER BY profiles.title;`
 	} else {
 		query = `
-			SELECT profiles.id, profiles.title, 
+			SELECT profiles.id, profiles.title, profiles.deleted,
 			       categories.id, categories.title
 			FROM profiles
 			LEFT JOIN categories ON categories.id = profiles.category
-			WHERE deleted = false
+			WHERE profiles.deleted = false
 			ORDER BY profiles.title;`
 	}
 
@@ -98,6 +98,7 @@ func (r *ProfileRepository) GetAll(ctx context.Context, deleted bool) ([]*model.
 
 	for rows.Next() {
 		profile := new(model.Profile)
+		profile.Category = new(model.Category)
 		if err := rows.Scan(
 			&profile.ID,
 			&profile.Title,
@@ -116,9 +117,11 @@ func (r *ProfileRepository) GetAll(ctx context.Context, deleted bool) ([]*model.
 // GetById is to get profile by id
 func (r *ProfileRepository) GetById(ctx context.Context, profile *model.Profile) (*model.Profile, error) {
 	const query = `
-		SELECT title, category, deleted
+		SELECT profiles.title, profiles.deleted,
+		       categories.id, categories.title
 		FROM profiles
-		WHERE id = $1;`
+		LEFT JOIN categories ON categories.id = profiles.category
+		WHERE profiles.id = $1;`
 
 	if err := r.DB.QueryRow(ctx, query, profile.ID).Scan(
 		&profile.Title,

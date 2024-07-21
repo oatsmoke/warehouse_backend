@@ -65,22 +65,26 @@ func (s *CategoryService) Restore(ctx context.Context, id int64) error {
 func (s *CategoryService) GetAll(ctx context.Context, deleted bool) ([]*model.Category, error) {
 	const fn = "service.Category.GetAll"
 
-	categories, err := s.CategoryRepository.GetAll(ctx, deleted)
+	res, err := s.CategoryRepository.GetAll(ctx, deleted)
 	if err != nil {
 		return nil, logger.Err(err, "", fn)
 	}
 
-	return categories, nil
+	return res, nil
 }
 
 // GetById is to get category by id
 func (s *CategoryService) GetById(ctx context.Context, id int64) (*model.Category, error) {
 	const fn = "service.Category.GetById"
 
-	category, err := s.CategoryRepository.GetById(ctx, &model.Category{ID: id})
+	category := &model.Category{
+		ID: id,
+	}
+
+	res, err := s.CategoryRepository.GetById(ctx, category)
 	if err != nil {
 		return nil, logger.Err(err, "", fn)
 	}
 
-	return category, nil
+	return res, nil
 }

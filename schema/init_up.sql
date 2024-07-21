@@ -16,7 +16,7 @@ create table equipments
     id            bigserial                        not null primary key,
     serial_number varchar                          not null unique,
     profile       integer references profiles (id) not null,
-    is_deleted    boolean                          not null default false
+    deleted       boolean                          not null default false
 );
 create table departments
 (
@@ -38,14 +38,14 @@ create table employees
     hidden             boolean                  not null default false,
     department         integer references departments (id),
     role               varchar                  not null default 'USER',
-    is_deleted         boolean                  not null default false
+    deleted            boolean                  not null default false
 );
 create table contracts
 (
-    id         bigserial not null primary key,
-    number     varchar   not null unique,
-    address    varchar   not null,
-    is_deleted boolean   not null default false
+    id      bigserial not null primary key,
+    number  varchar   not null unique,
+    address varchar   not null,
+    deleted boolean   not null default false
 );
 create table companies
 (

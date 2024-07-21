@@ -45,18 +45,17 @@ func (s *EquipmentService) GetByIds(ctx context.Context, ids []int64) ([]*model.
 	return equipments, nil
 }
 
-func (s *EquipmentService) GetByLocation(ctx context.Context, toDepartment, toEmployee, toContract int64) ([]*model.Location, error) {
+func (s *EquipmentService) GetByLocation(ctx context.Context, toDepartmentId, toEmployeeId, toContractId int64) ([]*model.Location, error) {
 	switch {
-	case toDepartment == 0 && toEmployee == 0 && toContract == 0:
+	case toDepartmentId != 0:
+		return s.repositoryEquipment.GetByLocationDepartment(ctx, toDepartmentId)
+	case toEmployeeId != 0:
+		return s.repositoryEquipment.GetByLocationEmployee(ctx, toEmployeeId)
+	case toContractId != 0:
+		return s.repositoryEquipment.GetByLocationContract(ctx, toContractId)
+	default:
 		return s.repositoryEquipment.GetByLocationStorage(ctx)
-	case toDepartment != 0:
-		return s.repositoryEquipment.GetByLocationDepartment(ctx, toDepartment)
-	case toEmployee != 0:
-		return s.repositoryEquipment.GetByLocationEmployee(ctx, toEmployee)
-	case toContract != 0:
-		return s.repositoryEquipment.GetByLocationContract(ctx, toContract)
 	}
-	return nil, nil
 }
 
 func (s *EquipmentService) GetAll(ctx context.Context) ([]*model.Equipment, error) {

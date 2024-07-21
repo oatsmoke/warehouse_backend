@@ -65,22 +65,27 @@ func (s *ProfileService) Restore(ctx context.Context, id int64) error {
 func (s *ProfileService) GetAll(ctx context.Context, deleted bool) ([]*model.Profile, error) {
 	const fn = "service.Profile.GetAll"
 
-	profiles, err := s.ProfileRepository.GetAll(ctx, deleted)
+	res, err := s.ProfileRepository.GetAll(ctx, deleted)
 	if err != nil {
 		return nil, logger.Err(err, "", fn)
 	}
 
-	return profiles, nil
+	return res, nil
 }
 
 // GetById is to get profile by id
 func (s *ProfileService) GetById(ctx context.Context, id int64) (*model.Profile, error) {
 	const fn = "service.Profile.GetById"
 
-	category, err := s.ProfileRepository.GetById(ctx, &model.Profile{ID: id})
+	profile := &model.Profile{
+		ID:       id,
+		Category: &model.Category{},
+	}
+
+	res, err := s.ProfileRepository.GetById(ctx, profile)
 	if err != nil {
 		return nil, logger.Err(err, "", fn)
 	}
 
-	return category, nil
+	return res, nil
 }

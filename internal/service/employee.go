@@ -9,11 +9,11 @@ import (
 	"warehouse_backend/internal/repository"
 )
 
-const (
-	salt       = "12345678"
-	dictionary = "abcdefghijklmnopqrstuvwxyz0123456789"
-	length     = 10
-)
+//const (
+//	salt       = "12345678"
+//	dictionary = "abcdefghijklmnopqrstuvwxyz0123456789"
+//	length     = 10
+//)
 
 type EmployeeService struct {
 	repositoryEmployee  repository.Employee
