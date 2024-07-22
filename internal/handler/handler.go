@@ -76,7 +76,7 @@ func (h *Handler) InitRoutes(cfg *config.Client) *gin.Engine {
 			department.POST("/update", h.Department.Update)
 			department.POST("/delete", h.Department.Delete)
 			department.POST("/restore", h.Department.Restore)
-			department.GET("/getAll", h.Department.GetAll)
+			department.POST("/getAll", h.Department.GetAll)
 			department.POST("/getById", h.Department.GetById)
 			department.POST("/getAllButOne", h.Department.GetAllButOne)
 		}
