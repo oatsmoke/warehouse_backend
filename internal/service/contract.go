@@ -2,57 +2,89 @@ package service
 
 import (
 	"context"
-	"errors"
+	"warehouse_backend/internal/lib/logger"
 	"warehouse_backend/internal/model"
 	"warehouse_backend/internal/repository"
 )
 
 type ContractService struct {
-	repositoryContract  repository.Contract
-	repositoryEquipment repository.Equipment
+	ContractRepository repository.Contract
 }
 
-func NewContractService(repositoryContract repository.Contract,
-	repositoryEquipment repository.Equipment) *ContractService {
-	return &ContractService{repositoryContract: repositoryContract,
-		repositoryEquipment: repositoryEquipment,
+func NewContractService(contractRepository repository.Contract) *ContractService {
+	return &ContractService{
+		ContractRepository: contractRepository,
 	}
 }
 
+// Create is contract create
 func (s *ContractService) Create(ctx context.Context, number, address string) error {
-	if _, err := s.repositoryContract.FindByNumber(ctx, number); err == nil {
-		return errors.New("number already exists")
+	const fn = "service.Contract.Create"
+
+	if err := s.ContractRepository.Create(ctx, number, address); err != nil {
+		return logger.Err(err, "", fn)
 	}
 
-	return s.repositoryContract.Create(ctx, number, address)
+	return nil
 }
 
-func (s *ContractService) GetById(ctx context.Context, id int64) (*model.Contract, error) {
-	return s.repositoryContract.GetById(ctx, id)
-}
-
-func (s *ContractService) GetAll(ctx context.Context) ([]*model.Contract, error) {
-	return s.repositoryContract.GetAll(ctx)
-}
-
+// Update is contract create
 func (s *ContractService) Update(ctx context.Context, id int64, number, address string) error {
-	findId, err := s.repositoryContract.FindByNumber(ctx, number)
-	if findId != id && err == nil {
-		return errors.New("number already exists")
+	const fn = "service.Contract.Update"
+
+	if err := s.ContractRepository.Update(ctx, id, number, address); err != nil {
+		return logger.Err(err, "", fn)
 	}
 
-	return s.repositoryContract.Update(ctx, id, number, address)
+	return nil
 }
 
+// Delete is contract delete
 func (s *ContractService) Delete(ctx context.Context, id int64) error {
-	equipments, err := s.repositoryEquipment.GetByLocationContract(ctx, id)
+	const fn = "service.Contract.Delete"
+
+	if err := s.ContractRepository.Delete(ctx, id); err != nil {
+		return logger.Err(err, "", fn)
+	}
+
+	return nil
+}
+
+// Restore is contract restore
+func (s *ContractService) Restore(ctx context.Context, id int64) error {
+	const fn = "service.Contract.Restore"
+
+	if err := s.ContractRepository.Restore(ctx, id); err != nil {
+		return logger.Err(err, "", fn)
+	}
+
+	return nil
+}
+
+// GetAll is to get all contracts
+func (s *ContractService) GetAll(ctx context.Context, deleted bool) ([]*model.Contract, error) {
+	const fn = "service.Contract.GetAll"
+
+	res, err := s.ContractRepository.GetAll(ctx, deleted)
 	if err != nil {
-		return err
+		return nil, logger.Err(err, "", fn)
 	}
 
-	if len(equipments) > 0 {
-		return errors.New("have equipment")
+	return res, nil
+}
+
+// GetById is to get contract by id
+func (s *ContractService) GetById(ctx context.Context, id int64) (*model.Contract, error) {
+	const fn = "service.Contract.GetById"
+
+	contract := &model.Contract{
+		ID: id,
 	}
 
-	return s.repositoryContract.Delete(ctx, id)
+	res, err := s.ContractRepository.GetById(ctx, contract)
+	if err != nil {
+		return nil, logger.Err(err, "", fn)
+	}
+
+	return res, nil
 }

@@ -65,22 +65,26 @@ func (s *CompanyService) Restore(ctx context.Context, id int64) error {
 func (s *CompanyService) GetAll(ctx context.Context, deleted bool) ([]*model.Company, error) {
 	const fn = "service.Company.GetAll"
 
-	companies, err := s.CompanyRepository.GetAll(ctx, deleted)
+	res, err := s.CompanyRepository.GetAll(ctx, deleted)
 	if err != nil {
 		return nil, logger.Err(err, "", fn)
 	}
 
-	return companies, nil
+	return res, nil
 }
 
 // GetById is to get company by id
 func (s *CompanyService) GetById(ctx context.Context, id int64) (*model.Company, error) {
 	const fn = "service.Company.GetById"
 
-	company, err := s.CompanyRepository.GetById(ctx, &model.Company{ID: id})
+	company := &model.Company{
+		ID: id,
+	}
+
+	res, err := s.CompanyRepository.GetById(ctx, company)
 	if err != nil {
 		return nil, logger.Err(err, "", fn)
 	}
 
-	return company, nil
+	return res, nil
 }

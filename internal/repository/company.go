@@ -27,7 +27,7 @@ func (r *CompanyRepository) Create(ctx context.Context, title string) error {
 	return nil
 }
 
-// Update is a company update
+// Update is company update
 func (r *CompanyRepository) Update(ctx context.Context, id int64, title string) error {
 	query := `
 			UPDATE companies 
@@ -41,7 +41,7 @@ func (r *CompanyRepository) Update(ctx context.Context, id int64, title string) 
 	return nil
 }
 
-// Delete is a company delete
+// Delete is company delete
 func (r *CompanyRepository) Delete(ctx context.Context, id int64) error {
 	const query = `
 		UPDATE companies 
@@ -55,7 +55,7 @@ func (r *CompanyRepository) Delete(ctx context.Context, id int64) error {
 	return nil
 }
 
-// Restore is a company restore
+// Restore is company restore
 func (r *CompanyRepository) Restore(ctx context.Context, id int64) error {
 	const query = `
 		UPDATE companies 
@@ -73,6 +73,7 @@ func (r *CompanyRepository) Restore(ctx context.Context, id int64) error {
 func (r *CompanyRepository) GetAll(ctx context.Context, deleted bool) ([]*model.Company, error) {
 	var companies []*model.Company
 	query := ""
+
 	if deleted {
 		query = `
 			SELECT id, title, deleted

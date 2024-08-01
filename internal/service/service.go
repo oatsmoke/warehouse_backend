@@ -27,7 +27,7 @@ func NewService(repository *repository.Repository) *Service {
 		Profile:    NewProfileService(repository.Profile),
 		Equipment:  NewEquipmentService(repository.Equipment, repository.Category),
 		Location:   NewLocationService(repository.Location, repository.Replace),
-		Contract:   NewContractService(repository.Contract, repository.Equipment),
+		Contract:   NewContractService(repository.Contract),
 		Company:    NewCompanyService(repository.Company),
 	}
 }
@@ -101,10 +101,11 @@ type Location interface {
 
 type Contract interface {
 	Create(ctx context.Context, number, address string) error
-	GetById(ctx context.Context, id int64) (*model.Contract, error)
-	GetAll(ctx context.Context) ([]*model.Contract, error)
 	Update(ctx context.Context, id int64, number, address string) error
 	Delete(ctx context.Context, id int64) error
+	Restore(ctx context.Context, id int64) error
+	GetAll(ctx context.Context, deleted bool) ([]*model.Contract, error)
+	GetById(ctx context.Context, id int64) (*model.Contract, error)
 }
 
 type Company interface {

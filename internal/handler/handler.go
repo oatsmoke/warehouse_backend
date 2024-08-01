@@ -117,11 +117,11 @@ func (h *Handler) InitRoutes(cfg *config.Client) *gin.Engine {
 		}
 		contract := api.Group("/contract")
 		{
-			contract.POST("/create", h.Contract.createContract)
-			contract.POST("/getById", h.Contract.getByIdContract)
-			contract.GET("/getAll", h.Contract.getAllContract)
-			contract.POST("/update", h.Contract.updateContract)
-			contract.POST("/delete", h.Contract.deleteContract)
+			contract.POST("/create", h.Contract.Create)
+			contract.POST("/update", h.Contract.Update)
+			contract.POST("/delete", h.Contract.Delete)
+			contract.POST("/getAll", h.Contract.GetAll)
+			contract.POST("/getById", h.Contract.GetById)
 		}
 		company := api.Group("/company")
 		{

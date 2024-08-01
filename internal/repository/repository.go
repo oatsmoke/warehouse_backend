@@ -123,11 +123,12 @@ type Location interface {
 
 type Contract interface {
 	Create(ctx context.Context, number, address string) error
-	GetById(ctx context.Context, id int64) (*model.Contract, error)
-	GetAll(ctx context.Context) ([]*model.Contract, error)
-	FindByNumber(ctx context.Context, number string) (int64, error)
 	Update(ctx context.Context, id int64, number, address string) error
 	Delete(ctx context.Context, id int64) error
+	Restore(ctx context.Context, id int64) error
+	GetAll(ctx context.Context, deleted bool) ([]*model.Contract, error)
+	GetById(ctx context.Context, contract *model.Contract) (*model.Contract, error)
+	//FindByNumber(ctx context.Context, number string) (int64, error)
 }
 
 type Company interface {
