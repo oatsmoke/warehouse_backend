@@ -40,15 +40,16 @@ type Auth interface {
 
 type Employee interface {
 	Create(ctx context.Context, name, phone, email string) error
-	GetById(ctx context.Context, id int64) (*model.Employee, error)
-	GetByDepartment(ctx context.Context, ids []int64, id int64) ([]*model.Employee, error)
-	GetAll(ctx context.Context) ([]*model.Employee, error)
-	GetFree(ctx context.Context) ([]*model.Employee, error)
-	GetAllButOne(ctx context.Context, id int64) ([]*model.Employee, error)
-	AddToDepartment(ctx context.Context, id, department int64) error
-	RemoveFromDepartment(ctx context.Context, idDepartment, idEmployee int64) error
 	Update(ctx context.Context, id int64, name, phone, email string) error
 	Delete(ctx context.Context, id int64) error
+	Restore(ctx context.Context, id int64) error
+	GetAll(ctx context.Context, deleted bool) ([]*model.Employee, error)
+	GetAllButOne(ctx context.Context, id int64) ([]*model.Employee, error)
+	GetById(ctx context.Context, id int64) (*model.Employee, error)
+	GetFree(ctx context.Context) ([]*model.Employee, error)
+	GetByDepartment(ctx context.Context, ids []int64, id int64) ([]*model.Employee, error)
+	AddToDepartment(ctx context.Context, id, department int64) error
+	RemoveFromDepartment(ctx context.Context, idDepartment, idEmployee int64) error
 	Activate(ctx context.Context, id int64) error
 	Deactivate(ctx context.Context, id int64) error
 	ResetPassword(ctx context.Context, id int64) error

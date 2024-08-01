@@ -8,147 +8,96 @@ import (
 )
 
 type EmployeeRepository struct {
-	db *pgxpool.Pool
+	DB *pgxpool.Pool
 }
 
 func NewEmployeeRepository(db *pgxpool.Pool) *EmployeeRepository {
-	return &EmployeeRepository{db: db}
+	return &EmployeeRepository{DB: db}
 }
 
+// Create is employee create
 func (r *EmployeeRepository) Create(ctx context.Context, name, phone, email string) error {
 	date := time.Now()
 
-	query := `
-			INSERT INTO employees (name, phone, email, password, hash, registration_date, authorization_date)
-			VALUES ($1, $2, $3, $4, $5, $6, $7);`
+	const query = `
+		INSERT INTO employees (name, phone, email, password, hash, registration_date, authorization_date)
+		VALUES ($1, $2, $3, $4, $5, $6, $7);`
 
-	if _, err := r.db.Exec(ctx, query, name, phone, email, "", "", date, date); err != nil {
+	if _, err := r.DB.Exec(ctx, query, name, phone, email, "", "", date, date); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (r *EmployeeRepository) GetById(ctx context.Context, id int64) (*model.Employee, error) {
-	employee := new(model.Employee)
-	query := `
-			SELECT name, phone, email, registration_date, authorization_date, activate, department, role
-			FROM employees 
-			WHERE id = $1;`
+// Update is employee update
+func (r *EmployeeRepository) Update(ctx context.Context, id int64, name, phone, email string) error {
+	const query = `
+		UPDATE employees 
+		SET name = $2, phone = $3, email = $4 
+		WHERE id = $1;`
 
-	if err := r.db.QueryRow(ctx, query, id).Scan(
-		&employee.Name,
-		&employee.Phone,
-		&employee.Email,
-		&employee.RegistrationDate,
-		&employee.AuthorizationDate,
-		&employee.Activate,
-		&employee.Department,
-		&employee.Role); err != nil {
-		return nil, err
+	if _, err := r.DB.Exec(ctx, query, id, name, phone, email); err != nil {
+		return err
 	}
 
-	return employee, nil
+	return nil
 }
 
-func (r *EmployeeRepository) GetByDepartment(ctx context.Context, ids []int64, departmentId int64) ([]*model.Employee, error) {
-	var employees []*model.Employee
-	employee := new(model.Employee)
+// Delete is employee delete
+func (r *EmployeeRepository) Delete(ctx context.Context, id int64) error {
+	const query = `
+		UPDATE employees 
+		SET password = $2, hash = $3, activate = false, deleted = true
+		WHERE id = $1;`
 
-	query := `
-			SELECT id, name 
-			FROM employees 
-			WHERE department = $2 AND id IN $2 
-			ORDER BY name;`
-
-	rows, err := r.db.Query(ctx, query, ids, departmentId)
-	if err != nil {
-		return nil, err
+	if _, err := r.DB.Exec(ctx, query, id, "", ""); err != nil {
+		return err
 	}
 
-	for rows.Next() {
-		if err := rows.Scan(&employee.ID, &employee.Name); err != nil {
-			return nil, err
-		}
-		employees = append(employees, employee)
-	}
-
-	return employees, nil
+	return nil
 }
 
-func (r *EmployeeRepository) GetAll(ctx context.Context) ([]*model.Employee, error) {
-	var employees []*model.Employee
-	employee := new(model.Employee)
+// Restore is employee restore
+func (r *EmployeeRepository) Restore(ctx context.Context, id int64) error {
+	const query = `
+		UPDATE employees 
+		SET deleted = false
+		WHERE id = $1;`
 
-	query := `
+	if _, err := r.DB.Exec(ctx, query, id, "", ""); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// GetAll is employee get all
+func (r *EmployeeRepository) GetAll(ctx context.Context, deleted bool) ([]*model.Employee, error) {
+	var employees []*model.Employee
+	query := ""
+
+	if deleted {
+		query = `
 			SELECT id, name, phone, email, registration_date, authorization_date, activate
 			FROM employees 
-			WHERE hidden = false AND is_deleted = false 
+			WHERE hidden = false 
 			ORDER BY name;`
+	} else {
+		query = `
+			SELECT id, name, phone, email, registration_date, authorization_date, activate
+			FROM employees 
+			WHERE hidden = false AND deleted = false 
+			ORDER BY name;`
+	}
 
-	rows, err := r.db.Query(ctx, query)
+	rows, err := r.DB.Query(ctx, query)
 	if err != nil {
 		return nil, err
 	}
 
 	for rows.Next() {
-		if err := rows.Scan(
-			&employee.ID,
-			&employee.Name,
-			&employee.Phone,
-			&employee.Email,
-			&employee.RegistrationDate,
-			&employee.AuthorizationDate,
-			&employee.Activate); err != nil {
-			return nil, err
-		}
-		employees = append(employees, employee)
-	}
-
-	return employees, err
-}
-
-func (r *EmployeeRepository) GetFree(ctx context.Context) ([]*model.Employee, error) {
-	var employees []*model.Employee
-	employee := new(model.Employee)
-
-	query := `
-			SELECT id, name
-			FROM employees
-			WHERE hidden = false AND is_deleted = false AND department IS NULL
-			ORDER BY name;`
-
-	rows, err := r.db.Query(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-
-	for rows.Next() {
-		if err := rows.Scan(&employee.ID, &employee.Name); err != nil {
-			return nil, err
-		}
-		employees = append(employees, employee)
-	}
-
-	return employees, nil
-}
-
-func (r *EmployeeRepository) GetAllButOne(ctx context.Context, id int64) ([]*model.Employee, error) {
-	var employees []*model.Employee
-	employee := new(model.Employee)
-
-	query := `
-			SELECT id, name, phone, email, registration_date, authorization_date, activate, role
-			FROM employees
-			WHERE hidden = false AND id != $1
-			ORDER BY name;`
-
-	rows, err := r.db.Query(ctx, query, id)
-	if err != nil {
-		return nil, err
-	}
-
-	for rows.Next() {
+		employee := new(model.Employee)
 		if err := rows.Scan(
 			&employee.ID,
 			&employee.Name,
@@ -157,7 +106,42 @@ func (r *EmployeeRepository) GetAllButOne(ctx context.Context, id int64) ([]*mod
 			&employee.RegistrationDate,
 			&employee.AuthorizationDate,
 			&employee.Activate,
-			&employee.Role); err != nil {
+		); err != nil {
+			return nil, err
+		}
+		employees = append(employees, employee)
+	}
+
+	return employees, err
+}
+
+// GetAllButOne is employee get all but one
+func (r *EmployeeRepository) GetAllButOne(ctx context.Context, id int64) ([]*model.Employee, error) {
+	var employees []*model.Employee
+
+	const query = `
+		SELECT id, name, phone, email, registration_date, authorization_date, activate, role
+		FROM employees
+		WHERE hidden = false AND deleted = false AND id != $1
+		ORDER BY name;`
+
+	rows, err := r.DB.Query(ctx, query, id)
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		employee := new(model.Employee)
+		if err := rows.Scan(
+			&employee.ID,
+			&employee.Name,
+			&employee.Phone,
+			&employee.Email,
+			&employee.RegistrationDate,
+			&employee.AuthorizationDate,
+			&employee.Activate,
+			&employee.Role,
+		); err != nil {
 			return nil, err
 		}
 		employees = append(employees, employee)
@@ -166,104 +150,162 @@ func (r *EmployeeRepository) GetAllButOne(ctx context.Context, id int64) ([]*mod
 	return employees, nil
 }
 
+// GetById is employee get by id
+func (r *EmployeeRepository) GetById(ctx context.Context, employee *model.Employee) (*model.Employee, error) {
+	const query = `
+		SELECT name, phone, email, registration_date, authorization_date, activate, department, role
+		FROM employees 
+		WHERE id = $1;`
+
+	if err := r.DB.QueryRow(ctx, query, employee.ID).Scan(
+		&employee.Name,
+		&employee.Phone,
+		&employee.Email,
+		&employee.RegistrationDate,
+		&employee.AuthorizationDate,
+		&employee.Activate,
+		&employee.Department,
+		&employee.Role,
+	); err != nil {
+		return nil, err
+	}
+
+	return employee, nil
+}
+
+// GetFree is employee get free
+func (r *EmployeeRepository) GetFree(ctx context.Context) ([]*model.Employee, error) {
+	var employees []*model.Employee
+
+	const query = `
+		SELECT id, name
+		FROM employees
+		WHERE hidden = false AND deleted = false AND department IS NULL
+		ORDER BY name;`
+
+	rows, err := r.DB.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		employee := new(model.Employee)
+		if err := rows.Scan(
+			&employee.ID,
+			&employee.Name,
+		); err != nil {
+			return nil, err
+		}
+		employees = append(employees, employee)
+	}
+
+	return employees, nil
+}
+
+// GetByDepartment is employee get by department
+func (r *EmployeeRepository) GetByDepartment(ctx context.Context, ids []int64, departmentId int64) ([]*model.Employee, error) {
+	var employees []*model.Employee
+
+	const query = `
+		SELECT id, name 
+		FROM employees 
+		WHERE department = $2 AND id IN $1 
+		ORDER BY name;`
+
+	rows, err := r.DB.Query(ctx, query, ids, departmentId)
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		employee := new(model.Employee)
+		if err := rows.Scan(&employee.ID, &employee.Name); err != nil {
+			return nil, err
+		}
+		employees = append(employees, employee)
+	}
+
+	return employees, nil
+}
+
+// AddToDepartment is employee add to department
 func (r *EmployeeRepository) AddToDepartment(ctx context.Context, id, departmentId int64) error {
-	query := `
-			UPDATE employees 
-			SET department = $2 
-			WHERE id = $1;`
+	const query = `
+		UPDATE employees 
+		SET department = $2 
+		WHERE id = $1;`
 
-	if _, err := r.db.Exec(ctx, query, id, departmentId); err != nil {
+	if _, err := r.DB.Exec(ctx, query, id, departmentId); err != nil {
 		return err
 	}
 
 	return nil
 }
 
+// RemoveFromDepartment is employee remove from department
 func (r *EmployeeRepository) RemoveFromDepartment(ctx context.Context, id int64) error {
-	query := `
-			UPDATE employees 
-			SET department = NULL 
-			WHERE id = $1;`
+	const query = `
+		UPDATE employees 
+		SET department = NULL 
+		WHERE id = $1;`
 
-	if _, err := r.db.Exec(ctx, query, id); err != nil {
+	if _, err := r.DB.Exec(ctx, query, id); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (r *EmployeeRepository) Update(ctx context.Context, id int64, name, phone, email string) error {
-	query := `
-			UPDATE employees 
-			SET name = $2, phone = $3, email = $4 
-			WHERE id = $1;`
-
-	if _, err := r.db.Exec(ctx, query, id, name, phone, email); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (r *EmployeeRepository) Delete(ctx context.Context, id int64) error {
-	query := `
-			UPDATE employees 
-			SET password = $2, hash = $3, activate = false, is_deleted = true
-			WHERE id = $1;`
-
-	if _, err := r.db.Exec(ctx, query, id, "", ""); err != nil {
-		return err
-	}
-
-	return nil
-}
-
+// Activate is employee activate
 func (r *EmployeeRepository) Activate(ctx context.Context, id int64, password string) error {
-	query := `
-			UPDATE employees 
-			SET password = $2, activate = true
-			WHERE id = $1;`
+	const query = `
+		UPDATE employees 
+		SET password = $2, activate = true
+		WHERE id = $1;`
 
-	if _, err := r.db.Exec(ctx, query, id, password); err != nil {
+	if _, err := r.DB.Exec(ctx, query, id, password); err != nil {
 		return err
 	}
 
 	return nil
 }
 
+// Deactivate is employee deactivate
 func (r *EmployeeRepository) Deactivate(ctx context.Context, id int64) error {
-	query := `
-			UPDATE employees 
-			SET password = $2, hash = $3, activate = false
-			WHERE id = $1;`
+	const query = `
+		UPDATE employees 
+		SET password = $2, hash = $3, activate = false
+		WHERE id = $1;`
 
-	if _, err := r.db.Exec(ctx, query, id, "", ""); err != nil {
+	if _, err := r.DB.Exec(ctx, query, id, "", ""); err != nil {
 		return err
 	}
 
 	return nil
 }
 
+// ResetPassword is employee reset password
 func (r *EmployeeRepository) ResetPassword(ctx context.Context, id int64, password string) error {
-	query := `
-			UPDATE employees 
-			SET password = $2
-			WHERE id = $1;`
+	const query = `
+		UPDATE employees 
+		SET password = $2
+		WHERE id = $1;`
 
-	if _, err := r.db.Exec(ctx, query, id, password); err != nil {
+	if _, err := r.DB.Exec(ctx, query, id, password); err != nil {
 		return err
 	}
 
 	return nil
 }
 
+// ChangeRole is employee change role
 func (r *EmployeeRepository) ChangeRole(ctx context.Context, id int64, role string) error {
-	query := `
-			UPDATE employees 
-			SET role = $2
-			WHERE id = $1;`
+	const query = `
+		UPDATE employees 
+		SET role = $2
+		WHERE id = $1;`
 
-	if _, err := r.db.Exec(ctx, query, id, role); err != nil {
+	if _, err := r.DB.Exec(ctx, query, id, role); err != nil {
 		return err
 	}
 

@@ -6,17 +6,17 @@ create table categories
 );
 create table profiles
 (
-    id       bigserial                          not null primary key,
-    title    varchar                            not null unique,
-    category integer references categories (id) not null,
-    deleted  boolean                            not null default false
+    id       bigserial                         not null primary key,
+    title    varchar                           not null unique,
+    category bigint references categories (id) not null,
+    deleted  boolean                           not null default false
 );
 create table equipments
 (
-    id            bigserial                        not null primary key,
-    serial_number varchar                          not null unique,
-    profile       integer references profiles (id) not null,
-    deleted       boolean                          not null default false
+    id            bigserial                       not null primary key,
+    serial_number varchar                         not null unique,
+    profile       bigint references profiles (id) not null,
+    deleted       boolean                         not null default false
 );
 create table departments
 (
@@ -36,7 +36,7 @@ create table employees
     authorization_date timestamp with time zone not null,
     activate           boolean                  not null default false,
     hidden             boolean                  not null default false,
-    department         integer references departments (id),
+    department         bigint references departments (id),
     role               varchar                  not null default 'USER',
     deleted            boolean                  not null default false
 );
@@ -55,26 +55,26 @@ create table companies
 );
 create table locations
 (
-    id              bigserial                          not null primary key,
-    date            timestamp with time zone           not null,
-    code            varchar                            not null,
-    equipment       integer references equipments (id) not null,
-    employee        integer references employees (id)  not null,
-    company         integer references companies (id)  not null,
-    from_department integer references departments (id),
-    from_employee   integer references employees (id),
-    from_contract   integer references contracts (id),
-    to_department   integer references departments (id),
-    to_employee     integer references employees (id),
-    to_contract     integer references contracts (id),
+    id              bigserial                         not null primary key,
+    date            timestamp with time zone          not null,
+    code            varchar                           not null,
+    equipment       bigint references equipments (id) not null,
+    employee        bigint references employees (id)  not null,
+    company         bigint references companies (id)  not null,
+    from_department bigint references departments (id),
+    from_employee   bigint references employees (id),
+    from_contract   bigint references contracts (id),
+    to_department   bigint references departments (id),
+    to_employee     bigint references employees (id),
+    to_contract     bigint references contracts (id),
     transfer_type   varchar,
-    price           integer
+    price           bigint
 );
 create table replaces
 (
-    id            bigserial                                      not null primary key,
-    transfer_from integer references locations on delete cascade not null,
-    transfer_to   integer references locations on delete cascade not null
+    id            bigserial                                     not null primary key,
+    transfer_from bigint references locations on delete cascade not null,
+    transfer_to   bigint references locations on delete cascade not null
 );
 insert into employees (name,
                        phone,

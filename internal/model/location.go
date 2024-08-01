@@ -1,20 +1,20 @@
 package model
 
 type Location struct {
-	ID             int64       `json:"id"`
-	Date           int64       `json:"date"`
-	Code           string      `json:"code"`
-	Equipment      *Equipment  `json:"equipment"`
-	Employee       *Employee   `json:"employee"`
-	Company        *Company    `json:"company"`
-	FromDepartment *Department `json:"from_department"`
-	FromEmployee   *Employee   `json:"from_employee"`
-	FromContract   *Contract   `json:"from_contract"`
-	ToDepartment   *Department `json:"to_department"`
-	ToEmployee     *Employee   `json:"to_employee"`
-	ToContract     *Contract   `json:"to_contract"`
-	TransferType   string      `json:"transfer_type"`
-	Price          int         `json:"price"`
+	ID             int64       `json:"id,omitempty"`
+	Date           int64       `json:"date,omitempty"`
+	Code           string      `json:"code,omitempty"`
+	Equipment      *Equipment  `json:"equipment,omitempty"`
+	Employee       *Employee   `json:"employee,omitempty"`
+	Company        *Company    `json:"company,omitempty"`
+	FromDepartment *Department `json:"from_department,omitempty"`
+	FromEmployee   *Employee   `json:"from_employee,omitempty"`
+	FromContract   *Contract   `json:"from_contract,omitempty"`
+	ToDepartment   *Department `json:"to_department,omitempty"`
+	ToEmployee     *Employee   `json:"to_employee,omitempty"`
+	ToContract     *Contract   `json:"to_contract,omitempty"`
+	TransferType   string      `json:"transfer_type,omitempty"`
+	Price          int         `json:"price,omitempty"`
 }
 
 type RequestLocation struct {

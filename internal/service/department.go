@@ -91,13 +91,17 @@ func (s *DepartmentService) GetById(ctx context.Context, id int64) (*model.Depar
 func (s *DepartmentService) GetAllButOne(ctx context.Context, id, employeeId int64) ([]*model.Department, error) {
 	const fn = "service.Department.GetAllButOne"
 
-	employee, err := s.EmployeeRepository.GetById(ctx, employeeId)
+	employee := &model.Employee{
+		ID: employeeId,
+	}
+
+	res, err := s.EmployeeRepository.GetById(ctx, employee)
 	if err != nil {
 		return nil, logger.Err(err, "", fn)
 	}
 
 	var departments []*model.Department
-	if employee.Role == "ADMIN" {
+	if res.Role == "ADMIN" {
 		res, err := s.DepartmentRepository.GetAllButOneForAdmin(ctx, id)
 		if err != nil {
 			return nil, logger.Err(err, "", fn)

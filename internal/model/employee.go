@@ -15,7 +15,7 @@ type Employee struct {
 	Hidden            bool        `json:"hidden,omitempty"`
 	Department        *Department `json:"department,omitempty"`
 	Role              string      `json:"role,omitempty"`
-	IsDeleted         bool        `json:"is_deleted,omitempty"`
+	Deleted           bool        `json:"deleted,omitempty"`
 }
 
 type SignInInput struct {
@@ -24,6 +24,6 @@ type SignInInput struct {
 }
 
 type RequestEmployee struct {
-	Ids []int64 `json:"ids"`
-	Id  int64   `json:"id"`
+	Ids          []int64 `json:"ids"`
+	DepartmentId int64   `json:"department_id"`
 }
