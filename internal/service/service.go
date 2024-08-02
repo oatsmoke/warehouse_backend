@@ -25,7 +25,7 @@ func NewService(repository *repository.Repository) *Service {
 		Department: NewDepartmentService(repository.Department, repository.Employee),
 		Category:   NewCategoryService(repository.Category),
 		Profile:    NewProfileService(repository.Profile),
-		Equipment:  NewEquipmentService(repository.Equipment, repository.Category),
+		Equipment:  NewEquipmentService(repository.Equipment),
 		Location:   NewLocationService(repository.Location, repository.Replace),
 		Contract:   NewContractService(repository.Contract),
 		Company:    NewCompanyService(repository.Company),
@@ -85,19 +85,21 @@ type Profile interface {
 }
 
 type Equipment interface {
-	Create(ctx context.Context, date int64, company int64, serialNumber string, profile int64, userId int64) (int64, error)
-	GetById(ctx context.Context, id int64) (*model.Location, error)
-	GetByIds(ctx context.Context, ids []int64) ([]*model.Location, error)
-	GetByLocation(ctx context.Context, toDepartment, toEmployee, toContract int64) ([]*model.Location, error)
-	GetAll(ctx context.Context) ([]*model.Equipment, error)
-	Update(ctx context.Context, id int64, serialNumber string, profile int64) error
+	Create(ctx context.Context, serialNumber string, profileId int64) (int64, error)
+	Update(ctx context.Context, id int64, serialNumber string, profileId int64) error
 	Delete(ctx context.Context, id int64) error
-	ReportByCategory(ctx context.Context, departmentId int64, date int64) (*model.Report, error)
+	Restore(ctx context.Context, id int64) error
+	GetAll(ctx context.Context) ([]*model.Equipment, error)
 }
+
 type Location interface {
 	TransferTo(ctx context.Context, id int64, request []*model.RequestLocation) error
 	GetHistory(ctx context.Context, id int64) ([]*model.Location, error)
 	Delete(ctx context.Context, id int64) error
+	GetById(ctx context.Context, id int64) (*model.Location, error)
+	GetByIds(ctx context.Context, ids []int64) ([]*model.Location, error)
+	GetByLocation(ctx context.Context, toDepartment, toEmployee, toContract int64) ([]*model.Location, error)
+	ReportByCategory(ctx context.Context, departmentId int64, date int64) (*model.Report, error)
 }
 
 type Contract interface {

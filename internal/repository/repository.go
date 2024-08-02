@@ -93,22 +93,13 @@ type Profile interface {
 }
 
 type Equipment interface {
-	Create(ctx context.Context, date int64, company int64, serialNumber string, profile int64, userId int64) (int64, error)
-	GetByProfile(ctx context.Context, id int64) ([]*model.Equipment, error)
-	GetById(ctx context.Context, id int64) (*model.Location, error)
-	GetByLocationStorage(ctx context.Context) ([]*model.Location, error)
-	GetByLocationDepartment(ctx context.Context, toDepartment int64) ([]*model.Location, error)
-	GetByLocationEmployee(ctx context.Context, toEmployee int64) ([]*model.Location, error)
-	GetByLocationContract(ctx context.Context, toContract int64) ([]*model.Location, error)
-	GetByLocationDepartmentEmployee(ctx context.Context, toDepartment, toEmployee int64) ([]*model.Location, error)
-	GetAll(ctx context.Context) ([]*model.Equipment, error)
-	FindBySerialNumber(ctx context.Context, serialNumber string) (int64, error)
-	Update(ctx context.Context, id int64, serialNumber string, profile int64) error
+	Create(ctx context.Context, serialNumber string, profileId int64) (int64, error)
+	Update(ctx context.Context, id int64, serialNumber string, profileId int64) error
 	Delete(ctx context.Context, id int64) error
-	RemainderByCategory(ctx context.Context, categoryId, departmentId int64, date time.Time) ([]*model.Location, error)
-	TransferByCategory(ctx context.Context, categoryId, departmentId int64, fromDate, toDate time.Time, code string) ([]*model.Location, error)
-	ToDepartmentTransferByCategory(ctx context.Context, categoryId, departmentId int64, fromDate, toDate time.Time) ([]*model.Location, error)
-	FromDepartmentTransferByCategory(ctx context.Context, categoryId, departmentId int64, fromDate, toDate time.Time) ([]*model.Location, error)
+	Restore(ctx context.Context, id int64) error
+	GetAll(ctx context.Context) ([]*model.Equipment, error)
+	//GetByProfile(ctx context.Context, id int64) ([]*model.Equipment, error)
+	//GetBySerialNumber(ctx context.Context, equipment *model.Equipment) (*model.Equipment, error)
 }
 
 type Location interface {
@@ -120,6 +111,16 @@ type Location interface {
 	GetHistory(ctx context.Context, id int64) ([]*model.Location, error)
 	GetLocationNow(ctx context.Context, id int64) ([]interface{}, error)
 	Delete(ctx context.Context, id int64) error
+	GetById(ctx context.Context, id int64) (*model.Location, error)
+	GetByLocationStorage(ctx context.Context) ([]*model.Location, error)
+	GetByLocationDepartment(ctx context.Context, toDepartment int64) ([]*model.Location, error)
+	GetByLocationEmployee(ctx context.Context, toEmployee int64) ([]*model.Location, error)
+	GetByLocationContract(ctx context.Context, toContract int64) ([]*model.Location, error)
+	GetByLocationDepartmentEmployee(ctx context.Context, toDepartment, toEmployee int64) ([]*model.Location, error)
+	RemainderByCategory(ctx context.Context, categoryId, departmentId int64, date time.Time) ([]*model.Location, error)
+	TransferByCategory(ctx context.Context, categoryId, departmentId int64, fromDate, toDate time.Time, code string) ([]*model.Location, error)
+	ToDepartmentTransferByCategory(ctx context.Context, categoryId, departmentId int64, fromDate, toDate time.Time) ([]*model.Location, error)
+	FromDepartmentTransferByCategory(ctx context.Context, categoryId, departmentId int64, fromDate, toDate time.Time) ([]*model.Location, error)
 }
 
 type Contract interface {

@@ -101,20 +101,21 @@ func (h *Handler) InitRoutes(cfg *config.Client) *gin.Engine {
 		}
 		equipment := api.Group("/equipment")
 		{
-			equipment.POST("/create", h.Equipment.createEquipment)
-			equipment.POST("/getById", h.Equipment.getByIdEquipment)
-			equipment.POST("/getByIds", h.Equipment.getByIdsEquipment)
-			equipment.POST("/getByLocation", h.Equipment.GetByLocationEquipment)
-			equipment.GET("/getAll", h.Equipment.getAllEquipment)
-			equipment.POST("/update", h.Equipment.updateEquipment)
-			equipment.POST("/delete", h.Equipment.deleteEquipment)
-			equipment.POST("/reportByCategory", h.Equipment.reportByCategory)
+			equipment.POST("/create", h.Equipment.Create)
+			equipment.POST("/update", h.Equipment.Update)
+			equipment.POST("/delete", h.Equipment.Delete)
+			equipment.POST("/restore", h.Equipment.Restore)
+			equipment.POST("/getAll", h.Equipment.GetAll)
 		}
 		location := api.Group("/location")
 		{
 			location.POST("/transferTo", h.Location.transferToLocation)
 			location.POST("/getHistory", h.Location.getHistory)
 			location.POST("/delete", h.Location.deleteLocation)
+			location.POST("/getById", h.Equipment.getByIdEquipment)
+			location.POST("/getByIds", h.Equipment.getByIdsEquipment)
+			location.POST("/getByLocation", h.Equipment.GetByLocationEquipment)
+			location.POST("/reportByCategory", h.Equipment.reportByCategory)
 		}
 		contract := api.Group("/contract")
 		{

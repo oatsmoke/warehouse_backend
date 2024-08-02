@@ -67,24 +67,24 @@ func (s *DepartmentService) Restore(ctx context.Context, id int64) error {
 func (s *DepartmentService) GetAll(ctx context.Context, deleted bool) ([]*model.Department, error) {
 	const fn = "service.Department.GetAll"
 
-	departments, err := s.DepartmentRepository.GetAll(ctx, deleted)
+	res, err := s.DepartmentRepository.GetAll(ctx, deleted)
 	if err != nil {
 		return nil, logger.Err(err, "", fn)
 	}
 
-	return departments, nil
+	return res, nil
 }
 
 // GetById is to get department by id
 func (s *DepartmentService) GetById(ctx context.Context, id int64) (*model.Department, error) {
 	const fn = "service.Department.GetById"
 
-	department, err := s.DepartmentRepository.GetById(ctx, &model.Department{ID: id})
+	res, err := s.DepartmentRepository.GetById(ctx, &model.Department{ID: id})
 	if err != nil {
 		return nil, logger.Err(err, "", fn)
 	}
 
-	return department, nil
+	return res, nil
 }
 
 // GetAllButOne is to get all departments but one
