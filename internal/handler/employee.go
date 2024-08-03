@@ -119,13 +119,19 @@ func (h *EmployeeHandler) GetAll(ctx *gin.Context) {
 func (h *EmployeeHandler) GetAllButAuth(ctx *gin.Context) {
 	const fn = "handler.Employee.GetAllButAuth"
 
+	var deleted bool
+	if err := ctx.BindJSON(&deleted); err != nil {
+		logger.ErrResponse(ctx, err, http.StatusBadRequest, fn)
+		return
+	}
+
 	id, err := getUserId(ctx)
 	if err != nil {
 		logger.ErrResponse(ctx, err, http.StatusUnauthorized, fn)
 		return
 	}
 
-	employees, err := h.serviceEmployee.GetAllButOne(ctx, id)
+	employees, err := h.serviceEmployee.GetAllButOne(ctx, id, deleted)
 	if err != nil {
 		logger.ErrResponse(ctx, err, http.StatusInternalServerError, fn)
 		return
@@ -145,7 +151,7 @@ func (h *EmployeeHandler) GetAllButOne(ctx *gin.Context) {
 		return
 	}
 
-	res, err := h.serviceEmployee.GetAllButOne(ctx, employees.ID)
+	res, err := h.serviceEmployee.GetAllButOne(ctx, employees.ID, employees.Deleted)
 	if err != nil {
 		logger.ErrResponse(ctx, err, http.StatusInternalServerError, fn)
 		return

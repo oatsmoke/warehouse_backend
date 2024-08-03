@@ -83,10 +83,10 @@ func (s *EmployeeService) GetAll(ctx context.Context, deleted bool) ([]*model.Em
 }
 
 // GetAllButOne is to get all employees but one
-func (s *EmployeeService) GetAllButOne(ctx context.Context, id int64) ([]*model.Employee, error) {
+func (s *EmployeeService) GetAllButOne(ctx context.Context, id int64, deleted bool) ([]*model.Employee, error) {
 	const fn = "service.Employee.GetAllButOne"
 
-	res, err := s.EmployeeRepository.GetAllButOne(ctx, id)
+	res, err := s.EmployeeRepository.GetAllButOne(ctx, id, deleted)
 	if err != nil {
 		return nil, logger.Err(err, "", fn)
 	}

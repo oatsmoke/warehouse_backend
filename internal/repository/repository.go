@@ -47,7 +47,7 @@ type Employee interface {
 	Delete(ctx context.Context, id int64) error
 	Restore(ctx context.Context, id int64) error
 	GetAll(ctx context.Context, deleted bool) ([]*model.Employee, error)
-	GetAllButOne(ctx context.Context, id int64) ([]*model.Employee, error)
+	GetAllButOne(ctx context.Context, id int64, deleted bool) ([]*model.Employee, error)
 	GetById(ctx context.Context, employee *model.Employee) (*model.Employee, error)
 	GetFree(ctx context.Context) ([]*model.Employee, error)
 	GetByDepartment(ctx context.Context, ids []int64, departmentId int64) ([]*model.Employee, error)

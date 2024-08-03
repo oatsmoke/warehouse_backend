@@ -65,7 +65,7 @@ func (r *EmployeeRepository) Restore(ctx context.Context, id int64) error {
 		SET deleted = false
 		WHERE id = $1;`
 
-	if _, err := r.DB.Exec(ctx, query, id, "", ""); err != nil {
+	if _, err := r.DB.Exec(ctx, query, id); err != nil {
 		return err
 	}
 
@@ -116,14 +116,23 @@ func (r *EmployeeRepository) GetAll(ctx context.Context, deleted bool) ([]*model
 }
 
 // GetAllButOne is employee get all but one
-func (r *EmployeeRepository) GetAllButOne(ctx context.Context, id int64) ([]*model.Employee, error) {
+func (r *EmployeeRepository) GetAllButOne(ctx context.Context, id int64, deleted bool) ([]*model.Employee, error) {
 	var employees []*model.Employee
+	query := ""
 
-	const query = `
-		SELECT id, name, phone, email, registration_date, authorization_date, activate, role
-		FROM employees
-		WHERE hidden = false AND deleted = false AND id != $1
-		ORDER BY name;`
+	if deleted {
+		query = `
+			SELECT id, name, phone, email, registration_date, authorization_date, activate, role, deleted
+			FROM employees 
+			WHERE hidden = false AND id != $1 
+			ORDER BY name;`
+	} else {
+		query = `
+			SELECT id, name, phone, email, registration_date, authorization_date, activate, role, deleted
+			FROM employees 
+			WHERE hidden = false AND deleted = false AND id != $1 
+			ORDER BY name;`
+	}
 
 	rows, err := r.DB.Query(ctx, query, id)
 	if err != nil {
@@ -141,6 +150,7 @@ func (r *EmployeeRepository) GetAllButOne(ctx context.Context, id int64) ([]*mod
 			&employee.AuthorizationDate,
 			&employee.Activate,
 			&employee.Role,
+			&employee.Deleted,
 		); err != nil {
 			return nil, err
 		}
