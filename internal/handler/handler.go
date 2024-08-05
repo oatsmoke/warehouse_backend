@@ -3,14 +3,9 @@ package handler
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 	"warehouse_backend/internal/lib/config"
 	"warehouse_backend/internal/service"
 )
-
-type errorResponse struct {
-	Message string `json:"message"`
-}
 
 type Handler struct {
 	Auth       *AuthHandler
@@ -109,13 +104,13 @@ func (h *Handler) InitRoutes(cfg *config.Client) *gin.Engine {
 		}
 		location := api.Group("/location")
 		{
-			location.POST("/transferTo", h.Location.transferToLocation)
-			location.POST("/getHistory", h.Location.getHistory)
-			location.POST("/delete", h.Location.deleteLocation)
-			location.POST("/getById", h.Equipment.getByIdEquipment)
-			location.POST("/getByIds", h.Equipment.getByIdsEquipment)
-			location.POST("/getByLocation", h.Equipment.GetByLocationEquipment)
-			location.POST("/reportByCategory", h.Equipment.reportByCategory)
+			location.POST("/transferTo", h.Location.TransferTo)
+			location.POST("/delete", h.Location.Delete)
+			location.POST("/getById", h.Location.GetById)
+			location.POST("/getByIds", h.Location.GetByIds)
+			location.POST("/getHistory", h.Location.GetHistory)
+			location.POST("/getByLocation", h.Location.GetByLocation)
+			location.POST("/reportByCategory", h.Location.ReportByCategory)
 		}
 		contract := api.Group("/contract")
 		{
@@ -151,9 +146,4 @@ func CORSMiddleware(cfg *config.Client) gin.HandlerFunc {
 		}
 		c.Next()
 	}
-}
-
-func newErrorResponse(c *gin.Context, statusCode int, message string) {
-	logrus.Error(statusCode, " - ", message)
-	c.AbortWithStatusJSON(statusCode, errorResponse{message})
 }

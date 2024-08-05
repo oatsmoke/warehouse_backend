@@ -18,11 +18,6 @@ type Employee struct {
 	Deleted           bool        `json:"deleted,omitempty"`
 }
 
-type SignInInput struct {
-	Login    string `json:"login" binding:"required"`
-	Password string `json:"password" binding:"required"`
-}
-
 type RequestEmployee struct {
 	Ids          []int64 `json:"ids"`
 	DepartmentId int64   `json:"department_id"`

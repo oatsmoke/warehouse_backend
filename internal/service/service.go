@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"time"
 	"warehouse_backend/internal/model"
 	"warehouse_backend/internal/repository"
 )
@@ -26,7 +27,7 @@ func NewService(repository *repository.Repository) *Service {
 		Category:   NewCategoryService(repository.Category),
 		Profile:    NewProfileService(repository.Profile),
 		Equipment:  NewEquipmentService(repository.Equipment),
-		Location:   NewLocationService(repository.Location, repository.Replace),
+		Location:   NewLocationService(repository.Location, repository.Replace, repository.Category),
 		Contract:   NewContractService(repository.Contract),
 		Company:    NewCompanyService(repository.Company),
 	}
@@ -93,13 +94,13 @@ type Equipment interface {
 }
 
 type Location interface {
-	TransferTo(ctx context.Context, id int64, request []*model.RequestLocation) error
-	GetHistory(ctx context.Context, id int64) ([]*model.Location, error)
+	TransferTo(ctx context.Context, EmployeeId int64, requests []*model.RequestLocation) error
 	Delete(ctx context.Context, id int64) error
-	GetById(ctx context.Context, id int64) (*model.Location, error)
-	GetByIds(ctx context.Context, ids []int64) ([]*model.Location, error)
+	GetById(ctx context.Context, equipmentId int64) (*model.Location, error)
+	GetByIds(ctx context.Context, equipmentIds []int64) ([]*model.Location, error)
+	GetHistory(ctx context.Context, equipmentId int64) ([]*model.Location, error)
 	GetByLocation(ctx context.Context, toDepartment, toEmployee, toContract int64) ([]*model.Location, error)
-	ReportByCategory(ctx context.Context, departmentId int64, date int64) (*model.Report, error)
+	ReportByCategory(ctx context.Context, departmentId int64, date time.Time) (*model.Report, error)
 }
 
 type Contract interface {

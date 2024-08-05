@@ -1,8 +1,8 @@
 package model
 
 type Contract struct {
-	ID      int64  `json:"id"`
-	Number  string `json:"number"`
-	Address string `json:"address"`
-	Deleted bool   `json:"deleted"`
+	ID      int64  `json:"id,omitempty"`
+	Number  string `json:"number,omitempty"`
+	Address string `json:"address,omitempty"`
+	Deleted bool   `json:"deleted,omitempty"`
 }

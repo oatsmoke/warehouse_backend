@@ -1,8 +1,10 @@
 package model
 
+import "time"
+
 type Location struct {
 	ID             int64       `json:"id,omitempty"`
-	Date           int64       `json:"date,omitempty"`
+	Date           time.Time   `json:"date,omitempty"`
 	Code           string      `json:"code,omitempty"`
 	Equipment      *Equipment  `json:"equipment,omitempty"`
 	Employee       *Employee   `json:"employee,omitempty"`
@@ -18,18 +20,18 @@ type Location struct {
 }
 
 type RequestLocation struct {
-	Date         int64  `json:"date"`
-	EquipmentId  int64  `json:"equipment_id"`
-	Way          string `json:"way"`
-	ThisLocation string `json:"this_location"`
-	Where        string `json:"where"`
-	InDepartment bool   `json:"in_department"`
-	Company      int64  `json:"company"`
-	ToDepartment int64  `json:"to_department"`
-	ToEmployee   int64  `json:"to_employee"`
-	ToContract   int64  `json:"to_contract"`
-	TransferType string `json:"transfer_type"`
-	Price        int    `json:"price"`
+	Date         time.Time `json:"date"`
+	EquipmentId  int64     `json:"equipment_id"`
+	Way          string    `json:"way"`
+	ThisLocation string    `json:"this_location"`
+	Where        string    `json:"where"`
+	InDepartment bool      `json:"in_department"`
+	Company      int64     `json:"company"`
+	ToDepartment int64     `json:"to_department"`
+	ToEmployee   int64     `json:"to_employee"`
+	ToContract   int64     `json:"to_contract"`
+	TransferType string    `json:"transfer_type"`
+	Price        int       `json:"price"`
 }
 
 type LocationAndRequestLocation struct {

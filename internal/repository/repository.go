@@ -103,15 +103,16 @@ type Equipment interface {
 }
 
 type Location interface {
-	TransferToStorage(ctx context.Context, date int64, code string, equipment, employee, company int64, nowLocation []interface{}) (int64, error)
-	TransferToDepartment(ctx context.Context, date int64, code string, equipment, employee, company, toDepartment int64, nowLocation []interface{}) (int64, error)
-	TransferToEmployee(ctx context.Context, date int64, code string, equipment, employee, company, toEmployee int64, nowLocation []interface{}) (int64, error)
-	TransferToEmployeeInDepartment(ctx context.Context, date int64, code string, equipment, employee, company, toDepartment, toEmployee int64, nowLocation []interface{}) (int64, error)
-	TransferToContract(ctx context.Context, date int64, code string, equipment, employee, company, toContract int64, transferType string, price int, nowLocation []interface{}) (int64, error)
-	GetHistory(ctx context.Context, id int64) ([]*model.Location, error)
-	GetLocationNow(ctx context.Context, id int64) ([]interface{}, error)
+	AddToStorage(ctx context.Context, date time.Time, equipmentId, employeeId, companyId int64) error
+	TransferToStorage(ctx context.Context, date time.Time, code string, equipmentId, employeeId, companyId int64, nowLocation []interface{}) (int64, error)
+	TransferToDepartment(ctx context.Context, date time.Time, code string, equipmentId, employeeId, companyId, toDepartment int64, nowLocation []interface{}) (int64, error)
+	TransferToEmployee(ctx context.Context, date time.Time, code string, equipmentId, employeeId, companyId, toEmployee int64, nowLocation []interface{}) (int64, error)
+	TransferToEmployeeInDepartment(ctx context.Context, date time.Time, code string, equipmentId, employeeId, companyId, toDepartment, toEmployee int64, nowLocation []interface{}) (int64, error)
+	TransferToContract(ctx context.Context, date time.Time, code string, equipmentId, employeeId, companyId, toContract int64, transferType string, price int, nowLocation []interface{}) (int64, error)
 	Delete(ctx context.Context, id int64) error
-	GetById(ctx context.Context, id int64) (*model.Location, error)
+	GetById(ctx context.Context, equipmentId int64) (*model.Location, error)
+	GetHistory(ctx context.Context, equipmentId int64) ([]*model.Location, error)
+	GetLocationNow(ctx context.Context, equipmentId int64) ([]interface{}, error)
 	GetByLocationStorage(ctx context.Context) ([]*model.Location, error)
 	GetByLocationDepartment(ctx context.Context, toDepartment int64) ([]*model.Location, error)
 	GetByLocationEmployee(ctx context.Context, toEmployee int64) ([]*model.Location, error)

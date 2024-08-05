@@ -26,15 +26,6 @@ func (r *EquipmentRepository) Create(ctx context.Context, serialNumber string, p
 		return 0, err
 	}
 
-	//tm := time.Unix(date, 0)
-	//queryLocationRecord := `
-	//		INSERT INTO locations (date, code, equipment, employee, company)
-	//		VALUES ($1, $2, $3, $4, $5);`
-	//
-	//if _, err = tx.Exec(ctx, queryLocationRecord, tm, "ADD_TO_STORAGE", equipment.ID, userId, company); err != nil {
-	//	return 0, err
-	//}
-
 	return equipmentId, nil
 }
 
@@ -91,7 +82,7 @@ func (r *EquipmentRepository) GetAll(ctx context.Context) ([]*model.Equipment, e
 		FROM equipments
 		LEFT JOIN profiles ON profiles.id = equipments.profile
 		LEFT JOIN categories ON categories.id = profiles.category
-		WHERE equipments.is_deleted = FALSE
+		WHERE equipments.deleted = FALSE
 		ORDER BY profiles.title;`
 
 	rows, err := r.DB.Query(ctx, query)

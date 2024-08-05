@@ -4,85 +4,96 @@ import (
 	"context"
 	"strings"
 	"time"
+	"warehouse_backend/internal/lib/logger"
 	"warehouse_backend/internal/model"
 	"warehouse_backend/internal/repository"
 )
 
 type LocationService struct {
-	repositoryLocation repository.Location
-	repositoryReplace  repository.Replace
+	LocationRepository repository.Location
+	ReplaceRepository  repository.Replace
+	CategoryRepository repository.Category
 }
 
-func NewLocationService(repositoryLocation repository.Location,
-	repositoryReplace repository.Replace) *LocationService {
-	return &LocationService{repositoryLocation: repositoryLocation,
-		repositoryReplace: repositoryReplace,
+func NewLocationService(locationRepository repository.Location, replaceRepository repository.Replace, categoryRepository repository.Category) *LocationService {
+	return &LocationService{
+		LocationRepository: locationRepository,
+		ReplaceRepository:  replaceRepository,
+		CategoryRepository: categoryRepository,
 	}
 }
 
-func (s *LocationService) TransferTo(ctx context.Context, id int64, requests []*model.RequestLocation) error {
+// TransferTo is equipment transfer to
+func (s *LocationService) TransferTo(ctx context.Context, EmployeeId int64, requests []*model.RequestLocation) error {
+	const fn = "service.Location.TransferTo"
+
 	var code string
 	replace := []int64{0, 0}
 	for _, request := range requests {
-		nowLocation, _ := s.repositoryLocation.GetLocationNow(ctx, request.EquipmentId)
+		nowLocation, _ := s.LocationRepository.GetLocationNow(ctx, request.EquipmentId)
 		switch {
+
 		case request.ToDepartment == 0 && request.ToEmployee == 0 && request.ToContract == 0:
 			code = strings.ToUpper(request.ThisLocation + "_to_storage")
-			transferId, err := s.repositoryLocation.TransferToStorage(ctx, request.Date, code, request.EquipmentId, id, request.Company, nowLocation)
+			transferId, err := s.LocationRepository.TransferToStorage(ctx, request.Date, code, request.EquipmentId, EmployeeId, request.Company, nowLocation)
 			if err != nil {
-				return err
+				return logger.Err(err, "", fn)
 			}
 			if request.Way == "replace" && replace[0] == 0 {
 				replace[0] = transferId
 			} else if request.Way == "replace" && replace[1] == 0 {
 				replace[1] = transferId
 			}
+
 		case request.ToDepartment != 0 && request.ToEmployee == 0 && request.ToContract == 0:
 			if request.InDepartment {
 				code = strings.ToUpper(request.ThisLocation + "_to_" + request.Where + "_in_department")
 			} else {
 				code = strings.ToUpper(request.ThisLocation + "_to_" + request.Where)
 			}
-			transferId, err := s.repositoryLocation.TransferToDepartment(ctx, request.Date, code, request.EquipmentId, id, request.Company, request.ToDepartment, nowLocation)
+			transferId, err := s.LocationRepository.TransferToDepartment(ctx, request.Date, code, request.EquipmentId, EmployeeId, request.Company, request.ToDepartment, nowLocation)
 			if err != nil {
-				return err
+				return logger.Err(err, "", fn)
 			}
 			if request.Way == "replace" && replace[0] == 0 {
 				replace[0] = transferId
 			} else if request.Way == "replace" && replace[1] == 0 {
 				replace[1] = transferId
 			}
+
 		case request.ToDepartment == 0 && request.ToEmployee != 0 && request.ToContract == 0:
 			code = strings.ToUpper(request.ThisLocation + "_to_" + request.Where)
-			transferId, err := s.repositoryLocation.TransferToEmployee(ctx, request.Date, code, request.EquipmentId, id, request.Company, request.ToEmployee, nowLocation)
+			transferId, err := s.LocationRepository.TransferToEmployee(ctx, request.Date, code, request.EquipmentId, EmployeeId, request.Company, request.ToEmployee, nowLocation)
 			if err != nil {
-				return err
+				return logger.Err(err, "", fn)
 			}
 			if request.Way == "replace" && replace[0] == 0 {
 				replace[0] = transferId
 			} else if request.Way == "replace" && replace[1] == 0 {
 				replace[1] = transferId
 			}
+
 		case request.ToDepartment != 0 && request.ToEmployee != 0 && request.ToContract == 0:
 			if request.InDepartment {
 				code = strings.ToUpper(request.ThisLocation + "_to_" + request.Where + "_in_department")
 			} else {
 				code = strings.ToUpper(request.ThisLocation + "_to_" + request.Where)
 			}
-			transferId, err := s.repositoryLocation.TransferToEmployeeInDepartment(ctx, request.Date, code, request.EquipmentId, id, request.Company, request.ToDepartment, request.ToEmployee, nowLocation)
+			transferId, err := s.LocationRepository.TransferToEmployeeInDepartment(ctx, request.Date, code, request.EquipmentId, EmployeeId, request.Company, request.ToDepartment, request.ToEmployee, nowLocation)
 			if err != nil {
-				return err
+				return logger.Err(err, "", fn)
 			}
 			if request.Way == "replace" && replace[0] == 0 {
 				replace[0] = transferId
 			} else if request.Way == "replace" && replace[1] == 0 {
 				replace[1] = transferId
 			}
+
 		case request.ToDepartment == 0 && request.ToEmployee == 0 && request.ToContract != 0:
 			code = strings.ToUpper(request.ThisLocation + "_to_" + request.Where)
-			transferId, err := s.repositoryLocation.TransferToContract(ctx, request.Date, code, request.EquipmentId, id, request.Company, request.ToContract, request.TransferType, request.Price, nowLocation)
+			transferId, err := s.LocationRepository.TransferToContract(ctx, request.Date, code, request.EquipmentId, EmployeeId, request.Company, request.ToContract, request.TransferType, request.Price, nowLocation)
 			if err != nil {
-				return err
+				return logger.Err(err, "", fn)
 			}
 			if request.Way == "replace" && replace[0] == 0 {
 				replace[0] = transferId
@@ -91,71 +102,120 @@ func (s *LocationService) TransferTo(ctx context.Context, id int64, requests []*
 			}
 		}
 	}
+
 	if requests[0].Way == "replace" {
-		err := s.repositoryReplace.Create(ctx, replace)
+		err := s.ReplaceRepository.Create(ctx, replace)
 		if err != nil {
-			return err
+			return logger.Err(err, "", fn)
 		}
 	}
+
 	return nil
 }
-func (s *LocationService) GetHistory(ctx context.Context, id int64) ([]*model.Location, error) {
-	return s.repositoryLocation.GetHistory(ctx, id)
-}
 
+// Delete is equipment transfer to
 func (s *LocationService) Delete(ctx context.Context, id int64) error {
-	replace, err := s.repositoryReplace.FindByLocationId(ctx, id)
+	fn := "service.Location.Delete"
+
+	replace, err := s.ReplaceRepository.FindByLocationId(ctx, id)
 	if err != nil {
-		return s.repositoryLocation.Delete(ctx, id)
+		return s.LocationRepository.Delete(ctx, id)
 	}
 
-	if err = s.repositoryLocation.Delete(ctx, replace.TransferFrom); err != nil {
-		return err
+	if err = s.LocationRepository.Delete(ctx, replace.TransferFrom); err != nil {
+		return logger.Err(err, "", fn)
 	}
 
-	if err = s.repositoryLocation.Delete(ctx, replace.TransferTo); err != nil {
-		return err
+	if err = s.LocationRepository.Delete(ctx, replace.TransferTo); err != nil {
+		return logger.Err(err, "", fn)
 	}
 
 	return nil
 }
 
-func (s *EquipmentService) GetById(ctx context.Context, id int64) (*model.Location, error) {
-	return s.EquipmentRepository.GetById(ctx, id)
+// GetById is equipment get by id
+func (s *LocationService) GetById(ctx context.Context, equipmentId int64) (*model.Location, error) {
+	fn := "service.Location.GetById"
+
+	res, err := s.LocationRepository.GetById(ctx, equipmentId)
+	if err != nil {
+		return nil, logger.Err(err, "", fn)
+	}
+
+	return res, nil
 }
 
-func (s *EquipmentService) GetByIds(ctx context.Context, ids []int64) ([]*model.Location, error) {
+// GetByIds is equipment get by ids
+func (s *LocationService) GetByIds(ctx context.Context, equipmentIds []int64) ([]*model.Location, error) {
+	fn := "service.Location.GetByIds"
 	var equipments []*model.Location
-	for _, id := range ids {
-		equipment, err := s.EquipmentRepository.GetById(ctx, id)
+
+	for _, id := range equipmentIds {
+		equipment, err := s.LocationRepository.GetById(ctx, id)
 		if err != nil {
-			return nil, err
+			return nil, logger.Err(err, "", fn)
 		}
 		equipments = append(equipments, equipment)
 	}
 	return equipments, nil
 }
 
-func (s *EquipmentService) GetByLocation(ctx context.Context, toDepartmentId, toEmployeeId, toContractId int64) ([]*model.Location, error) {
+// GetHistory is equipment get history
+func (s *LocationService) GetHistory(ctx context.Context, equipmentId int64) ([]*model.Location, error) {
+	fn := "service.Location.GetHistory"
+
+	res, err := s.LocationRepository.GetHistory(ctx, equipmentId)
+	if err != nil {
+		return nil, logger.Err(err, "", fn)
+	}
+	return res, nil
+}
+
+// GetByLocation is equipment get by location
+func (s *LocationService) GetByLocation(ctx context.Context, toDepartmentId, toEmployeeId, toContractId int64) ([]*model.Location, error) {
+	fn := "service.Location.GetByLocation"
+
 	switch {
 	case toDepartmentId != 0:
-		return s.EquipmentRepository.GetByLocationDepartment(ctx, toDepartmentId)
+		res, err := s.LocationRepository.GetByLocationDepartment(ctx, toDepartmentId)
+		if err != nil {
+			return nil, logger.Err(err, "", fn)
+		}
+		return res, nil
+
 	case toEmployeeId != 0:
-		return s.EquipmentRepository.GetByLocationEmployee(ctx, toEmployeeId)
+		res, err := s.LocationRepository.GetByLocationEmployee(ctx, toDepartmentId)
+		if err != nil {
+			return nil, logger.Err(err, "", fn)
+		}
+		return res, nil
+
 	case toContractId != 0:
-		return s.EquipmentRepository.GetByLocationContract(ctx, toContractId)
+		res, err := s.LocationRepository.GetByLocationContract(ctx, toDepartmentId)
+		if err != nil {
+			return nil, logger.Err(err, "", fn)
+		}
+		return res, nil
+
 	default:
-		return s.EquipmentRepository.GetByLocationStorage(ctx)
+		res, err := s.LocationRepository.GetByLocationStorage(ctx)
+		if err != nil {
+			return nil, logger.Err(err, "", fn)
+		}
+		return res, nil
 	}
 }
 
-func (s *EquipmentService) ReportByCategory(ctx context.Context, departmentId int64, date int64) (*model.Report, error) {
+// ReportByCategory is equipment report by category
+func (s *LocationService) ReportByCategory(ctx context.Context, departmentId int64, date time.Time) (*model.Report, error) {
+	fn := "service.Location.ReportByCategory"
+
 	report := new(model.Report)
-	fromDate := time.Unix(date, 0)
-	toDate := time.Unix(date, 0).AddDate(0, 1, 0)
-	categories, err := s.repositoryCategory.GetAll(ctx, false)
+	fromDate := date
+	toDate := date.AddDate(0, 1, 0)
+	categories, err := s.CategoryRepository.GetAll(ctx, false)
 	if err != nil {
-		return nil, err
+		return nil, logger.Err(err, "", fn)
 	}
 	report.Categories = categories
 	departments := make(map[int64]*model.Department)
@@ -168,45 +228,45 @@ func (s *EquipmentService) ReportByCategory(ctx context.Context, departmentId in
 	fromDepartment := make(map[int64]map[int64][]*model.Location)
 	toDepartment := make(map[int64]map[int64][]*model.Location)
 	for _, category := range categories {
-		equipment, err := s.EquipmentRepository.RemainderByCategory(ctx, category.ID, departmentId, fromDate)
+		equipment, err := s.LocationRepository.RemainderByCategory(ctx, category.ID, departmentId, fromDate)
 		if err != nil {
-			return nil, err
+			return nil, logger.Err(err, "", fn)
 		}
 		leftover[category.ID] = equipment
 
-		equipment, err = s.EquipmentRepository.RemainderByCategory(ctx, category.ID, departmentId, toDate)
+		equipment, err = s.LocationRepository.RemainderByCategory(ctx, category.ID, departmentId, toDate)
 		if err != nil {
-			return nil, err
+			return nil, logger.Err(err, "", fn)
 		}
 		total[category.ID] = equipment
 
-		equipment, err = s.EquipmentRepository.TransferByCategory(ctx, category.ID, departmentId, fromDate, toDate, "STORAGE_TO_DEPARTMENT")
+		equipment, err = s.LocationRepository.TransferByCategory(ctx, category.ID, departmentId, fromDate, toDate, "STORAGE_TO_DEPARTMENT")
 		if err != nil {
-			return nil, err
+			return nil, logger.Err(err, "", fn)
 		}
 		fromStorage[category.ID] = equipment
 
-		equipment, err = s.EquipmentRepository.TransferByCategory(ctx, category.ID, departmentId, fromDate, toDate, "DEPARTMENT_TO_STORAGE")
+		equipment, err = s.LocationRepository.TransferByCategory(ctx, category.ID, departmentId, fromDate, toDate, "DEPARTMENT_TO_STORAGE")
 		if err != nil {
-			return nil, err
+			return nil, logger.Err(err, "", fn)
 		}
 		toStorage[category.ID] = equipment
 
-		equipment, err = s.EquipmentRepository.TransferByCategory(ctx, category.ID, departmentId, fromDate, toDate, "CONTRACT_TO_DEPARTMENT")
+		equipment, err = s.LocationRepository.TransferByCategory(ctx, category.ID, departmentId, fromDate, toDate, "CONTRACT_TO_DEPARTMENT")
 		if err != nil {
-			return nil, err
+			return nil, logger.Err(err, "", fn)
 		}
 		fromContract[category.ID] = equipment
 
-		equipment, err = s.EquipmentRepository.TransferByCategory(ctx, category.ID, departmentId, fromDate, toDate, "DEPARTMENT_TO_CONTRACT")
+		equipment, err = s.LocationRepository.TransferByCategory(ctx, category.ID, departmentId, fromDate, toDate, "DEPARTMENT_TO_CONTRACT")
 		if err != nil {
-			return nil, err
+			return nil, logger.Err(err, "", fn)
 		}
 		toContract[category.ID] = equipment
 
-		equipment, err = s.EquipmentRepository.FromDepartmentTransferByCategory(ctx, category.ID, departmentId, fromDate, toDate)
+		equipment, err = s.LocationRepository.FromDepartmentTransferByCategory(ctx, category.ID, departmentId, fromDate, toDate)
 		if err != nil {
-			return nil, err
+			return nil, logger.Err(err, "", fn)
 		}
 
 		locationFromDepartment := make(map[int64][]*model.Location)
@@ -215,9 +275,9 @@ func (s *EquipmentService) ReportByCategory(ctx context.Context, departmentId in
 			locationFromDepartment[row.FromDepartment.ID] = append(locationFromDepartment[row.FromDepartment.ID], row)
 		}
 		fromDepartment[category.ID] = locationFromDepartment
-		equipmentFrom, err := s.EquipmentRepository.ToDepartmentTransferByCategory(ctx, category.ID, departmentId, fromDate, toDate)
+		equipmentFrom, err := s.LocationRepository.ToDepartmentTransferByCategory(ctx, category.ID, departmentId, fromDate, toDate)
 		if err != nil {
-			return nil, err
+			return nil, logger.Err(err, "", fn)
 		}
 
 		locationToDepartment := make(map[int64][]*model.Location)
