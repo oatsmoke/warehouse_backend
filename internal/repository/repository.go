@@ -146,5 +146,5 @@ type Company interface {
 
 type Replace interface {
 	Create(ctx context.Context, transferIds []int64) error
-	FindByLocationId(ctx context.Context, id int64) (*model.Replace, error)
+	FindByLocationId(ctx context.Context, locationId int64) (*model.Replace, error)
 }
