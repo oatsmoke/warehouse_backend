@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"time"
 	"warehouse_backend/internal/lib/logger"
 	"warehouse_backend/internal/model"
 	"warehouse_backend/internal/service"
@@ -128,7 +127,10 @@ func (h *LocationHandler) GetHistory(ctx *gin.Context) {
 func (h *LocationHandler) GetByLocation(ctx *gin.Context) {
 	const fn = "handler.Location.GetByLocation"
 
-	var location *model.Location
+	location := new(model.Location)
+	location.ToDepartment = new(model.Department)
+	location.ToEmployee = new(model.Employee)
+	location.ToContract = new(model.Contract)
 	if err := ctx.BindJSON(&location); err != nil {
 		logger.ErrResponse(ctx, err, http.StatusBadRequest, fn)
 		return
@@ -140,7 +142,7 @@ func (h *LocationHandler) GetByLocation(ctx *gin.Context) {
 		return
 	}
 
-	logger.InfoInConsole("sent location", fn)
+	logger.InfoInConsole(fmt.Sprintf("sent location department: %d, employee: %d, contract: %d", location.ToDepartment.ID, location.ToEmployee.ID, location.ToContract.ID), fn)
 	ctx.JSON(http.StatusOK, res)
 }
 
@@ -149,8 +151,8 @@ func (h *LocationHandler) ReportByCategory(ctx *gin.Context) {
 	const fn = "handler.Location.ReportByCategory"
 
 	request := struct {
-		DepartmentId int64     `json:"departmentId"`
-		Date         time.Time `json:"date"`
+		DepartmentId int64  `json:"departmentId"`
+		Date         string `json:"date"`
 	}{}
 	if err := ctx.BindJSON(&request); err != nil {
 		logger.ErrResponse(ctx, err, http.StatusBadRequest, fn)

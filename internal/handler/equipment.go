@@ -24,34 +24,43 @@ func NewEquipmentHandler(equipmentService service.Equipment, locationService ser
 // Create is equipment create
 func (h *EquipmentHandler) Create(ctx *gin.Context) {
 	const fn = "handler.Equipment.Create"
-	//userId, err := getUserId(ctx)
-	//if err != nil {
-	//	logger.ErrResponse(ctx, err, http.StatusUnauthorized, fn)
-	//	return
-	//}
-	//var request *model.LocationAndRequestLocation
-	var equipment *model.Equipment
-	if err := ctx.BindJSON(&equipment); err != nil {
+
+	userId, err := getUserId(ctx)
+	if err != nil {
+		logger.ErrResponse(ctx, err, http.StatusUnauthorized, fn)
+		return
+	}
+
+	var request *model.LocationAndRequestLocation
+	if err := ctx.BindJSON(&request); err != nil {
 		logger.ErrResponse(ctx, err, http.StatusBadRequest, fn)
 		return
 	}
 
-	_, err := h.EquipmentService.Create(ctx, equipment.SerialNumber, equipment.Profile.ID)
+	id, err := h.EquipmentService.Create(ctx, request.Location.Equipment.SerialNumber, request.Location.Equipment.Profile.ID)
 	if err != nil {
 		logger.ErrResponse(ctx, err, http.StatusInternalServerError, fn)
 		return
 	}
-	//request.RequestLocation[0].EquipmentId = equipmentId
-	//if request.RequestLocation[0].ToDepartment != 0 ||
-	//	request.RequestLocation[0].ToEmployee != 0 ||
-	//	request.RequestLocation[0].ToContract != 0 {
-	//	if err := h.serviceLocation.TransferTo(ctx, userId, request.RequestLocation); err != nil {
-	//		logger.ErrResponse(ctx, err, http.StatusInternalServerError, fn)
-	//		return
-	//	}
-	//}
 
-	logger.InfoInConsole(fmt.Sprintf("%s created", equipment.SerialNumber), fn)
+	if err := h.LocationService.AddToStorage(ctx, request.Location.Date, id, userId, request.Location.Company.ID); err != nil {
+		logger.ErrResponse(ctx, err, http.StatusInternalServerError, fn)
+		return
+	}
+
+	if request.RequestLocation != nil {
+		request.RequestLocation[0].EquipmentId = id
+		if request.RequestLocation[0].ToDepartment != 0 ||
+			request.RequestLocation[0].ToEmployee != 0 ||
+			request.RequestLocation[0].ToContract != 0 {
+			if err := h.LocationService.TransferTo(ctx, userId, request.RequestLocation); err != nil {
+				logger.ErrResponse(ctx, err, http.StatusInternalServerError, fn)
+				return
+			}
+		}
+	}
+
+	logger.InfoInConsole(fmt.Sprintf("%s created", request.Location.Equipment.SerialNumber), fn)
 	ctx.JSON(http.StatusOK, "")
 }
 
@@ -123,5 +132,26 @@ func (h *EquipmentHandler) GetAll(ctx *gin.Context) {
 	}
 
 	logger.InfoInConsole("equipments list sent", fn)
+	ctx.JSON(http.StatusOK, res)
+}
+
+// GetByIds is equipment get by id
+func (h *EquipmentHandler) GetByIds(ctx *gin.Context) {
+	const fn = "handler.Equipment.GetByIds"
+
+	//req := make(map[string]int64)
+	var req []int64
+	if err := ctx.BindJSON(&req); err != nil {
+		logger.ErrResponse(ctx, err, http.StatusBadRequest, fn)
+		return
+	}
+
+	res, err := h.EquipmentService.GetByIds(ctx, req)
+	if err != nil {
+		logger.ErrResponse(ctx, err, http.StatusInternalServerError, fn)
+		return
+	}
+
+	logger.InfoInConsole(fmt.Sprintf("%d, get", req), fn)
 	ctx.JSON(http.StatusOK, res)
 }

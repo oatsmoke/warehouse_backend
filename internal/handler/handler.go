@@ -101,6 +101,7 @@ func (h *Handler) InitRoutes(cfg *config.Client) *gin.Engine {
 			equipment.POST("/delete", h.Equipment.Delete)
 			equipment.POST("/restore", h.Equipment.Restore)
 			equipment.POST("/getAll", h.Equipment.GetAll)
+			equipment.POST("/getByIds", h.Equipment.GetByIds)
 		}
 		location := api.Group("/location")
 		{

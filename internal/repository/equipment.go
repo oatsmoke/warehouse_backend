@@ -108,6 +108,39 @@ func (r *EquipmentRepository) GetAll(ctx context.Context) ([]*model.Equipment, e
 	return equipments, nil
 }
 
+// GetByIds is equipment get by ids
+func (r *EquipmentRepository) GetByIds(ctx context.Context, ids []int64) ([]*model.Equipment, error) {
+	var equipments []*model.Equipment
+
+	const query = `
+		SELECT equipments.id, equipments.serial_number,
+		       profiles.id, profiles.title
+		FROM equipments
+		LEFT JOIN profiles ON profiles.id = equipments.profile
+		WHERE equipments.id = ANY($1);`
+
+	rows, err := r.DB.Query(ctx, query, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		equipment := new(model.Equipment)
+		equipment.Profile = new(model.Profile)
+		if err := rows.Scan(
+			&equipment.ID,
+			&equipment.SerialNumber,
+			&equipment.Profile.ID,
+			&equipment.Profile.Title,
+		); err != nil {
+			return nil, err
+		}
+		equipments = append(equipments, equipment)
+	}
+
+	return equipments, nil
+}
+
 //// GetByProfile is equipment get by profile
 //func (r *EquipmentRepository) GetByProfile(ctx context.Context, id int64) ([]*model.Equipment, error) {
 //	var equipments []*model.Equipment

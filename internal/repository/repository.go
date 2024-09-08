@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"time"
 	"warehouse_backend/internal/model"
 )
 
@@ -98,17 +97,18 @@ type Equipment interface {
 	Delete(ctx context.Context, id int64) error
 	Restore(ctx context.Context, id int64) error
 	GetAll(ctx context.Context) ([]*model.Equipment, error)
+	GetByIds(ctx context.Context, ids []int64) ([]*model.Equipment, error)
 	//GetByProfile(ctx context.Context, id int64) ([]*model.Equipment, error)
 	//GetBySerialNumber(ctx context.Context, equipment *model.Equipment) (*model.Equipment, error)
 }
 
 type Location interface {
-	AddToStorage(ctx context.Context, date time.Time, equipmentId, employeeId, companyId int64) error
-	TransferToStorage(ctx context.Context, date time.Time, code string, equipmentId, employeeId, companyId int64, nowLocation []interface{}) (int64, error)
-	TransferToDepartment(ctx context.Context, date time.Time, code string, equipmentId, employeeId, companyId, toDepartment int64, nowLocation []interface{}) (int64, error)
-	TransferToEmployee(ctx context.Context, date time.Time, code string, equipmentId, employeeId, companyId, toEmployee int64, nowLocation []interface{}) (int64, error)
-	TransferToEmployeeInDepartment(ctx context.Context, date time.Time, code string, equipmentId, employeeId, companyId, toDepartment, toEmployee int64, nowLocation []interface{}) (int64, error)
-	TransferToContract(ctx context.Context, date time.Time, code string, equipmentId, employeeId, companyId, toContract int64, transferType string, price int, nowLocation []interface{}) (int64, error)
+	AddToStorage(ctx context.Context, date string, equipmentId, employeeId, companyId int64) error
+	TransferToStorage(ctx context.Context, date string, code string, equipmentId, employeeId, companyId int64, nowLocation []interface{}) (int64, error)
+	TransferToDepartment(ctx context.Context, date string, code string, equipmentId, employeeId, companyId, toDepartment int64, nowLocation []interface{}) (int64, error)
+	TransferToEmployee(ctx context.Context, date string, code string, equipmentId, employeeId, companyId, toEmployee int64, nowLocation []interface{}) (int64, error)
+	TransferToEmployeeInDepartment(ctx context.Context, date string, code string, equipmentId, employeeId, companyId, toDepartment, toEmployee int64, nowLocation []interface{}) (int64, error)
+	TransferToContract(ctx context.Context, date string, code string, equipmentId, employeeId, companyId, toContract int64, transferType string, price int, nowLocation []interface{}) (int64, error)
 	Delete(ctx context.Context, id int64) error
 	GetById(ctx context.Context, equipmentId int64) (*model.Location, error)
 	GetHistory(ctx context.Context, equipmentId int64) ([]*model.Location, error)
@@ -118,10 +118,10 @@ type Location interface {
 	GetByLocationEmployee(ctx context.Context, toEmployee int64) ([]*model.Location, error)
 	GetByLocationContract(ctx context.Context, toContract int64) ([]*model.Location, error)
 	GetByLocationDepartmentEmployee(ctx context.Context, toDepartment, toEmployee int64) ([]*model.Location, error)
-	RemainderByCategory(ctx context.Context, categoryId, departmentId int64, date time.Time) ([]*model.Location, error)
-	TransferByCategory(ctx context.Context, categoryId, departmentId int64, fromDate, toDate time.Time, code string) ([]*model.Location, error)
-	ToDepartmentTransferByCategory(ctx context.Context, categoryId, departmentId int64, fromDate, toDate time.Time) ([]*model.Location, error)
-	FromDepartmentTransferByCategory(ctx context.Context, categoryId, departmentId int64, fromDate, toDate time.Time) ([]*model.Location, error)
+	RemainderByCategory(ctx context.Context, categoryId, departmentId int64, date string) ([]*model.Location, error)
+	TransferByCategory(ctx context.Context, categoryId, departmentId int64, fromDate, toDate string, code string) ([]*model.Location, error)
+	ToDepartmentTransferByCategory(ctx context.Context, categoryId, departmentId int64, fromDate, toDate string) ([]*model.Location, error)
+	FromDepartmentTransferByCategory(ctx context.Context, categoryId, departmentId int64, fromDate, toDate string) ([]*model.Location, error)
 }
 
 type Contract interface {

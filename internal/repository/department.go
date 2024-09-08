@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"errors"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"warehouse_backend/internal/model"
 )
@@ -117,9 +119,10 @@ func (r *DepartmentRepository) GetById(ctx context.Context, department *model.De
 	if err := r.DB.QueryRow(ctx, query, department.ID).Scan(
 		&department.Title,
 		&department.Deleted,
-	); err != nil {
+	); err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return nil, err
 	}
+
 	return department, nil
 }
 
