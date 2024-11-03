@@ -3,7 +3,9 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"time"
 	"warehouse_backend/internal/model"
 )
 
@@ -16,7 +18,8 @@ func NewLocationRepository(db *pgxpool.Pool) *LocationRepository {
 }
 
 // AddToStorage is equipment add to storage
-func (r *LocationRepository) AddToStorage(ctx context.Context, date string, equipmentId, employeeId, companyId int64) error {
+func (r *LocationRepository) AddToStorage(ctx context.Context, date time.Time, equipmentId, employeeId, companyId int64) error {
+	fmt.Println("repo:", date)
 	const query = `
 		INSERT INTO locations (date, code, equipment, employee, company)
 		VALUES ($1, $2, $3, $4, $5);`
@@ -29,7 +32,7 @@ func (r *LocationRepository) AddToStorage(ctx context.Context, date string, equi
 }
 
 // TransferToStorage is equipment transfer to storage
-func (r *LocationRepository) TransferToStorage(ctx context.Context, date string, code string, equipmentId, employeeId, companyId int64, nowLocation []interface{}) (int64, error) {
+func (r *LocationRepository) TransferToStorage(ctx context.Context, date time.Time, code string, equipmentId, employeeId, companyId int64, nowLocation []interface{}) (int64, error) {
 	var id int64
 	const query = `
 		INSERT INTO locations (date, code, equipment, employee, company, from_department, from_employee, from_contract) 
@@ -44,7 +47,7 @@ func (r *LocationRepository) TransferToStorage(ctx context.Context, date string,
 }
 
 // TransferToDepartment is equipment transfer to department
-func (r *LocationRepository) TransferToDepartment(ctx context.Context, date string, code string, equipmentId, employeeId, companyId, toDepartment int64, nowLocation []interface{}) (int64, error) {
+func (r *LocationRepository) TransferToDepartment(ctx context.Context, date time.Time, code string, equipmentId, employeeId, companyId, toDepartment int64, nowLocation []interface{}) (int64, error) {
 	var id int64
 	const query = `
 		INSERT INTO locations (date, code, equipment, employee, company, to_department, from_department, from_employee, from_contract) 
@@ -59,7 +62,7 @@ func (r *LocationRepository) TransferToDepartment(ctx context.Context, date stri
 }
 
 // TransferToEmployee is equipment transfer to employee
-func (r *LocationRepository) TransferToEmployee(ctx context.Context, date string, code string, equipmentId, employeeId, companyId, toEmployee int64, nowLocation []interface{}) (int64, error) {
+func (r *LocationRepository) TransferToEmployee(ctx context.Context, date time.Time, code string, equipmentId, employeeId, companyId, toEmployee int64, nowLocation []interface{}) (int64, error) {
 	var id int64
 	const query = `
 		INSERT INTO locations (date, code, equipment, employee, company, to_employee, from_department, from_employee, from_contract) 
@@ -74,7 +77,7 @@ func (r *LocationRepository) TransferToEmployee(ctx context.Context, date string
 }
 
 // TransferToEmployeeInDepartment is equipment transfer to employee in department
-func (r *LocationRepository) TransferToEmployeeInDepartment(ctx context.Context, date string, code string, equipmentId, employeeId, companyId, toDepartment, toEmployee int64, nowLocation []interface{}) (int64, error) {
+func (r *LocationRepository) TransferToEmployeeInDepartment(ctx context.Context, date time.Time, code string, equipmentId, employeeId, companyId, toDepartment, toEmployee int64, nowLocation []interface{}) (int64, error) {
 	var id int64
 	const query = `
 		INSERT INTO locations (date, code, equipment, employee, company, to_department, to_employee, from_department, from_employee, from_contract) 
@@ -89,7 +92,7 @@ func (r *LocationRepository) TransferToEmployeeInDepartment(ctx context.Context,
 }
 
 // TransferToContract is equipment transfer to contract
-func (r *LocationRepository) TransferToContract(ctx context.Context, date string, code string, equipmentId, employeeId, companyId, toContract int64, transferType string, price int, nowLocation []interface{}) (int64, error) {
+func (r *LocationRepository) TransferToContract(ctx context.Context, date time.Time, code string, equipmentId, employeeId, companyId, toContract int64, transferType string, price int, nowLocation []interface{}) (int64, error) {
 	var id int64
 	const query = `
 		INSERT INTO locations (date, code, equipment, employee, company, to_contract, transfer_type, price, from_department, from_employee, from_contract) 
@@ -117,7 +120,7 @@ func (r *LocationRepository) Delete(ctx context.Context, id int64) error {
 
 // GetById is equipment get by id
 func (r *LocationRepository) GetById(ctx context.Context, equipmentId int64) (*model.Location, error) {
-	equipmentByLoc := new(model.Location)
+	equipmentByLoc := newLocation()
 
 	const query = `
 		SELECT equipments.id, equipments.serial_number, 
@@ -142,6 +145,14 @@ func (r *LocationRepository) GetById(ctx context.Context, equipmentId int64) (*m
 		       GROUP BY locations.equipment)
 		AND equipments.id = $1;`
 
+	var (
+		toDepartmentId sql.NullInt64
+		toEmployeeId   sql.NullInt64
+		toContractId   sql.NullInt64
+		transferType   sql.NullString
+		price          sql.NullString
+	)
+
 	if err := r.DB.QueryRow(ctx, query, equipmentId).Scan(
 		&equipmentByLoc.Equipment.ID,
 		&equipmentByLoc.Equipment.SerialNumber,
@@ -151,13 +162,19 @@ func (r *LocationRepository) GetById(ctx context.Context, equipmentId int64) (*m
 		&equipmentByLoc.Equipment.Profile.Category.Title,
 		&equipmentByLoc.Company.ID,
 		&equipmentByLoc.Company.Title,
-		&equipmentByLoc.ToDepartment.ID,
-		&equipmentByLoc.ToEmployee.ID,
-		&equipmentByLoc.ToContract.ID,
-		&equipmentByLoc.TransferType,
-		&equipmentByLoc.Price); err != nil {
+		&toDepartmentId,
+		&toEmployeeId,
+		&toContractId,
+		&transferType,
+		&price); err != nil {
 		return nil, err
 	}
+
+	equipmentByLoc.ToDepartment.ID = validInt64(toDepartmentId)
+	equipmentByLoc.ToEmployee.ID = validInt64(toEmployeeId)
+	equipmentByLoc.ToContract.ID = validInt64(toContractId)
+	equipmentByLoc.TransferType = validString(transferType)
+	equipmentByLoc.Price = validString(price)
 
 	return equipmentByLoc, nil
 }
@@ -188,23 +205,40 @@ func (r *LocationRepository) GetHistory(ctx context.Context, equipmentId int64) 
 	}
 
 	for rows.Next() {
-		history := new(model.Location)
+		location := newLocation()
+		var (
+			transferType      sql.NullString
+			price             sql.NullString
+			toDepartmentTitle sql.NullString
+			toEmployeeName    sql.NullString
+			toContractNumber  sql.NullString
+			toContractAddress sql.NullString
+		)
+
 		if err := rows.Scan(
-			&history.ID,
-			&history.Date,
-			&history.Code,
-			&history.TransferType,
-			&history.Price,
-			&history.Employee.Name,
-			&history.Company.Title,
-			&history.ToDepartment.Title,
-			&history.ToEmployee.Name,
-			&history.ToContract.Number,
-			&history.ToContract.Address,
+			&location.ID,
+			&location.Date,
+			&location.Code,
+			&transferType,
+			&price,
+			&location.Employee.Name,
+			&location.Company.Title,
+			&toDepartmentTitle,
+			&toEmployeeName,
+			&toContractNumber,
+			&toContractAddress,
 		); err != nil {
 			return nil, err
 		}
-		histories = append(histories, history)
+
+		location.TransferType = validString(transferType)
+		location.Price = validString(price)
+		location.ToDepartment.Title = validString(toDepartmentTitle)
+		location.ToEmployee.Name = validString(toEmployeeName)
+		location.ToContract.Number = validString(toContractNumber)
+		location.ToContract.Address = validString(toContractAddress)
+
+		histories = append(histories, location)
 	}
 
 	return histories, err
@@ -510,7 +544,7 @@ func (r *LocationRepository) GetByLocationDepartmentEmployee(ctx context.Context
 }
 
 // RemainderByCategory is remainder equipment get by category
-func (r *LocationRepository) RemainderByCategory(ctx context.Context, categoryId, departmentId int64, date string) ([]*model.Location, error) {
+func (r *LocationRepository) RemainderByCategory(ctx context.Context, categoryId, departmentId int64, date time.Time) ([]*model.Location, error) {
 	var locations []*model.Location
 
 	const query = `
@@ -553,7 +587,7 @@ func (r *LocationRepository) RemainderByCategory(ctx context.Context, categoryId
 }
 
 // TransferByCategory is transfer equipment get by category
-func (r *LocationRepository) TransferByCategory(ctx context.Context, categoryId, departmentId int64, fromDate, toDate string, code string) ([]*model.Location, error) {
+func (r *LocationRepository) TransferByCategory(ctx context.Context, categoryId, departmentId int64, fromDate, toDate time.Time, code string) ([]*model.Location, error) {
 	var locations []*model.Location
 	var query string
 
@@ -609,7 +643,7 @@ func (r *LocationRepository) TransferByCategory(ctx context.Context, categoryId,
 }
 
 // ToDepartmentTransferByCategory is transfer equipment to department by category
-func (r *LocationRepository) ToDepartmentTransferByCategory(ctx context.Context, categoryId, departmentId int64, fromDate, toDate string) ([]*model.Location, error) {
+func (r *LocationRepository) ToDepartmentTransferByCategory(ctx context.Context, categoryId, departmentId int64, fromDate, toDate time.Time) ([]*model.Location, error) {
 	var locations []*model.Location
 
 	const query = `
@@ -659,7 +693,7 @@ func (r *LocationRepository) ToDepartmentTransferByCategory(ctx context.Context,
 }
 
 // FromDepartmentTransferByCategory is transfer equipment from department by category
-func (r *LocationRepository) FromDepartmentTransferByCategory(ctx context.Context, categoryId, departmentId int64, fromDate, toDate string) ([]*model.Location, error) {
+func (r *LocationRepository) FromDepartmentTransferByCategory(ctx context.Context, categoryId, departmentId int64, fromDate, toDate time.Time) ([]*model.Location, error) {
 	var locations []*model.Location
 
 	const query = `

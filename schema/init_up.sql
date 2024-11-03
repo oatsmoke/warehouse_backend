@@ -68,7 +68,7 @@ create table locations
     to_employee     bigint references employees (id),
     to_contract     bigint references contracts (id),
     transfer_type   varchar,
-    price           bigint
+    price           varchar
 );
 create table replaces
 (

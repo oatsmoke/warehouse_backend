@@ -24,7 +24,7 @@ func NewLocationService(locationRepository repository.Location, replaceRepositor
 }
 
 // AddToStorage is equipment add to storage
-func (s *LocationService) AddToStorage(ctx context.Context, date string, equipmentId, employeeId, companyId int64) error {
+func (s *LocationService) AddToStorage(ctx context.Context, date time.Time, equipmentId, employeeId, companyId int64) error {
 	const fn = "service.Location.AddToStorage"
 
 	if err := s.LocationRepository.AddToStorage(ctx, date, equipmentId, employeeId, companyId); err != nil {
@@ -218,16 +218,16 @@ func (s *LocationService) GetByLocation(ctx context.Context, toDepartmentId, toE
 }
 
 // ReportByCategory is equipment report by category
-func (s *LocationService) ReportByCategory(ctx context.Context, departmentId int64, date string) (*model.Report, error) {
+func (s *LocationService) ReportByCategory(ctx context.Context, departmentId int64, date time.Time) (*model.Report, error) {
 	fn := "service.Location.ReportByCategory"
 
 	report := new(model.Report)
 	fromDate := date
-	parseTime, err := time.Parse(time.RFC3339, date)
+	parseTime, err := time.Parse(time.RFC3339, date.String())
 	if err != nil {
 		return nil, logger.Err(err, "", fn)
 	}
-	toDate := parseTime.AddDate(0, 1, 0).String()
+	toDate := parseTime.AddDate(0, 1, 0)
 	categories, err := s.CategoryRepository.GetAll(ctx, false)
 	if err != nil {
 		return nil, logger.Err(err, "", fn)

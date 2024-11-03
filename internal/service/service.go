@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"time"
 	"warehouse_backend/internal/model"
 	"warehouse_backend/internal/repository"
 )
@@ -44,6 +45,7 @@ type Employee interface {
 	Delete(ctx context.Context, id int64) error
 	Restore(ctx context.Context, id int64) error
 	GetAll(ctx context.Context, deleted bool) ([]*model.Employee, error)
+	GetAllShort(ctx context.Context, deleted bool) ([]*model.Employee, error)
 	GetAllButOne(ctx context.Context, id int64, deleted bool) ([]*model.Employee, error)
 	GetById(ctx context.Context, id int64) (*model.Employee, error)
 	GetFree(ctx context.Context) ([]*model.Employee, error)
@@ -94,14 +96,14 @@ type Equipment interface {
 }
 
 type Location interface {
-	AddToStorage(ctx context.Context, date string, equipmentId, employeeId, companyId int64) error
+	AddToStorage(ctx context.Context, date time.Time, equipmentId, employeeId, companyId int64) error
 	TransferTo(ctx context.Context, EmployeeId int64, requests []*model.RequestLocation) error
 	Delete(ctx context.Context, id int64) error
 	GetById(ctx context.Context, equipmentId int64) (*model.Location, error)
 	GetByIds(ctx context.Context, equipmentIds []int64) ([]*model.Location, error)
 	GetHistory(ctx context.Context, equipmentId int64) ([]*model.Location, error)
 	GetByLocation(ctx context.Context, toDepartment, toEmployee, toContract int64) ([]*model.Location, error)
-	ReportByCategory(ctx context.Context, departmentId int64, date string) (*model.Report, error)
+	ReportByCategory(ctx context.Context, departmentId int64, date time.Time) (*model.Report, error)
 }
 
 type Contract interface {

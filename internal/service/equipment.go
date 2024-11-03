@@ -75,7 +75,7 @@ func (s *EquipmentService) GetAll(ctx context.Context) ([]*model.Equipment, erro
 	return res, nil
 }
 
-// GetById is equipment get by id
+// GetByIds is equipment get by id
 func (s *EquipmentService) GetByIds(ctx context.Context, ids []int64) ([]*model.Equipment, error) {
 	const fn = "service.Equipment.GetById"
 

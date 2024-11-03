@@ -37,6 +37,14 @@ func (h *EquipmentHandler) Create(ctx *gin.Context) {
 		return
 	}
 
+	//location, err := time.LoadLocation("Asia/Almaty")
+	//if err != nil {
+	//	return
+	//}
+	//request.Location.Date = request.Location.Date.In(location)
+
+	fmt.Println("handlerLocation:", request.Location.Date)
+	fmt.Println("handlerRequestLocation:", request.RequestLocation[0].Date)
 	id, err := h.EquipmentService.Create(ctx, request.Location.Equipment.SerialNumber, request.Location.Equipment.Profile.ID)
 	if err != nil {
 		logger.ErrResponse(ctx, err, http.StatusInternalServerError, fn)

@@ -115,6 +115,34 @@ func (r *EmployeeRepository) GetAll(ctx context.Context, deleted bool) ([]*model
 	return employees, err
 }
 
+// GetAllShort is employee get all short
+func (r *EmployeeRepository) GetAllShort(ctx context.Context, deleted bool) ([]*model.Employee, error) {
+	var employees []*model.Employee
+
+	const query = `
+		SELECT id, name
+		FROM employees 
+		WHERE hidden = false AND deleted = false 
+		ORDER BY name;`
+
+	rows, err := r.DB.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		employee := new(model.Employee)
+		if err := rows.Scan(
+			&employee.ID,
+			&employee.Name); err != nil {
+			return nil, err
+		}
+		employees = append(employees, employee)
+	}
+
+	return employees, err
+}
+
 // GetAllButOne is employee get all but one
 func (r *EmployeeRepository) GetAllButOne(ctx context.Context, id int64, deleted bool) ([]*model.Employee, error) {
 	var employees []*model.Employee
@@ -219,10 +247,10 @@ func (r *EmployeeRepository) GetByDepartment(ctx context.Context, ids []int64, d
 	const query = `
 		SELECT id, name 
 		FROM employees 
-		WHERE department = $2 AND id IN $1 
+		WHERE department = $1
 		ORDER BY name;`
-
-	rows, err := r.DB.Query(ctx, query, ids, departmentId)
+	//AND id = ANY($1)
+	rows, err := r.DB.Query(ctx, query, departmentId)
 	if err != nil {
 		return nil, err
 	}

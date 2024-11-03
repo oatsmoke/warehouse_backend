@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"time"
 	"warehouse_backend/internal/lib/logger"
 	"warehouse_backend/internal/model"
 	"warehouse_backend/internal/service"
@@ -87,19 +88,19 @@ func (h *LocationHandler) GetById(ctx *gin.Context) {
 func (h *LocationHandler) GetByIds(ctx *gin.Context) {
 	fn := "handler.Location.GetByIds"
 
-	var request map[string][]int64
+	var request []int64
 	if err := ctx.BindJSON(&request); err != nil {
 		logger.ErrResponse(ctx, err, http.StatusBadRequest, fn)
 		return
 	}
 
-	res, err := h.LocationService.GetByIds(ctx, request["ids"])
+	res, err := h.LocationService.GetByIds(ctx, request)
 	if err != nil {
 		logger.ErrResponse(ctx, err, http.StatusInternalServerError, fn)
 		return
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("%d, get", request["ids"]), fn)
+	logger.InfoInConsole(fmt.Sprintf("%d, get", request), fn)
 	ctx.JSON(http.StatusOK, res)
 }
 
@@ -151,8 +152,8 @@ func (h *LocationHandler) ReportByCategory(ctx *gin.Context) {
 	const fn = "handler.Location.ReportByCategory"
 
 	request := struct {
-		DepartmentId int64  `json:"departmentId"`
-		Date         string `json:"date"`
+		DepartmentId int64     `json:"departmentId"`
+		Date         time.Time `json:"date"`
 	}{}
 	if err := ctx.BindJSON(&request); err != nil {
 		logger.ErrResponse(ctx, err, http.StatusBadRequest, fn)

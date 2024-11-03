@@ -115,6 +115,26 @@ func (h *EmployeeHandler) GetAll(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, employees)
 }
 
+// GetAllShort is employee get all short
+func (h *EmployeeHandler) GetAllShort(ctx *gin.Context) {
+	const fn = "handler.Employee.GetAllShort"
+
+	var deleted bool
+	if err := ctx.BindJSON(&deleted); err != nil {
+		logger.ErrResponse(ctx, err, http.StatusBadRequest, fn)
+		return
+	}
+
+	employees, err := h.serviceEmployee.GetAllShort(ctx, deleted)
+	if err != nil {
+		logger.ErrResponse(ctx, err, http.StatusInternalServerError, fn)
+		return
+	}
+
+	logger.InfoInConsole(fmt.Sprintf("employees list sended (deleted = %t)", deleted), fn)
+	ctx.JSON(http.StatusOK, employees)
+}
+
 // GetAllButAuth is employee get all but auth
 func (h *EmployeeHandler) GetAllButAuth(ctx *gin.Context) {
 	const fn = "handler.Employee.GetAllButAuth"

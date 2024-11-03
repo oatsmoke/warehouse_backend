@@ -82,6 +82,18 @@ func (s *EmployeeService) GetAll(ctx context.Context, deleted bool) ([]*model.Em
 	return res, nil
 }
 
+// GetAllShort is to get all employees short
+func (s *EmployeeService) GetAllShort(ctx context.Context, deleted bool) ([]*model.Employee, error) {
+	const fn = "service.Employee.GetAllShort"
+
+	res, err := s.EmployeeRepository.GetAllShort(ctx, deleted)
+	if err != nil {
+		return nil, logger.Err(err, "", fn)
+	}
+
+	return res, nil
+}
+
 // GetAllButOne is to get all employees but one
 func (s *EmployeeService) GetAllButOne(ctx context.Context, id int64, deleted bool) ([]*model.Employee, error) {
 	const fn = "service.Employee.GetAllButOne"
