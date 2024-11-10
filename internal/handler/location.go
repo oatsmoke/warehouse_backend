@@ -143,7 +143,7 @@ func (h *LocationHandler) GetByLocation(ctx *gin.Context) {
 		return
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("sent location department: %d, employee: %d, contract: %d", location.ToDepartment.ID, location.ToEmployee.ID, location.ToContract.ID), fn)
+	logger.InfoInConsole(fmt.Sprintf("sent location - department: %d, employee: %d, contract: %d", location.ToDepartment.ID, location.ToEmployee.ID, location.ToContract.ID), fn)
 	ctx.JSON(http.StatusOK, res)
 }
 

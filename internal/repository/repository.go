@@ -110,7 +110,7 @@ type Location interface {
 	TransferToDepartment(ctx context.Context, date time.Time, code string, equipmentId, employeeId, companyId, toDepartment int64, nowLocation []interface{}) (int64, error)
 	TransferToEmployee(ctx context.Context, date time.Time, code string, equipmentId, employeeId, companyId, toEmployee int64, nowLocation []interface{}) (int64, error)
 	TransferToEmployeeInDepartment(ctx context.Context, date time.Time, code string, equipmentId, employeeId, companyId, toDepartment, toEmployee int64, nowLocation []interface{}) (int64, error)
-	TransferToContract(ctx context.Context, date time.Time, code string, equipmentId, employeeId, companyId, toContract int64, transferType string, price int, nowLocation []interface{}) (int64, error)
+	TransferToContract(ctx context.Context, date time.Time, code string, equipmentId, employeeId, companyId, toContract int64, transferType string, price string, nowLocation []interface{}) (int64, error)
 	Delete(ctx context.Context, id int64) error
 	GetById(ctx context.Context, equipmentId int64) (*model.Location, error)
 	GetHistory(ctx context.Context, equipmentId int64) ([]*model.Location, error)

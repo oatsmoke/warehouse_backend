@@ -195,14 +195,14 @@ func (s *LocationService) GetByLocation(ctx context.Context, toDepartmentId, toE
 		return res, nil
 
 	case toEmployeeId != 0:
-		res, err := s.LocationRepository.GetByLocationEmployee(ctx, toDepartmentId)
+		res, err := s.LocationRepository.GetByLocationEmployee(ctx, toEmployeeId)
 		if err != nil {
 			return nil, logger.Err(err, "", fn)
 		}
 		return res, nil
 
 	case toContractId != 0:
-		res, err := s.LocationRepository.GetByLocationContract(ctx, toDepartmentId)
+		res, err := s.LocationRepository.GetByLocationContract(ctx, toContractId)
 		if err != nil {
 			return nil, logger.Err(err, "", fn)
 		}

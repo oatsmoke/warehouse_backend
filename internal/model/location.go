@@ -31,7 +31,7 @@ type RequestLocation struct {
 	ToEmployee   int64     `json:"to_employee"`
 	ToContract   int64     `json:"to_contract"`
 	TransferType string    `json:"transfer_type"`
-	Price        int       `json:"price"`
+	Price        string    `json:"price"`
 }
 
 type LocationAndRequestLocation struct {

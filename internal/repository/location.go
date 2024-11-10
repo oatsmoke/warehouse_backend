@@ -92,7 +92,7 @@ func (r *LocationRepository) TransferToEmployeeInDepartment(ctx context.Context,
 }
 
 // TransferToContract is equipment transfer to contract
-func (r *LocationRepository) TransferToContract(ctx context.Context, date time.Time, code string, equipmentId, employeeId, companyId, toContract int64, transferType string, price int, nowLocation []interface{}) (int64, error) {
+func (r *LocationRepository) TransferToContract(ctx context.Context, date time.Time, code string, equipmentId, employeeId, companyId, toContract int64, transferType string, price string, nowLocation []interface{}) (int64, error) {
 	var id int64
 	const query = `
 		INSERT INTO locations (date, code, equipment, employee, company, to_contract, transfer_type, price, from_department, from_employee, from_contract) 
