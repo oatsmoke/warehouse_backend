@@ -1,9 +1,8 @@
 package handler
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
-	"warehouse_backend/internal/lib/config"
+	"warehouse_backend/internal/lib/env"
 	"warehouse_backend/internal/service"
 )
 
@@ -33,13 +32,13 @@ func NewHandler(service *service.Service) *Handler {
 	}
 }
 
-func (h *Handler) InitRoutes(cfg *config.Client) *gin.Engine {
+func (h *Handler) InitRoutes() *gin.Engine {
 	router := gin.New()
 	router.ForwardedByClientIP = true
 	if err := router.SetTrustedProxies([]string{"127.0.0.1"}); err != nil {
 		return nil
 	}
-	router.Use(CORSMiddleware(cfg))
+	router.Use(CORSMiddleware(env.GetClientUrl()))
 	auth := router.Group("/auth")
 	{
 		auth.POST("/sing-in", h.Auth.SignIn)
@@ -136,10 +135,9 @@ func (h *Handler) InitRoutes(cfg *config.Client) *gin.Engine {
 	return router
 }
 
-func CORSMiddleware(cfg *config.Client) gin.HandlerFunc {
-	clientStr := fmt.Sprintf("%s://%s:%s", cfg.Protocol, cfg.Ip, cfg.Port)
+func CORSMiddleware(clientUrl string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", clientStr)
+		c.Writer.Header().Set("Access-Control-Allow-Origin", clientUrl)
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "OPTIONS, POST, GET, PUT, DELETE")

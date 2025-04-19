@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgconn"
-	"log"
 	"log/slog"
 	"os"
 	"strconv"
@@ -23,7 +22,7 @@ func Init(logLevel string) {
 	case "error":
 		level = slog.LevelError
 	default:
-		log.Panic("incorrect log level")
+		level = slog.LevelDebug
 	}
 
 	opts := &slog.HandlerOptions{

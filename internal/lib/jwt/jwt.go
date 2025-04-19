@@ -3,14 +3,14 @@ package jwt
 import (
 	"errors"
 	"github.com/golang-jwt/jwt/v5"
-	"os"
 	"strconv"
 	"time"
+	"warehouse_backend/internal/lib/env"
 )
 
 // GenerateToken is token generation
 func GenerateToken(id int64) (string, error) {
-	num, err := strconv.Atoi(os.Getenv("tokenTTL"))
+	num, err := strconv.Atoi(env.GetTokenTtl())
 	if err != nil {
 		return "", err
 	}
@@ -23,7 +23,7 @@ func GenerateToken(id int64) (string, error) {
 		"iat": jwt.NewNumericDate(time.Unix(time.Now().Unix(), 0)),
 	})
 
-	signedString, err := token.SignedString([]byte(os.Getenv("signingKey")))
+	signedString, err := token.SignedString([]byte(env.GetSigningKey()))
 	if err != nil {
 		return "", err
 	}
@@ -37,7 +37,7 @@ func ParseToken(accessToken string) (int64, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("invalid signing")
 		}
-		return []byte(os.Getenv("signingKey")), nil
+		return []byte(env.GetSigningKey()), nil
 	})
 
 	if err != nil {

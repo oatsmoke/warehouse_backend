@@ -3,7 +3,6 @@ package server
 import (
 	"log"
 	"warehouse_backend/internal/handler"
-	"warehouse_backend/internal/lib/config"
 )
 
 type Server struct {
@@ -15,8 +14,8 @@ func NewServer(handlers *handler.Handler) *Server {
 }
 
 // Run is server startup
-func (s *Server) Run(client *config.Client, address string) {
-	if err := s.Handlers.InitRoutes(client).Run(address); err != nil {
-		log.Panic(err)
+func (s *Server) Run(address string) {
+	if err := s.Handlers.InitRoutes().Run(address); err != nil {
+		log.Fatal(err)
 	}
 }
