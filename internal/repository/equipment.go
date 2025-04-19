@@ -141,6 +141,38 @@ func (r *EquipmentRepository) GetByIds(ctx context.Context, ids []int64) ([]*mod
 	return equipments, nil
 }
 
+// FindBySerialNumber is equipment find by serial number
+func (r *EquipmentRepository) FindBySerialNumber(ctx context.Context, value string) ([]*model.Equipment, error) {
+	var equipments []*model.Equipment
+
+	const query = `
+		SELECT equipments.id, equipments.serial_number,
+		       profiles.title
+		FROM equipments
+		LEFT JOIN profiles ON profiles.id = equipments.profile
+		WHERE LOWER(serial_number) LIKE LOWER($1);`
+
+	rows, err := r.DB.Query(ctx, query, value)
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		equipment := new(model.Equipment)
+		equipment.Profile = new(model.Profile)
+		if err := rows.Scan(
+			&equipment.ID,
+			&equipment.SerialNumber,
+			&equipment.Profile.Title,
+		); err != nil {
+			return nil, err
+		}
+		equipments = append(equipments, equipment)
+	}
+
+	return equipments, nil
+}
+
 //// GetByProfile is equipment get by profile
 //func (r *EquipmentRepository) GetByProfile(ctx context.Context, id int64) ([]*model.Equipment, error) {
 //	var equipments []*model.Equipment
@@ -168,17 +200,4 @@ func (r *EquipmentRepository) GetByIds(ctx context.Context, ids []int64) ([]*mod
 //	}
 //
 //	return equipments, nil
-//}
-//
-//func (r *EquipmentRepository) GetBySerialNumber(ctx context.Context, equipment *model.Equipment) (*model.Equipment, error) {
-//	const query = `
-//		SELECT id
-//		FROM equipments
-//		WHERE serial_number = $1;`
-//
-//	if err := r.DB.QueryRow(ctx, query, equipment.SerialNumber).Scan(&equipment.ID); err != nil {
-//		return nil, err
-//	}
-//
-//	return equipment, nil
 //}

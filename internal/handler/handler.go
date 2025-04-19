@@ -103,6 +103,7 @@ func (h *Handler) InitRoutes(cfg *config.Client) *gin.Engine {
 			equipment.POST("/restore", h.Equipment.Restore)
 			equipment.POST("/getAll", h.Equipment.GetAll)
 			equipment.POST("/getByIds", h.Equipment.GetByIds)
+			equipment.POST("/findBySerialNumber", h.Equipment.FindBySerialNumber)
 		}
 		location := api.Group("/location")
 		{

@@ -37,14 +37,6 @@ func (h *EquipmentHandler) Create(ctx *gin.Context) {
 		return
 	}
 
-	//location, err := time.LoadLocation("Asia/Almaty")
-	//if err != nil {
-	//	return
-	//}
-	//request.Location.Date = request.Location.Date.In(location)
-
-	fmt.Println("handlerLocation:", request.Location.Date)
-	fmt.Println("handlerRequestLocation:", request.RequestLocation[0].Date)
 	id, err := h.EquipmentService.Create(ctx, request.Location.Equipment.SerialNumber, request.Location.Equipment.Profile.ID)
 	if err != nil {
 		logger.ErrResponse(ctx, err, http.StatusInternalServerError, fn)
@@ -161,5 +153,25 @@ func (h *EquipmentHandler) GetByIds(ctx *gin.Context) {
 	}
 
 	logger.InfoInConsole(fmt.Sprintf("%d, get", req), fn)
+	ctx.JSON(http.StatusOK, res)
+}
+
+// FindBySerialNumber is equipment find by serial number
+func (h *EquipmentHandler) FindBySerialNumber(ctx *gin.Context) {
+	const fn = "handler.Equipment.FindBySerialNumber"
+
+	req := make(map[string]string)
+	if err := ctx.BindJSON(&req); err != nil {
+		logger.ErrResponse(ctx, err, http.StatusBadRequest, fn)
+		return
+	}
+
+	res, err := h.EquipmentService.FindBySerialNumber(ctx, req["search"])
+	if err != nil {
+		logger.ErrResponse(ctx, err, http.StatusInternalServerError, fn)
+		return
+	}
+
+	logger.InfoInConsole(fmt.Sprintf("%s, find", req), fn)
 	ctx.JSON(http.StatusOK, res)
 }

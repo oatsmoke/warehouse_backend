@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"warehouse_backend/internal/lib/logger"
 	"warehouse_backend/internal/model"
@@ -80,6 +81,18 @@ func (s *EquipmentService) GetByIds(ctx context.Context, ids []int64) ([]*model.
 	const fn = "service.Equipment.GetById"
 
 	res, err := s.EquipmentRepository.GetByIds(ctx, ids)
+	if err != nil {
+		return nil, logger.Err(err, "", fn)
+	}
+
+	return res, nil
+}
+
+// FindBySerialNumber is equipment find by serial number
+func (s *EquipmentService) FindBySerialNumber(ctx context.Context, value string) ([]*model.Equipment, error) {
+	const fn = "service.Equipment.FindBySerialNumber"
+
+	res, err := s.EquipmentRepository.FindBySerialNumber(ctx, fmt.Sprintf("%%%s%%", value))
 	if err != nil {
 		return nil, logger.Err(err, "", fn)
 	}

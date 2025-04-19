@@ -152,8 +152,8 @@ func (h *LocationHandler) ReportByCategory(ctx *gin.Context) {
 	const fn = "handler.Location.ReportByCategory"
 
 	request := struct {
-		DepartmentId int64     `json:"departmentId"`
-		Date         time.Time `json:"date"`
+		DepartmentId int64      `json:"departmentId"`
+		Date         *time.Time `json:"date"`
 	}{}
 	if err := ctx.BindJSON(&request); err != nil {
 		logger.ErrResponse(ctx, err, http.StatusBadRequest, fn)

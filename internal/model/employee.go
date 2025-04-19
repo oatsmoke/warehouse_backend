@@ -9,8 +9,8 @@ type Employee struct {
 	Email             string      `json:"email,omitempty"`
 	Password          string      `json:"password,omitempty"`
 	Hash              string      `json:"hash,omitempty"`
-	RegistrationDate  time.Time   `json:"registration_date,omitempty"`
-	AuthorizationDate time.Time   `json:"authorization_date,omitempty"`
+	RegistrationDate  *time.Time  `json:"registration_date,omitempty"`
+	AuthorizationDate *time.Time  `json:"authorization_date,omitempty"`
 	Activate          bool        `json:"activate,omitempty"`
 	Hidden            bool        `json:"hidden,omitempty"`
 	Department        *Department `json:"department,omitempty"`

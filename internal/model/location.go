@@ -4,7 +4,7 @@ import "time"
 
 type Location struct {
 	ID             int64       `json:"id,omitempty"`
-	Date           time.Time   `json:"date,omitempty"`
+	Date           *time.Time  `json:"date,omitempty"`
 	Code           string      `json:"code,omitempty"`
 	Equipment      *Equipment  `json:"equipment,omitempty"`
 	Employee       *Employee   `json:"employee,omitempty"`
@@ -20,18 +20,18 @@ type Location struct {
 }
 
 type RequestLocation struct {
-	Date         time.Time `json:"date"`
-	EquipmentId  int64     `json:"equipment_id"`
-	Way          string    `json:"way"`
-	ThisLocation string    `json:"this_location"`
-	Where        string    `json:"where"`
-	InDepartment bool      `json:"in_department"`
-	Company      int64     `json:"company"`
-	ToDepartment int64     `json:"to_department"`
-	ToEmployee   int64     `json:"to_employee"`
-	ToContract   int64     `json:"to_contract"`
-	TransferType string    `json:"transfer_type"`
-	Price        string    `json:"price"`
+	Date         *time.Time `json:"date,omitempty"`
+	EquipmentId  int64      `json:"equipment_id,omitempty"`
+	Way          string     `json:"way,omitempty"`
+	ThisLocation string     `json:"this_location,omitempty"`
+	Where        string     `json:"where,omitempty"`
+	InDepartment bool       `json:"in_department,omitempty"`
+	Company      int64      `json:"company,omitempty"`
+	ToDepartment int64      `json:"to_department,omitempty"`
+	ToEmployee   int64      `json:"to_employee,omitempty"`
+	ToContract   int64      `json:"to_contract,omitempty"`
+	TransferType string     `json:"transfer_type,omitempty"`
+	Price        string     `json:"price,omitempty"`
 }
 
 type LocationAndRequestLocation struct {

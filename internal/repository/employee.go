@@ -191,7 +191,7 @@ func (r *EmployeeRepository) GetAllButOne(ctx context.Context, id int64, deleted
 // GetById is employee get by id
 func (r *EmployeeRepository) GetById(ctx context.Context, employee *model.Employee) (*model.Employee, error) {
 	const query = `
-		SELECT name, phone, email, registration_date, authorization_date, activate, department, role
+		SELECT name, phone, email, registration_date, authorization_date, activate, role
 		FROM employees 
 		WHERE id = $1;`
 
@@ -202,7 +202,6 @@ func (r *EmployeeRepository) GetById(ctx context.Context, employee *model.Employ
 		&employee.RegistrationDate,
 		&employee.AuthorizationDate,
 		&employee.Activate,
-		&employee.Department,
 		&employee.Role,
 	); err != nil {
 		return nil, err

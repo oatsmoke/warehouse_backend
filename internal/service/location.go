@@ -24,7 +24,7 @@ func NewLocationService(locationRepository repository.Location, replaceRepositor
 }
 
 // AddToStorage is equipment add to storage
-func (s *LocationService) AddToStorage(ctx context.Context, date time.Time, equipmentId, employeeId, companyId int64) error {
+func (s *LocationService) AddToStorage(ctx context.Context, date *time.Time, equipmentId, employeeId, companyId int64) error {
 	const fn = "service.Location.AddToStorage"
 
 	if err := s.LocationRepository.AddToStorage(ctx, date, equipmentId, employeeId, companyId); err != nil {
@@ -218,7 +218,7 @@ func (s *LocationService) GetByLocation(ctx context.Context, toDepartmentId, toE
 }
 
 // ReportByCategory is equipment report by category
-func (s *LocationService) ReportByCategory(ctx context.Context, departmentId int64, date time.Time) (*model.Report, error) {
+func (s *LocationService) ReportByCategory(ctx context.Context, departmentId int64, date *time.Time) (*model.Report, error) {
 	fn := "service.Location.ReportByCategory"
 
 	report := new(model.Report)
@@ -249,37 +249,37 @@ func (s *LocationService) ReportByCategory(ctx context.Context, departmentId int
 		}
 		leftover[category.ID] = equipment
 
-		equipment, err = s.LocationRepository.RemainderByCategory(ctx, category.ID, departmentId, toDate)
+		equipment, err = s.LocationRepository.RemainderByCategory(ctx, category.ID, departmentId, &toDate)
 		if err != nil {
 			return nil, logger.Err(err, "", fn)
 		}
 		total[category.ID] = equipment
 
-		equipment, err = s.LocationRepository.TransferByCategory(ctx, category.ID, departmentId, fromDate, toDate, "STORAGE_TO_DEPARTMENT")
+		equipment, err = s.LocationRepository.TransferByCategory(ctx, category.ID, departmentId, fromDate, &toDate, "STORAGE_TO_DEPARTMENT")
 		if err != nil {
 			return nil, logger.Err(err, "", fn)
 		}
 		fromStorage[category.ID] = equipment
 
-		equipment, err = s.LocationRepository.TransferByCategory(ctx, category.ID, departmentId, fromDate, toDate, "DEPARTMENT_TO_STORAGE")
+		equipment, err = s.LocationRepository.TransferByCategory(ctx, category.ID, departmentId, fromDate, &toDate, "DEPARTMENT_TO_STORAGE")
 		if err != nil {
 			return nil, logger.Err(err, "", fn)
 		}
 		toStorage[category.ID] = equipment
 
-		equipment, err = s.LocationRepository.TransferByCategory(ctx, category.ID, departmentId, fromDate, toDate, "CONTRACT_TO_DEPARTMENT")
+		equipment, err = s.LocationRepository.TransferByCategory(ctx, category.ID, departmentId, fromDate, &toDate, "CONTRACT_TO_DEPARTMENT")
 		if err != nil {
 			return nil, logger.Err(err, "", fn)
 		}
 		fromContract[category.ID] = equipment
 
-		equipment, err = s.LocationRepository.TransferByCategory(ctx, category.ID, departmentId, fromDate, toDate, "DEPARTMENT_TO_CONTRACT")
+		equipment, err = s.LocationRepository.TransferByCategory(ctx, category.ID, departmentId, fromDate, &toDate, "DEPARTMENT_TO_CONTRACT")
 		if err != nil {
 			return nil, logger.Err(err, "", fn)
 		}
 		toContract[category.ID] = equipment
 
-		equipment, err = s.LocationRepository.FromDepartmentTransferByCategory(ctx, category.ID, departmentId, fromDate, toDate)
+		equipment, err = s.LocationRepository.FromDepartmentTransferByCategory(ctx, category.ID, departmentId, fromDate, &toDate)
 		if err != nil {
 			return nil, logger.Err(err, "", fn)
 		}
@@ -290,7 +290,7 @@ func (s *LocationService) ReportByCategory(ctx context.Context, departmentId int
 			locationFromDepartment[row.FromDepartment.ID] = append(locationFromDepartment[row.FromDepartment.ID], row)
 		}
 		fromDepartment[category.ID] = locationFromDepartment
-		equipmentFrom, err := s.LocationRepository.ToDepartmentTransferByCategory(ctx, category.ID, departmentId, fromDate, toDate)
+		equipmentFrom, err := s.LocationRepository.ToDepartmentTransferByCategory(ctx, category.ID, departmentId, fromDate, &toDate)
 		if err != nil {
 			return nil, logger.Err(err, "", fn)
 		}
