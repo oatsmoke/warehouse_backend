@@ -51,7 +51,7 @@ func get(key string) string {
 			return "debug"
 		case HttpPort:
 			message(HttpPort)
-			return "8080"
+			return "8081"
 		case TokenTtl:
 			message(TokenTtl)
 			return "3600"
