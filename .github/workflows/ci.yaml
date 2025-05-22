@@ -21,4 +21,4 @@ jobs:
           push: true
           tags: |
             hub.docker.com/u/oatsmoke/warehouse-api:latest
-            hub.docker.com/u/oatsmoke/warehouse-api:${{github.sha}}jmk
+            hub.docker.com/u/oatsmoke/warehouse-api:${{github.sha}}
