@@ -1,35 +1,32 @@
-name: docker build and push
+name: build and push docker image
 
 on:
   push:
-    branches: [ master ]
+    branches:
+      - master
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+
     steps:
       - name: checkout code
         uses: actions/checkout@v4
 
-      - name: docker buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker
-
       - name: login to docker hub
         uses: docker/login-action@v3
         with:
-          username: ${{secrets.DOCKERHUB_USERNAME}}
-          password: ${{secrets.DOCKERHUB_TOKEN}}
+          username: ${{secrets.DOCKER_HUB_USER_NAME}}
+          password: ${{secrets.DOCKER_HUB_TOKEN}}
 
-      - name: short sha
-        id: short_sha
-        run: echo "SHORT_SHA=${GITHUB_SHA:0:7}" >> $GITHUB_OUTPUT
+      - name: extract metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: hub.docker.com/u/oatsmoke/warehouse-api
 
       - name: build and push
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: |
-            hub.docker.com/u/oatsmoke/warehouse-api:latest
-            hub.docker.com/u/oatsmoke/warehouse-api:${{steps.short_sha.outputs.SHORT_SHA}}
+          tags: ${{steps.meta.outputs.tags}}
