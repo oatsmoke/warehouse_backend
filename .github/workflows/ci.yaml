@@ -18,15 +18,15 @@ jobs:
           username: ${{secrets.DOCKER_HUB_USER_NAME}}
           password: ${{secrets.DOCKER_HUB_TOKEN}}
 
-      - name: extract metadata
-        id: meta
-        uses: docker/metadata-action@v4
-        with:
-          images: hub.docker.com/u/oatsmoke/warehouse-api
+      - name: short sha
+        id: short_sha
+        run: echo "SHORT_SHA=${GITHUB_SHA:0:7}" >> $GITHUB_OUTPUT
 
       - name: build and push
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{steps.meta.outputs.tags}}
+          tags: |
+            oatsmoke/warehouse-api:latest
+            oatsmoke/warehouse-api:${{steps.short_sha.outputs.SHORT_SHA}}
