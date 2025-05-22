@@ -9,11 +9,17 @@ jobs:
     steps:
       - name: checkout code
         uses: actions/checkout@v4
+
       - name: login to docker hub
         uses: docker/login-action@v3
         with:
           username: ${{secrets.DOCKERHUB_USERNAME}}
           password: ${{secrets.DOCKERHUB_TOKEN}}
+
+      - name: short sha
+        id: short_sha
+        run: echo "SHORT_SHA=${GITHUB_SHA:0:7}" >> $GITHUB_OUTPUT
+
       - name: build and push
         uses: docker/build-push-action@v5
         with:
@@ -21,4 +27,4 @@ jobs:
           push: true
           tags: |
             hub.docker.com/u/oatsmoke/warehouse-api:latest
-            hub.docker.com/u/oatsmoke/warehouse-api:${{github.sha}}
+            hub.docker.com/u/oatsmoke/warehouse-api:${{steps.short_sha.outputs.SHORT_SHA}}
