@@ -1,4 +1,4 @@
-FROM golang:1.24-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 WORKDIR /user/src/app
 
@@ -14,5 +14,5 @@ WORKDIR /user/src/app
 
 COPY --from=builder /user/src/app/api .
 
-EXPOSE 8081
+EXPOSE 8080
 CMD ["./api"]

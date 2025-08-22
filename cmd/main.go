@@ -8,6 +8,7 @@ import (
 	"github.com/oatsmoke/warehouse_backend/internal/handler"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/env"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
+	"github.com/oatsmoke/warehouse_backend/internal/lib/migration"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/postgresql"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/server"
 	"github.com/oatsmoke/warehouse_backend/internal/repository"
@@ -20,8 +21,10 @@ func main() {
 
 	logger.Init(env.GetLogLevel())
 
-	dbPostgres := postgresql.Connect(ctx, env.GetPostgresDsn())
+	postgresDsn := env.GetPostgresDsn()
+	dbPostgres := postgresql.Connect(ctx, postgresDsn)
 	defer dbPostgres.Close()
+	migration.Run(ctx, postgresDsn)
 
 	newR := repository.New(dbPostgres)
 	newS := service.New(newR)
