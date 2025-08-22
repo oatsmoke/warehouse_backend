@@ -2,10 +2,11 @@ package jwt
 
 import (
 	"errors"
-	"github.com/golang-jwt/jwt/v5"
 	"strconv"
 	"time"
-	"warehouse_backend/internal/lib/env"
+
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/oatsmoke/warehouse_backend/internal/lib/env"
 )
 
 // GenerateToken is token generation

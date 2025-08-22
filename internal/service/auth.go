@@ -5,13 +5,14 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"github.com/jackc/pgx/v5"
-	"golang.org/x/crypto/bcrypt"
 	"net/smtp"
-	"warehouse_backend/internal/lib/generate"
-	"warehouse_backend/internal/lib/logger"
-	"warehouse_backend/internal/model"
-	"warehouse_backend/internal/repository"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/oatsmoke/warehouse_backend/internal/lib/generate"
+	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
+	"github.com/oatsmoke/warehouse_backend/internal/model"
+	"github.com/oatsmoke/warehouse_backend/internal/repository"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthService struct {
@@ -26,22 +27,20 @@ func NewAuthService(authRepository repository.Auth) *AuthService {
 
 // AuthUser is user authentication for login
 func (s *AuthService) AuthUser(ctx context.Context, login, password string) (int64, error) {
-	const fn = "service.Auth.AuthUser"
-
 	user, err := s.AuthRepository.FindByPhone(ctx, &model.Employee{Phone: login})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return 0, logger.Err(err, "wrong login or password", fn)
+			return 0, logger.Err(err, "wrong login or password")
 		} else {
-			return 0, logger.Err(err, "something wrong", fn)
+			return 0, logger.Err(err, "something wrong")
 		}
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
 		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
-			return 0, logger.Err(err, "wrong login or password", fn)
+			return 0, logger.Err(err, "wrong login or password")
 		} else {
-			return 0, logger.Err(err, "something wrong", fn)
+			return 0, logger.Err(err, "something wrong")
 		}
 	}
 
@@ -50,12 +49,10 @@ func (s *AuthService) AuthUser(ctx context.Context, login, password string) (int
 
 // GenerateHash is to generate hash
 func (s *AuthService) GenerateHash(ctx context.Context, id int64) (string, error) {
-	const fn = "service.Auth.GenerateHash"
-
 	str := generate.RandString(10)
 
 	if err := s.AuthRepository.SetHash(ctx, id, str); err != nil {
-		return "", logger.Err(err, "", fn)
+		return "", logger.Err(err, "")
 	}
 
 	return str, nil
@@ -63,11 +60,9 @@ func (s *AuthService) GenerateHash(ctx context.Context, id int64) (string, error
 
 // FindByHash is to find by hash
 func (s *AuthService) FindByHash(ctx context.Context, hash string) (int64, error) {
-	const fn = "service.Auth.FindByHash"
-
 	user, err := s.AuthRepository.FindByHash(ctx, &model.Employee{Hash: hash})
 	if err != nil {
-		return 0, logger.Err(err, "", fn)
+		return 0, logger.Err(err, "")
 	}
 
 	return user.ID, nil

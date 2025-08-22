@@ -2,31 +2,34 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"os"
 	"os/signal"
 	"syscall"
-	"warehouse_backend/internal/handler"
-	"warehouse_backend/internal/lib/env"
-	"warehouse_backend/internal/lib/logger"
-	"warehouse_backend/internal/lib/postgresql"
-	"warehouse_backend/internal/lib/server"
-	"warehouse_backend/internal/repository"
-	"warehouse_backend/internal/service"
+
+	"github.com/oatsmoke/warehouse_backend/internal/handler"
+	"github.com/oatsmoke/warehouse_backend/internal/lib/env"
+	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
+	"github.com/oatsmoke/warehouse_backend/internal/lib/postgresql"
+	"github.com/oatsmoke/warehouse_backend/internal/lib/server"
+	"github.com/oatsmoke/warehouse_backend/internal/repository"
+	"github.com/oatsmoke/warehouse_backend/internal/service"
 )
 
 func main() {
-	ctx := context.Background()
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
 	logger.Init(env.GetLogLevel())
+
 	dbPostgres := postgresql.Connect(ctx, env.GetPostgresDsn())
 	defer dbPostgres.Close()
-	newR := repository.NewRepository(dbPostgres)
-	newS := service.NewService(newR)
-	newH := handler.NewHandler(newS)
-	httpS := server.NewServer(newH)
-	port := fmt.Sprintf(":%s", env.GetHttpPort())
-	go httpS.Run(port)
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
-	<-stop
+
+	newR := repository.New(dbPostgres)
+	newS := service.New(newR)
+	newH := handler.New(newS)
+
+	httpS := server.New(ctx, env.GetHttpPort(), newH)
+	httpS.Run()
+	defer httpS.Stop()
+
+	<-ctx.Done()
 }

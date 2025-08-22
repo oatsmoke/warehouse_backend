@@ -2,8 +2,9 @@ package repository
 
 import (
 	"context"
+
 	"github.com/jackc/pgx/v5/pgxpool"
-	"warehouse_backend/internal/model"
+	"github.com/oatsmoke/warehouse_backend/internal/model"
 )
 
 type ContractRepository struct {

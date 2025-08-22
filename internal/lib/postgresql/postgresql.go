@@ -2,8 +2,9 @@ package postgresql
 
 import (
 	"context"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"log"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // Connect is a connection to the database

@@ -2,9 +2,10 @@ package service
 
 import (
 	"context"
-	"warehouse_backend/internal/lib/logger"
-	"warehouse_backend/internal/model"
-	"warehouse_backend/internal/repository"
+
+	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
+	"github.com/oatsmoke/warehouse_backend/internal/model"
+	"github.com/oatsmoke/warehouse_backend/internal/repository"
 )
 
 type ProfileService struct {
@@ -19,10 +20,8 @@ func NewProfileService(profileRepository repository.Profile) *ProfileService {
 
 // Create is profile create
 func (s *ProfileService) Create(ctx context.Context, title string, category int64) error {
-	const fn = "service.Profile.Create"
-
 	if err := s.ProfileRepository.Create(ctx, title, category); err != nil {
-		return logger.Err(err, "", fn)
+		return logger.Err(err, "")
 	}
 
 	return nil
@@ -30,10 +29,8 @@ func (s *ProfileService) Create(ctx context.Context, title string, category int6
 
 // Update is profile update
 func (s *ProfileService) Update(ctx context.Context, id int64, title string, category int64) error {
-	const fn = "service.Profile.Update"
-
 	if err := s.ProfileRepository.Update(ctx, id, title, category); err != nil {
-		return logger.Err(err, "", fn)
+		return logger.Err(err, "")
 	}
 
 	return nil
@@ -41,10 +38,8 @@ func (s *ProfileService) Update(ctx context.Context, id int64, title string, cat
 
 // Delete is profile delete
 func (s *ProfileService) Delete(ctx context.Context, id int64) error {
-	const fn = "service.Profile.Delete"
-
 	if err := s.ProfileRepository.Delete(ctx, id); err != nil {
-		return logger.Err(err, "", fn)
+		return logger.Err(err, "")
 	}
 
 	return nil
@@ -52,10 +47,8 @@ func (s *ProfileService) Delete(ctx context.Context, id int64) error {
 
 // Restore is profile restore
 func (s *ProfileService) Restore(ctx context.Context, id int64) error {
-	const fn = "service.Profile.Restore"
-
 	if err := s.ProfileRepository.Restore(ctx, id); err != nil {
-		return logger.Err(err, "", fn)
+		return logger.Err(err, "")
 	}
 
 	return nil
@@ -63,11 +56,9 @@ func (s *ProfileService) Restore(ctx context.Context, id int64) error {
 
 // GetAll is to get all profiles
 func (s *ProfileService) GetAll(ctx context.Context, deleted bool) ([]*model.Profile, error) {
-	const fn = "service.Profile.GetAll"
-
 	res, err := s.ProfileRepository.GetAll(ctx, deleted)
 	if err != nil {
-		return nil, logger.Err(err, "", fn)
+		return nil, logger.Err(err, "")
 	}
 
 	return res, nil
@@ -75,8 +66,6 @@ func (s *ProfileService) GetAll(ctx context.Context, deleted bool) ([]*model.Pro
 
 // GetById is to get profile by id
 func (s *ProfileService) GetById(ctx context.Context, id int64) (*model.Profile, error) {
-	const fn = "service.Profile.GetById"
-
 	profile := &model.Profile{
 		ID:       id,
 		Category: &model.Category{},
@@ -84,7 +73,7 @@ func (s *ProfileService) GetById(ctx context.Context, id int64) (*model.Profile,
 
 	res, err := s.ProfileRepository.GetById(ctx, profile)
 	if err != nil {
-		return nil, logger.Err(err, "", fn)
+		return nil, logger.Err(err, "")
 	}
 
 	return res, nil

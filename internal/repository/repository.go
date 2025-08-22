@@ -2,9 +2,10 @@ package repository
 
 import (
 	"context"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"time"
-	"warehouse_backend/internal/model"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/oatsmoke/warehouse_backend/internal/model"
 )
 
 type Repository struct {
@@ -20,7 +21,7 @@ type Repository struct {
 	Replace    *ReplaceRepository
 }
 
-func NewRepository(db *pgxpool.Pool) *Repository {
+func New(db *pgxpool.Pool) *Repository {
 	return &Repository{
 		Auth:       NewAuthRepository(db),
 		Employee:   NewEmployeeRepository(db),

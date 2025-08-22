@@ -3,8 +3,9 @@ package service
 import (
 	"context"
 	"time"
-	"warehouse_backend/internal/model"
-	"warehouse_backend/internal/repository"
+
+	"github.com/oatsmoke/warehouse_backend/internal/model"
+	"github.com/oatsmoke/warehouse_backend/internal/repository"
 )
 
 type Service struct {
@@ -19,7 +20,7 @@ type Service struct {
 	Company    *CompanyService
 }
 
-func NewService(repository *repository.Repository) *Service {
+func New(repository *repository.Repository) *Service {
 	return &Service{
 		Auth:       NewAuthService(repository.Auth),
 		Employee:   NewEmployeeService(repository.Employee, repository.Equipment, repository.Auth),
