@@ -1,5 +1,5 @@
 NAME ?= migration
-SCHEMA := file://schema/init_up.sql
+SCHEMA := file://schema/schema.sql
 DEV_URL := docker://postgres/17/dev?search_path=public
 MIGRATIONS_DIR := file://migrations
 
