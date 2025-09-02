@@ -4,8 +4,10 @@ import (
 	"context"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
+	"github.com/redis/go-redis/v9"
 )
 
 type Repository struct {
@@ -21,25 +23,27 @@ type Repository struct {
 	Replace    *ReplaceRepository
 }
 
-func New(db *pgxpool.Pool) *Repository {
+func New(postgresDB *pgxpool.Pool, redisDB *redis.Client) *Repository {
 	return &Repository{
-		Auth:       NewAuthRepository(db),
-		Employee:   NewEmployeeRepository(db),
-		Department: NewDepartmentRepository(db),
-		Category:   NewCategoryRepository(db),
-		Profile:    NewProfileRepository(db),
-		Equipment:  NewEquipmentRepository(db),
-		Location:   NewLocationRepository(db),
-		Contract:   NewContractRepository(db),
-		Company:    NewCompanyRepository(db),
-		Replace:    NewReplaceRepository(db),
+		Auth:       NewAuthRepository(postgresDB, redisDB),
+		Employee:   NewEmployeeRepository(postgresDB),
+		Department: NewDepartmentRepository(postgresDB),
+		Category:   NewCategoryRepository(postgresDB),
+		Profile:    NewProfileRepository(postgresDB),
+		Equipment:  NewEquipmentRepository(postgresDB),
+		Location:   NewLocationRepository(postgresDB),
+		Contract:   NewContractRepository(postgresDB),
+		Company:    NewCompanyRepository(postgresDB),
+		Replace:    NewReplaceRepository(postgresDB),
 	}
 }
 
 type Auth interface {
 	FindByPhone(ctx context.Context, user *model.Employee) (*model.Employee, error)
-	SetHash(ctx context.Context, id int64, hash string) error
-	FindByHash(ctx context.Context, user *model.Employee) (*model.Employee, error)
+	Set(ctx context.Context, claims *jwt.RegisteredClaims, revoked bool) error
+	Get(ctx context.Context, key string) (bool, error)
+	//SetHash(ctx context.Context, id int64, hash string) error
+	//FindByHash(ctx context.Context, user *model.Employee) (*model.Employee, error)
 }
 
 type Employee interface {

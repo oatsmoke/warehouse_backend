@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/oatsmoke/warehouse_backend/internal/lib/jwt_auth"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
 	"github.com/oatsmoke/warehouse_backend/internal/repository"
 )
@@ -35,9 +36,10 @@ func New(repository *repository.Repository) *Service {
 }
 
 type Auth interface {
-	AuthUser(ctx context.Context, login, password string) (int64, error)
-	GenerateHash(ctx context.Context, id int64) (string, error)
-	FindByHash(ctx context.Context, hash string) (int64, error)
+	AuthUser(ctx context.Context, login, password string) (*jwt_auth.Token, error)
+	Check(ctx context.Context, token *jwt_auth.Token) (*jwt_auth.Token, error)
+	//GenerateHash(ctx context.Context, id int64) (string, error)
+	//FindByHash(ctx context.Context, hash string) (int64, error)
 }
 
 type Employee interface {

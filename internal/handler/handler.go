@@ -50,11 +50,13 @@ func (h *Handler) InitRoutes() *gin.Engine {
 
 	auth := router.Group("/auth")
 	{
-		auth.POST("/sing-in", h.Auth.SignIn)
+		auth.POST("/singIn", h.Auth.SignIn)
 	}
+
 	api := router.Group("/api", h.Auth.UserIdentity)
 	{
 		api.GET("/getUser", h.Auth.GetUser)
+
 		employee := api.Group("/employee")
 		{
 			employee.POST("/create", h.Employee.Create)
@@ -75,6 +77,7 @@ func (h *Handler) InitRoutes() *gin.Engine {
 			employee.POST("/resetPassword", h.Employee.ResetPassword)
 			employee.POST("/changeRole", h.Employee.ChangeRole)
 		}
+
 		department := api.Group("/department")
 		{
 			department.POST("/create", h.Department.Create)
@@ -85,6 +88,7 @@ func (h *Handler) InitRoutes() *gin.Engine {
 			department.POST("/getById", h.Department.GetById)
 			department.POST("/getAllButOne", h.Department.GetAllButOne)
 		}
+
 		category := api.Group("/category")
 		{
 			category.POST("/create", h.Category.Create)
@@ -94,6 +98,7 @@ func (h *Handler) InitRoutes() *gin.Engine {
 			category.POST("/getAll", h.Category.GetAll)
 			category.POST("/getById", h.Category.GetById)
 		}
+
 		profile := api.Group("/profile")
 		{
 			profile.POST("/create", h.Profile.Create)
@@ -103,6 +108,7 @@ func (h *Handler) InitRoutes() *gin.Engine {
 			profile.POST("/getAll", h.Profile.GetAll)
 			profile.POST("/getById", h.Profile.GetById)
 		}
+
 		equipment := api.Group("/equipment")
 		{
 			equipment.POST("/create", h.Equipment.Create)
@@ -113,6 +119,7 @@ func (h *Handler) InitRoutes() *gin.Engine {
 			equipment.POST("/getByIds", h.Equipment.GetByIds)
 			equipment.POST("/findBySerialNumber", h.Equipment.FindBySerialNumber)
 		}
+
 		location := api.Group("/location")
 		{
 			location.POST("/transferTo", h.Location.TransferTo)
@@ -123,6 +130,7 @@ func (h *Handler) InitRoutes() *gin.Engine {
 			location.POST("/getByLocation", h.Location.GetByLocation)
 			location.POST("/reportByCategory", h.Location.ReportByCategory)
 		}
+
 		contract := api.Group("/contract")
 		{
 			contract.POST("/create", h.Contract.Create)
@@ -131,6 +139,7 @@ func (h *Handler) InitRoutes() *gin.Engine {
 			contract.POST("/getAll", h.Contract.GetAll)
 			contract.POST("/getById", h.Contract.GetById)
 		}
+
 		company := api.Group("/company")
 		{
 			company.POST("/create", h.Company.Create)

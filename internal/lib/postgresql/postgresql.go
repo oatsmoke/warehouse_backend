@@ -14,8 +14,7 @@ func Connect(ctx context.Context, dsn string) *pgxpool.Pool {
 		log.Fatal(err)
 	}
 
-	err = connectDB.Ping(ctx)
-	if err != nil {
+	if err := connectDB.Ping(ctx); err != nil {
 		log.Fatal(err)
 	}
 

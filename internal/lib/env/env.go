@@ -10,9 +10,11 @@ import (
 const (
 	LogLevel    = "LOG_LEVEL"
 	HttpPort    = "HTTP_PORT"
-	TokenTtl    = "TOKEN_TTL"
+	AccessTtl   = "ACCESS_TTL"
+	RefreshTtl  = "REFRESH_TTL"
 	SigningKey  = "SIGNING_KEY"
 	PostgresDsn = "POSTGRES_DSN"
+	RedisDsn    = "REDIS_DSN"
 	ClientUrl   = "CLIENT_URL"
 )
 
@@ -24,8 +26,12 @@ func GetHttpPort() string {
 	return get(HttpPort)
 }
 
-func GetTokenTtl() string {
-	return get(TokenTtl)
+func GetAccessTtl() string {
+	return get(AccessTtl)
+}
+
+func GetRefreshTtl() string {
+	return get(RefreshTtl)
 }
 
 func GetSigningKey() string {
@@ -34,6 +40,10 @@ func GetSigningKey() string {
 
 func GetPostgresDsn() string {
 	return get(PostgresDsn)
+}
+
+func GetRedisDsn() string {
+	return get(RedisDsn)
 }
 
 func GetClientUrl() string {
@@ -52,15 +62,21 @@ func get(key string) string {
 		case HttpPort:
 			message(HttpPort)
 			return ":8080"
-		case TokenTtl:
-			message(TokenTtl)
+		case AccessTtl:
+			message(AccessTtl)
+			return "300"
+		case RefreshTtl:
+			message(RefreshTtl)
 			return "3600"
 		case SigningKey:
 			message(SigningKey)
 			return "secret"
 		case PostgresDsn:
 			message(PostgresDsn)
-			return "postgres://postgres:password@localhost:5432/postgres?sslmode=disable"
+			return "postgres://root:password@localhost:5432/postgres?sslmode=disable"
+		case RedisDsn:
+			message(RedisDsn)
+			return "localhost:6379"
 		case ClientUrl:
 			message(ClientUrl)
 			return "http://localhost"
