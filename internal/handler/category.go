@@ -1,8 +1,10 @@
+// Package handler provides HTTP handlers for category operations.
 package handler
 
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
@@ -10,17 +12,23 @@ import (
 	"github.com/oatsmoke/warehouse_backend/internal/service"
 )
 
+// CategoryHandler handles HTTP requests for category operations.
 type CategoryHandler struct {
 	CategoryService service.Category
 }
 
+// NewCategoryHandler creates a new CategoryHandler with the given CategoryService.
+// categoryService: Category service.
+// Returns a pointer to CategoryHandler.
 func NewCategoryHandler(categoryService service.Category) *CategoryHandler {
 	return &CategoryHandler{
 		CategoryService: categoryService,
 	}
 }
 
-// Create is category create
+// Create creates a new category.
+// ctx: Gin context.
+// No return value.
 func (h *CategoryHandler) Create(ctx *gin.Context) {
 	var category *model.Category
 	if err := ctx.BindJSON(&category); err != nil {
@@ -33,11 +41,13 @@ func (h *CategoryHandler) Create(ctx *gin.Context) {
 		return
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("%s created", category.Title))
+	logger.InfoInConsole(fmt.Sprintf("category %s created", category.Title))
 	ctx.JSON(http.StatusOK, "")
 }
 
-// Update is category update
+// Update updates an existing category by id.
+// ctx: Gin context.
+// No return value.
 func (h *CategoryHandler) Update(ctx *gin.Context) {
 	var category *model.Category
 	if err := ctx.BindJSON(&category); err != nil {
@@ -45,33 +55,43 @@ func (h *CategoryHandler) Update(ctx *gin.Context) {
 		return
 	}
 
-	if err := h.CategoryService.Update(ctx, category.ID, category.Title); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
-		return
-	}
-
-	logger.InfoInConsole(fmt.Sprintf("%s updated", category.Title))
-	ctx.JSON(http.StatusOK, "")
-}
-
-// Delete is category delete
-func (h *CategoryHandler) Delete(ctx *gin.Context) {
-	var category *model.Category
-	if err := ctx.BindJSON(&category); err != nil {
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
 		logger.ErrResponse(ctx, err, http.StatusBadRequest)
 		return
 	}
 
-	if err := h.CategoryService.Delete(ctx, category.ID); err != nil {
+	if err := h.CategoryService.Update(ctx, id, category.Title); err != nil {
 		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
 		return
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("%d deleted", category.ID))
+	logger.InfoInConsole(fmt.Sprintf("category %d updated", id))
 	ctx.JSON(http.StatusOK, "")
 }
 
-// Restore is category restore
+// Delete performs a soft delete of a category by id.
+// ctx: Gin context.
+// No return value.
+func (h *CategoryHandler) Delete(ctx *gin.Context) {
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		return
+	}
+
+	if err := h.CategoryService.Delete(ctx, id); err != nil {
+		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		return
+	}
+
+	logger.InfoInConsole(fmt.Sprintf("category %d deleted", id))
+	ctx.JSON(http.StatusOK, "")
+}
+
+// Restore restores a previously deleted category by id.
+// ctx: Gin context.
+// No return value.
 func (h *CategoryHandler) Restore(ctx *gin.Context) {
 	var category *model.Category
 	if err := ctx.BindJSON(&category); err != nil {
@@ -79,16 +99,24 @@ func (h *CategoryHandler) Restore(ctx *gin.Context) {
 		return
 	}
 
-	if err := h.CategoryService.Restore(ctx, category.ID); err != nil {
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		return
+	}
+
+	if err := h.CategoryService.Restore(ctx, id); err != nil {
 		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
 		return
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("%d restored", category.ID))
+	logger.InfoInConsole(fmt.Sprintf("category %d restored", id))
 	ctx.JSON(http.StatusOK, "")
 }
 
-// GetAll is to get all categories
+// GetAll retrieves all categories, filtered by deleted status.
+// ctx: Gin context.
+// No return value.
 func (h *CategoryHandler) GetAll(ctx *gin.Context) {
 	var deleted bool
 	if err := ctx.BindJSON(&deleted); err != nil {
@@ -106,20 +134,22 @@ func (h *CategoryHandler) GetAll(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, res)
 }
 
-// GetById is to get category by id
+// GetById retrieves a category by id.
+// ctx: Gin context.
+// No return value.
 func (h *CategoryHandler) GetById(ctx *gin.Context) {
-	var category *model.Category
-	if err := ctx.BindJSON(&category); err != nil {
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
 		logger.ErrResponse(ctx, err, http.StatusBadRequest)
 		return
 	}
 
-	res, err := h.CategoryService.GetById(ctx, category.ID)
+	res, err := h.CategoryService.GetById(ctx, id)
 	if err != nil {
 		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
 		return
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("category %s found", res.Title))
+	logger.InfoInConsole(fmt.Sprintf("category %d found", id))
 	ctx.JSON(http.StatusOK, res)
 }

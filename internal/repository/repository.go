@@ -83,8 +83,7 @@ type Category interface {
 	Delete(ctx context.Context, id int64) error
 	Restore(ctx context.Context, id int64) error
 	GetAll(ctx context.Context, deleted bool) ([]*model.Category, error)
-	GetById(ctx context.Context, category *model.Category) (*model.Category, error)
-	//FindByTitle(ctx context.Context, title string) (int64, error)
+	GetById(ctx context.Context, id int64) (*model.Category, error)
 }
 
 type Profile interface {

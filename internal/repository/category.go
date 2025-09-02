@@ -1,3 +1,4 @@
+// Package repository provides data access implementation for working with categories
 package repository
 
 import (
@@ -7,70 +8,92 @@ import (
 	"github.com/oatsmoke/warehouse_backend/internal/model"
 )
 
+// CategoryRepository provides methods for managing categories in a PostgreSQL database.
 type CategoryRepository struct {
-	DB *pgxpool.Pool
+	PostgresDB *pgxpool.Pool
 }
 
-func NewCategoryRepository(db *pgxpool.Pool) *CategoryRepository {
-	return &CategoryRepository{DB: db}
+// NewCategoryRepository creates a new CategoryRepository with the given database pool.
+// postgresDB: PostgreSQL connection pool.
+// Returns a pointer to CategoryRepository.
+func NewCategoryRepository(postgresDB *pgxpool.Pool) *CategoryRepository {
+	return &CategoryRepository{
+		PostgresDB: postgresDB,
+	}
 }
 
-// Create is category create
+// Create adds a new category with the specified title.
+// ctx: request context.
+// title: category name.
+// Returns an error if the operation fails.
 func (r *CategoryRepository) Create(ctx context.Context, title string) error {
 	const query = `
 		INSERT INTO categories (title) 
 		VALUES ($1);`
 
-	if _, err := r.DB.Exec(ctx, query, title); err != nil {
+	if _, err := r.PostgresDB.Exec(ctx, query, title); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// Update is category update
+// Update changes the title of an existing category by its ID.
+// ctx: request context.
+// id: category ID.
+// title: new category name.
+// Returns an error if the operation fails.
 func (r *CategoryRepository) Update(ctx context.Context, id int64, title string) error {
 	const query = `
 		UPDATE categories 
 		SET title = $2
 		WHERE id = $1;`
 
-	if _, err := r.DB.Exec(ctx, query, id, title); err != nil {
+	if _, err := r.PostgresDB.Exec(ctx, query, id, title); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// Delete is category delete
+// Delete marks the category as deleted by its ID (soft delete).
+// ctx: request context.
+// id: category ID.
+// Returns an error if the operation fails.
 func (r *CategoryRepository) Delete(ctx context.Context, id int64) error {
 	const query = `
 		UPDATE categories 
 		SET deleted = true
        	WHERE id = $1;`
 
-	if _, err := r.DB.Exec(ctx, query, id); err != nil {
+	if _, err := r.PostgresDB.Exec(ctx, query, id); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// Restore is category restore
+// Restore unmarks the category as deleted by its ID.
+// ctx: request context.
+// id: category ID.
+// Returns an error if the operation fails.
 func (r *CategoryRepository) Restore(ctx context.Context, id int64) error {
 	const query = `
 		UPDATE categories 
 		SET deleted = false
        	WHERE id = $1;`
 
-	if _, err := r.DB.Exec(ctx, query, id); err != nil {
+	if _, err := r.PostgresDB.Exec(ctx, query, id); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// GetAll is to get all categories
+// GetAll returns a list of all categories.
+// ctx: request context.
+// deleted: if true, includes deleted categories.
+// Returns a slice of Category pointers and an error if the operation fails.
 func (r *CategoryRepository) GetAll(ctx context.Context, deleted bool) ([]*model.Category, error) {
 	var categories []*model.Category
 	query := ""
@@ -88,10 +111,11 @@ func (r *CategoryRepository) GetAll(ctx context.Context, deleted bool) ([]*model
 			ORDER BY title;`
 	}
 
-	rows, err := r.DB.Query(ctx, query)
+	rows, err := r.PostgresDB.Query(ctx, query)
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		category := new(model.Category)
@@ -104,18 +128,27 @@ func (r *CategoryRepository) GetAll(ctx context.Context, deleted bool) ([]*model
 		}
 		categories = append(categories, category)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 
 	return categories, nil
 }
 
-// GetById is to get category by id
-func (r *CategoryRepository) GetById(ctx context.Context, category *model.Category) (*model.Category, error) {
+// GetById returns a category by its ID.
+// ctx: request context.
+// id: category ID.
+// Returns a pointer to Category and an error if the operation fails.
+func (r *CategoryRepository) GetById(ctx context.Context, id int64) (*model.Category, error) {
+	category := new(model.Category)
+
 	const query = `
-		SELECT title, deleted
+		SELECT id, title, deleted
 		FROM categories 
 		WHERE id = $1;`
 
-	if err := r.DB.QueryRow(ctx, query, category.ID).Scan(
+	if err := r.PostgresDB.QueryRow(ctx, query, id).Scan(
+		&category.ID,
 		&category.Title,
 		&category.Deleted,
 	); err != nil {
@@ -124,18 +157,3 @@ func (r *CategoryRepository) GetById(ctx context.Context, category *model.Catego
 
 	return category, nil
 }
-
-//func (r *CategoryRepository) FindByTitle(ctx context.Context, title string) (int64, error) {
-//	category := new(model.Category)
-//
-//	query := `
-//			SELECT id
-//			FROM categories
-//			WHERE title = $1;`
-//
-//	if err := r.DB.QueryRow(ctx, query, title).Scan(&category.ID); err != nil {
-//		return 0, err
-//	}
-//
-//	return category.ID, nil
-//}

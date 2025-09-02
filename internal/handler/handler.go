@@ -92,11 +92,11 @@ func (h *Handler) InitRoutes() *gin.Engine {
 		category := api.Group("/category")
 		{
 			category.POST("/create", h.Category.Create)
-			category.POST("/update", h.Category.Update)
-			category.POST("/delete", h.Category.Delete)
-			category.POST("/restore", h.Category.Restore)
+			category.PUT("/update/:id", h.Category.Update)
+			category.DELETE("/delete/:id", h.Category.Delete)
+			category.PUT("/restore/:id", h.Category.Restore)
 			category.POST("/getAll", h.Category.GetAll)
-			category.POST("/getById", h.Category.GetById)
+			category.GET("/getById/:id", h.Category.GetById)
 		}
 
 		profile := api.Group("/profile")
