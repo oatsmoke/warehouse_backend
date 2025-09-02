@@ -1,0 +1,4 @@
+Hello {{.Name}}!
+
+Login: {{.Phone}}
+Password: {{.Password}}

@@ -2,10 +2,7 @@ package service
 
 import (
 	"context"
-	"crypto/tls"
 	"errors"
-	"fmt"
-	"net/smtp"
 	"strconv"
 
 	"github.com/jackc/pgx/v5"
@@ -125,47 +122,3 @@ func (s *AuthService) Check(ctx context.Context, token *jwt_auth.Token) (*jwt_au
 //
 //	return user.ID, nil
 //}
-
-func sendMail(recipient, phone, password string) error {
-	authEmail := "oatsmoke@yandex.ru"
-	authPassword := "kbbaojsmxlnboajk"
-	host := "smtp.yandex.ru"
-	port := "465"
-	subject := "Authorization data"
-	body := fmt.Sprintf("Login: %s\nPassword: %s", phone, password)
-	sendString := fmt.Sprintf("From: %s\nTo: %s\nSubject: %s\n\n%s", authEmail, recipient, subject, body)
-	msg := []byte(sendString)
-	auth := smtp.PlainAuth("", authEmail, authPassword, host)
-	conf := &tls.Config{ServerName: host}
-	conn, err := tls.Dial("tcp", host+":"+port, conf)
-	if err != nil {
-		return err
-	}
-	cl, err := smtp.NewClient(conn, host)
-	if err != nil {
-		return err
-	}
-	if err := cl.Auth(auth); err != nil {
-		return err
-	}
-	if err := cl.Mail(authEmail); err != nil {
-		return err
-	}
-	if err := cl.Rcpt(recipient); err != nil {
-		return err
-	}
-	w, err := cl.Data()
-	if err != nil {
-		return err
-	}
-	if _, err := w.Write(msg); err != nil {
-		return err
-	}
-	if err := w.Close(); err != nil {
-		return err
-	}
-	if err := cl.Quit(); err != nil {
-		return err
-	}
-	return nil
-}

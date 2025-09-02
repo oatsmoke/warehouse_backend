@@ -8,14 +8,17 @@ import (
 )
 
 const (
-	LogLevel    = "LOG_LEVEL"
-	HttpPort    = "HTTP_PORT"
-	AccessTtl   = "ACCESS_TTL"
-	RefreshTtl  = "REFRESH_TTL"
-	SigningKey  = "SIGNING_KEY"
-	PostgresDsn = "POSTGRES_DSN"
-	RedisDsn    = "REDIS_DSN"
-	ClientUrl   = "CLIENT_URL"
+	LogLevel     = "LOG_LEVEL"
+	HttpPort     = "HTTP_PORT"
+	AccessTtl    = "ACCESS_TTL"
+	RefreshTtl   = "REFRESH_TTL"
+	SigningKey   = "SIGNING_KEY"
+	PostgresDsn  = "POSTGRES_DSN"
+	RedisDsn     = "REDIS_DSN"
+	ClientUrl    = "CLIENT_URL"
+	SmtpHost     = "SMTP_HOST"
+	SmtpUser     = "SMTP_USER"
+	SmtpPassword = "SMTP_PASSWORD"
 )
 
 func GetLogLevel() string {
@@ -50,6 +53,18 @@ func GetClientUrl() string {
 	return get(ClientUrl)
 }
 
+func GetSmtpHost() string {
+	return get(SmtpHost)
+}
+
+func GetSmtpUser() string {
+	return get(SmtpUser)
+}
+
+func GetSmtpPassword() string {
+	return get(SmtpPassword)
+}
+
 func get(key string) string {
 	val, ok := os.LookupEnv(key)
 	if ok {
@@ -80,6 +95,15 @@ func get(key string) string {
 		case ClientUrl:
 			message(ClientUrl)
 			return "http://localhost"
+		case SmtpHost:
+			message(SmtpHost)
+			return ""
+		case SmtpUser:
+			message(SmtpUser)
+			return ""
+		case SmtpPassword:
+			message(SmtpPassword)
+			return ""
 		default:
 			logger.InfoInConsole(fmt.Sprintf("%s not found", key))
 			return ""

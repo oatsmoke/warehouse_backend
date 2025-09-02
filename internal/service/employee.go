@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	"github.com/oatsmoke/warehouse_backend/internal/lib/email"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/generate"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
@@ -166,9 +167,20 @@ func (s *EmployeeService) Activate(ctx context.Context, id int64) error {
 		return logger.Err(err, "")
 	}
 
-	if err := sendMail(res.Email, res.Phone, string(passwordHash)); err != nil {
+	sendTo := &email.SendTo{
+		Name:     res.Name,
+		Email:    res.Email,
+		Phone:    res.Phone,
+		Password: string(passwordHash),
+	}
+
+	if err := email.Send([]*email.SendTo{sendTo}); err != nil {
 		return logger.Err(err, "")
 	}
+
+	//if err := sendMail(res.Email, res.Phone, string(passwordHash)); err != nil {
+	//	return logger.Err(err, "")
+	//}
 
 	return nil
 }
@@ -203,9 +215,20 @@ func (s *EmployeeService) ResetPassword(ctx context.Context, id int64) error {
 		return logger.Err(err, "")
 	}
 
-	if err := sendMail(res.Email, res.Phone, string(passwordHash)); err != nil {
+	sendTo := &email.SendTo{
+		Name:     res.Name,
+		Email:    res.Email,
+		Phone:    res.Phone,
+		Password: string(passwordHash),
+	}
+
+	if err := email.Send([]*email.SendTo{sendTo}); err != nil {
 		return logger.Err(err, "")
 	}
+
+	//if err := sendMail(res.Email, res.Phone, string(passwordHash)); err != nil {
+	//	return logger.Err(err, "")
+	//}
 
 	return nil
 }
