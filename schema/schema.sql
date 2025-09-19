@@ -1,8 +1,8 @@
 create table categories
 (
-    id      bigserial primary key,
-    title   varchar(100) not null unique,
-    deleted boolean      not null default false
+    id         bigserial primary key,
+    title      varchar(100) not null unique,
+    deleted_at timestamp with time zone
 );
 
 create table profiles

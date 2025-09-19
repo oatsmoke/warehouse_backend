@@ -1,159 +1,149 @@
-// Package repository provides data access implementation for working with categories
 package repository
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
 )
 
-// CategoryRepository provides methods for managing categories in a PostgreSQL database.
 type CategoryRepository struct {
-	PostgresDB *pgxpool.Pool
+	postgresDB *pgxpool.Pool
 }
 
-// NewCategoryRepository creates a new CategoryRepository with the given database pool.
-// postgresDB: PostgreSQL connection pool.
-// Returns a pointer to CategoryRepository.
 func NewCategoryRepository(postgresDB *pgxpool.Pool) *CategoryRepository {
 	return &CategoryRepository{
-		PostgresDB: postgresDB,
+		postgresDB: postgresDB,
 	}
 }
 
-// Create adds a new category with the specified title.
-// ctx: request context.
-// title: category name.
-// Returns an error if the operation fails.
-func (r *CategoryRepository) Create(ctx context.Context, title string) error {
+func (r *CategoryRepository) Create(ctx context.Context, category *model.Category) error {
 	const query = `
 		INSERT INTO categories (title) 
-		VALUES ($1);`
+		VALUES ($1)
+		RETURNING id;`
 
-	if _, err := r.PostgresDB.Exec(ctx, query, title); err != nil {
+	var id int64
+	if err := r.postgresDB.QueryRow(ctx, query, category.Title).Scan(&id); err != nil {
 		return err
 	}
 
+	if id == 0 {
+		return logger.NoRowsAffected
+	}
+
+	logger.InfoInConsole(fmt.Sprintf("category with id %d created", id))
 	return nil
 }
 
-// Update changes the title of an existing category by its ID.
-// ctx: request context.
-// id: category ID.
-// title: new category name.
-// Returns an error if the operation fails.
-func (r *CategoryRepository) Update(ctx context.Context, id int64, title string) error {
+func (r *CategoryRepository) Read(ctx context.Context, id int64) (*model.Category, error) {
+	const query = `
+		SELECT id, title, deleted_at
+		FROM categories 
+		WHERE id = $1;`
+
+	category := new(model.Category)
+	if err := r.postgresDB.QueryRow(ctx, query, id).Scan(
+		&category.ID,
+		&category.Title,
+		&category.DeletedAt,
+	); err != nil {
+		return nil, err
+	}
+
+	logger.InfoInConsole(fmt.Sprintf("category with id %d read", id))
+	return category, nil
+}
+
+func (r *CategoryRepository) Update(ctx context.Context, category *model.Category) error {
 	const query = `
 		UPDATE categories 
 		SET title = $2
 		WHERE id = $1;`
 
-	if _, err := r.PostgresDB.Exec(ctx, query, id, title); err != nil {
+	ct, err := r.postgresDB.Exec(ctx, query, category.ID, category.Title)
+	if err != nil {
 		return err
 	}
 
+	if ct.RowsAffected() == 0 {
+		return logger.NoRowsAffected
+	}
+
+	logger.InfoInConsole(fmt.Sprintf("category with id %d updated", category.ID))
 	return nil
 }
 
-// Delete marks the category as deleted by its ID (soft delete).
-// ctx: request context.
-// id: category ID.
-// Returns an error if the operation fails.
 func (r *CategoryRepository) Delete(ctx context.Context, id int64) error {
 	const query = `
 		UPDATE categories 
-		SET deleted = true
-       	WHERE id = $1;`
+		SET deleted_at = now()
+       	WHERE id = $1 AND deleted_at IS NULL;`
 
-	if _, err := r.PostgresDB.Exec(ctx, query, id); err != nil {
+	ct, err := r.postgresDB.Exec(ctx, query, id)
+	if err != nil {
 		return err
 	}
 
+	if ct.RowsAffected() == 0 {
+		return logger.NoRowsAffected
+	}
+
+	logger.InfoInConsole(fmt.Sprintf("category with id %d deleted", id))
 	return nil
 }
 
-// Restore unmarks the category as deleted by its ID.
-// ctx: request context.
-// id: category ID.
-// Returns an error if the operation fails.
 func (r *CategoryRepository) Restore(ctx context.Context, id int64) error {
 	const query = `
 		UPDATE categories 
-		SET deleted = false
-       	WHERE id = $1;`
+		SET deleted_at = NULL
+       	WHERE id = $1 AND deleted_at IS NOT NULL;`
 
-	if _, err := r.PostgresDB.Exec(ctx, query, id); err != nil {
+	ct, err := r.postgresDB.Exec(ctx, query, id)
+	if err != nil {
 		return err
 	}
 
+	if ct.RowsAffected() == 0 {
+		return logger.NoRowsAffected
+	}
+
+	logger.InfoInConsole(fmt.Sprintf("category with id %d restored", id))
 	return nil
 }
 
-// GetAll returns a list of all categories.
-// ctx: request context.
-// deleted: if true, includes deleted categories.
-// Returns a slice of Category pointers and an error if the operation fails.
-func (r *CategoryRepository) GetAll(ctx context.Context, deleted bool) ([]*model.Category, error) {
-	var categories []*model.Category
-	query := ""
+func (r *CategoryRepository) List(ctx context.Context, withDeleted bool) ([]*model.Category, error) {
+	const query = `
+		SELECT id, title, deleted_at
+		FROM categories
+		WHERE $1 OR deleted_at IS NULL
+		ORDER BY title;`
 
-	if deleted {
-		query = `
-			SELECT id, title, deleted
-			FROM categories
-			ORDER BY title;`
-	} else {
-		query = `
-			SELECT id, title, deleted
-			FROM categories
-			WHERE deleted = false
-			ORDER BY title;`
-	}
-
-	rows, err := r.PostgresDB.Query(ctx, query)
+	rows, err := r.postgresDB.Query(ctx, query, withDeleted)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
+	var categories []*model.Category
 	for rows.Next() {
 		category := new(model.Category)
 		if err := rows.Scan(
 			&category.ID,
 			&category.Title,
-			&category.Deleted,
+			&category.DeletedAt,
 		); err != nil {
 			return nil, err
 		}
 		categories = append(categories, category)
 	}
+
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
+	logger.InfoInConsole(fmt.Sprintf("%d category listed", len(categories)))
 	return categories, nil
-}
-
-// GetById returns a category by its ID.
-// ctx: request context.
-// id: category ID.
-// Returns a pointer to Category and an error if the operation fails.
-func (r *CategoryRepository) GetById(ctx context.Context, id int64) (*model.Category, error) {
-	category := new(model.Category)
-
-	const query = `
-		SELECT id, title, deleted
-		FROM categories 
-		WHERE id = $1;`
-
-	if err := r.PostgresDB.QueryRow(ctx, query, id).Scan(
-		&category.ID,
-		&category.Title,
-		&category.Deleted,
-	); err != nil {
-		return nil, err
-	}
-
-	return category, nil
 }

@@ -52,8 +52,8 @@ func (h *Handler) InitRoutes() *gin.Engine {
 	{
 		auth.POST("/singIn", h.Auth.SignIn)
 	}
-
-	api := router.Group("/api", h.Auth.UserIdentity)
+	//, h.Auth.UserIdentity
+	api := router.Group("/api")
 	{
 		api.GET("/getUser", h.Auth.GetUser)
 
@@ -92,11 +92,11 @@ func (h *Handler) InitRoutes() *gin.Engine {
 		category := api.Group("/category")
 		{
 			category.POST("/create", h.Category.Create)
+			category.GET("/read/:id", h.Category.Read)
 			category.PUT("/update/:id", h.Category.Update)
 			category.DELETE("/delete/:id", h.Category.Delete)
 			category.PUT("/restore/:id", h.Category.Restore)
-			category.POST("/getAll", h.Category.GetAll)
-			category.GET("/getById/:id", h.Category.GetById)
+			category.GET("/list", h.Category.List)
 		}
 
 		profile := api.Group("/profile")

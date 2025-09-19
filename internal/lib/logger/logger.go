@@ -20,6 +20,13 @@ const (
 	reset   = "\033[0m"
 )
 
+var (
+	RequestBodyIsEmpty = errors.New("request body is empty")
+	NoRowsAffected     = errors.New("no rows affected")
+	MethodNotAllowed   = errors.New("method not allowed")
+	LaterDate          = errors.New("StartDate is later than EndDate")
+)
+
 var mu sync.Mutex
 
 // Init is logger initialization

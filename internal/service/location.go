@@ -214,7 +214,7 @@ func (s *LocationService) ReportByCategory(ctx context.Context, departmentId int
 		return nil, logger.Err(err, "")
 	}
 	toDate := parseTime.AddDate(0, 1, 0)
-	categories, err := s.CategoryRepository.GetAll(ctx, false)
+	categories, err := s.CategoryRepository.List(ctx, false)
 	if err != nil {
 		return nil, logger.Err(err, "")
 	}
