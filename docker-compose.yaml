@@ -1,0 +1,24 @@
+services:
+
+  postgres_test:
+    image: postgres:latest
+    container_name: postgres_test
+    ports:
+      - "55432:5432"
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: password
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U test -d test -h localhost" ]
+
+  migrate:
+    image: arigaio/atlas:latest
+    container_name: migrate
+    depends_on:
+      postgres_test:
+        condition: service_healthy
+    command: >
+      migrate apply
+      --url postgres://test:password@postgres_test:5432/test?sslmode=disable
+    volumes:
+      - ./migrations:/migrations

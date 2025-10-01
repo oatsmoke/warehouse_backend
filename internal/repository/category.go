@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
@@ -19,7 +18,7 @@ func NewCategoryRepository(postgresDB *pgxpool.Pool) *CategoryRepository {
 	}
 }
 
-func (r *CategoryRepository) Create(ctx context.Context, category *model.Category) error {
+func (r *CategoryRepository) Create(ctx context.Context, category *model.Category) (int64, error) {
 	const query = `
 		INSERT INTO categories (title) 
 		VALUES ($1)
@@ -27,15 +26,14 @@ func (r *CategoryRepository) Create(ctx context.Context, category *model.Categor
 
 	var id int64
 	if err := r.postgresDB.QueryRow(ctx, query, category.Title).Scan(&id); err != nil {
-		return err
+		return 0, err
 	}
 
 	if id == 0 {
-		return logger.NoRowsAffected
+		return 0, logger.NoRowsAffected
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("category with id %d created", id))
-	return nil
+	return id, nil
 }
 
 func (r *CategoryRepository) Read(ctx context.Context, id int64) (*model.Category, error) {
@@ -53,7 +51,6 @@ func (r *CategoryRepository) Read(ctx context.Context, id int64) (*model.Categor
 		return nil, err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("category with id %d read", id))
 	return category, nil
 }
 
@@ -72,7 +69,6 @@ func (r *CategoryRepository) Update(ctx context.Context, category *model.Categor
 		return logger.NoRowsAffected
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("category with id %d updated", category.ID))
 	return nil
 }
 
@@ -91,7 +87,6 @@ func (r *CategoryRepository) Delete(ctx context.Context, id int64) error {
 		return logger.NoRowsAffected
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("category with id %d deleted", id))
 	return nil
 }
 
@@ -110,7 +105,6 @@ func (r *CategoryRepository) Restore(ctx context.Context, id int64) error {
 		return logger.NoRowsAffected
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("category with id %d restored", id))
 	return nil
 }
 
@@ -144,6 +138,5 @@ func (r *CategoryRepository) List(ctx context.Context, withDeleted bool) ([]*mod
 		return nil, err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("%d category listed", len(categories)))
 	return categories, nil
 }

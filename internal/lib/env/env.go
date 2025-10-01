@@ -45,6 +45,10 @@ func GetPostgresDsn() string {
 	return get(PostgresDsn)
 }
 
+func GetTestPostgresDsn() string {
+	return "postgres://test:password@localhost:55432/test?sslmode=disable"
+}
+
 func GetRedisDsn() string {
 	return get(RedisDsn)
 }

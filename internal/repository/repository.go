@@ -78,7 +78,7 @@ type Department interface {
 }
 
 type Category interface {
-	Create(ctx context.Context, category *model.Category) error
+	Create(ctx context.Context, category *model.Category) (int64, error)
 	Read(ctx context.Context, id int64) (*model.Category, error)
 	Update(ctx context.Context, category *model.Category) error
 	Delete(ctx context.Context, id int64) error

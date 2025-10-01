@@ -21,10 +21,11 @@ const (
 )
 
 var (
-	RequestBodyIsEmpty = errors.New("request body is empty")
-	NoRowsAffected     = errors.New("no rows affected")
-	MethodNotAllowed   = errors.New("method not allowed")
-	LaterDate          = errors.New("StartDate is later than EndDate")
+	RequestBodyIsEmpty  = errors.New("request body is empty")
+	NoRowsAffected      = errors.New("no rows affected")
+	MethodNotAllowed    = errors.New("method not allowed")
+	LaterDate           = errors.New("StartDate is later than EndDate")
+	EmptyRequiredValues = errors.New("empty required values")
 )
 
 var mu sync.Mutex
