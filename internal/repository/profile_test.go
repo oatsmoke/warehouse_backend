@@ -10,85 +10,88 @@ import (
 	"github.com/oatsmoke/warehouse_backend/internal/model"
 )
 
-func truncateCategories() {
-	_, err := testConn.Exec(context.Background(), "TRUNCATE categories RESTART IDENTITY CASCADE;")
+func truncateProfiles() {
+	_, err := testConn.Exec(context.Background(), "TRUNCATE profiles RESTART IDENTITY CASCADE;")
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func addTestCategory(ctx context.Context) *model.Category {
-	c := new(model.Category)
+func addTestProfile(ctx context.Context, categoryID int64) *model.Profile {
+	p := new(model.Profile)
 
 	const query = `
-		INSERT INTO categories (title) 
-		VALUES ($1) 
-		RETURNING id,title;`
+		INSERT INTO profiles (title, category)
+		VALUES ($1, $2)
+		RETURNING id, title;`
 
-	if err := testConn.QueryRow(ctx, query, "test_category").
-		Scan(&c.ID, &c.Title); err != nil {
-		log.Fatalf("failed to insert test category: %v\n", err)
+	if err := testConn.QueryRow(ctx, query, "test_profile", categoryID).
+		Scan(&p.ID, &p.Title); err != nil {
+		log.Fatalf("failed to insert test profile: %v\n", err)
 	}
 
-	return c
+	return p
 }
 
-func addTestDeletedCategory(ctx context.Context) *model.Category {
-	c := new(model.Category)
+func addTestDeletedProfile(ctx context.Context, categoryID int64) *model.Profile {
+	p := new(model.Profile)
 
 	const query = `
-		INSERT INTO categories (title, deleted_at) 
-		VALUES ($1, now()) 
-		RETURNING id,title,deleted_at;`
+		INSERT INTO profiles (title, category, deleted_at)
+		VALUES ($1, $2, now())
+		RETURNING id, title, deleted_at;`
 
-	if err := testConn.QueryRow(ctx, query, "delete_category").
-		Scan(&c.ID, &c.Title, &c.DeletedAt); err != nil {
-		log.Fatalf("failed to insert test category: %v\n", err)
+	if err := testConn.QueryRow(ctx, query, "delete_profile", categoryID).
+		Scan(&p.ID, &p.Title, &p.DeletedAt); err != nil {
+		log.Fatalf("failed to insert test profile: %v\n", err)
 	}
 
-	return c
+	return p
 }
 
-func TestNewCategoryRepository(t *testing.T) {
+func TestNewProfileRepository(t *testing.T) {
 	type args struct {
 		postgresDB *pgxpool.Pool
 	}
 	tests := []struct {
 		name string
 		args args
-		want *CategoryRepository
+		want *ProfileRepository
 	}{
 		{
-			name: "create category repository",
+			name: "create profile repository",
 			args: args{
 				postgresDB: testConn,
 			},
-			want: &CategoryRepository{
+			want: &ProfileRepository{
 				postgresDB: testConn,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewCategoryRepository(tt.args.postgresDB); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewCategoryRepository() = %v, want %v", got, tt.want)
+			if got := NewProfileRepository(tt.args.postgresDB); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NewProfileRepository() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestCategoryRepository_Create(t *testing.T) {
-	defer truncateCategories()
+func TestProfileRepository_Create(t *testing.T) {
+	defer func() {
+		truncateProfiles()
+		truncateCategories()
+	}()
+
+	c := addTestCategory(t.Context())
 
 	type fields struct {
 		postgresDB *pgxpool.Pool
 	}
-
 	type args struct {
-		ctx      context.Context
-		category *model.Category
+		ctx     context.Context
+		profile *model.Profile
 	}
-
 	tests := []struct {
 		name    string
 		fields  fields
@@ -97,28 +100,34 @@ func TestCategoryRepository_Create(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "create category",
+			name: "create profile",
 			fields: fields{
 				postgresDB: testConn,
 			},
 			args: args{
 				ctx: context.Background(),
-				category: &model.Category{
-					Title: "test_category",
+				profile: &model.Profile{
+					Title: "test_profile",
+					Category: &model.Category{
+						ID: c.ID,
+					},
 				},
 			},
 			want:    1,
 			wantErr: false,
 		},
 		{
-			name: "create duplicate category",
+			name: "create duplicate profile",
 			fields: fields{
 				postgresDB: testConn,
 			},
 			args: args{
 				ctx: context.Background(),
-				category: &model.Category{
-					Title: "test_category",
+				profile: &model.Profile{
+					Title: "test_profile",
+					Category: &model.Category{
+						ID: c.ID,
+					},
 				},
 			},
 			wantErr: true,
@@ -126,25 +135,29 @@ func TestCategoryRepository_Create(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := &CategoryRepository{
+			r := &ProfileRepository{
 				postgresDB: tt.fields.postgresDB,
 			}
-			got, err := r.Create(tt.args.ctx, tt.args.category)
+			got, err := r.Create(tt.args.ctx, tt.args.profile)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Create() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
+			if got != tt.want {
 				t.Errorf("Create() got = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestCategoryRepository_Read(t *testing.T) {
-	defer truncateCategories()
+func TestProfileRepository_Read(t *testing.T) {
+	defer func() {
+		truncateProfiles()
+		truncateCategories()
+	}()
 
 	c := addTestCategory(t.Context())
+	p := addTestProfile(t.Context(), c.ID)
 
 	type fields struct {
 		postgresDB *pgxpool.Pool
@@ -157,26 +170,30 @@ func TestCategoryRepository_Read(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		want    *model.Category
+		want    *model.Profile
 		wantErr bool
 	}{
 		{
-			name: "read category",
+			name: "read profile",
 			fields: fields{
 				postgresDB: testConn,
 			},
 			args: args{
 				ctx: context.Background(),
-				id:  c.ID,
+				id:  p.ID,
 			},
-			want: &model.Category{
-				ID:    c.ID,
-				Title: c.Title,
+			want: &model.Profile{
+				ID:    p.ID,
+				Title: p.Title,
+				Category: &model.Category{
+					ID:    c.ID,
+					Title: c.Title,
+				},
 			},
 			wantErr: false,
 		},
 		{
-			name: "read non-existing category",
+			name: "read non-existing profile",
 			fields: fields{
 				postgresDB: testConn,
 			},
@@ -189,7 +206,7 @@ func TestCategoryRepository_Read(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := &CategoryRepository{
+			r := &ProfileRepository{
 				postgresDB: tt.fields.postgresDB,
 			}
 			got, err := r.Read(tt.args.ctx, tt.args.id)
@@ -204,17 +221,21 @@ func TestCategoryRepository_Read(t *testing.T) {
 	}
 }
 
-func TestCategoryRepository_Update(t *testing.T) {
-	defer truncateCategories()
+func TestProfileRepository_Update(t *testing.T) {
+	defer func() {
+		truncateProfiles()
+		truncateCategories()
+	}()
 
 	c := addTestCategory(t.Context())
+	p := addTestProfile(t.Context(), c.ID)
 
 	type fields struct {
 		postgresDB *pgxpool.Pool
 	}
 	type args struct {
-		ctx      context.Context
-		category *model.Category
+		ctx     context.Context
+		profile *model.Profile
 	}
 	tests := []struct {
 		name    string
@@ -223,29 +244,35 @@ func TestCategoryRepository_Update(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "update category",
+			name: "update profile",
 			fields: fields{
 				postgresDB: testConn,
 			},
 			args: args{
 				ctx: context.Background(),
-				category: &model.Category{
-					ID:    c.ID,
-					Title: "updated_category",
+				profile: &model.Profile{
+					ID:    p.ID,
+					Title: "updated_profile",
+					Category: &model.Category{
+						ID: c.ID,
+					},
 				},
 			},
 			wantErr: false,
 		},
 		{
-			name: "update non-existing category",
+			name: "update non-existing profile",
 			fields: fields{
 				postgresDB: testConn,
 			},
 			args: args{
 				ctx: context.Background(),
-				category: &model.Category{
+				profile: &model.Profile{
 					ID:    999,
-					Title: "non_existing_category",
+					Title: "non_existing_profile",
+					Category: &model.Category{
+						ID: c.ID,
+					},
 				},
 			},
 			wantErr: true,
@@ -253,20 +280,24 @@ func TestCategoryRepository_Update(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := &CategoryRepository{
+			r := &ProfileRepository{
 				postgresDB: tt.fields.postgresDB,
 			}
-			if err := r.Update(tt.args.ctx, tt.args.category); (err != nil) != tt.wantErr {
+			if err := r.Update(tt.args.ctx, tt.args.profile); (err != nil) != tt.wantErr {
 				t.Errorf("Update() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
 }
 
-func TestCategoryRepository_Delete(t *testing.T) {
-	defer truncateCategories()
+func TestProfileRepository_Delete(t *testing.T) {
+	defer func() {
+		truncateProfiles()
+		truncateCategories()
+	}()
 
 	c := addTestCategory(t.Context())
+	p := addTestProfile(t.Context(), c.ID)
 
 	type fields struct {
 		postgresDB *pgxpool.Pool
@@ -282,18 +313,18 @@ func TestCategoryRepository_Delete(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "delete category",
+			name: "delete profile",
 			fields: fields{
 				postgresDB: testConn,
 			},
 			args: args{
 				ctx: context.Background(),
-				id:  c.ID,
+				id:  p.ID,
 			},
 			wantErr: false,
 		},
 		{
-			name: "delete non-existing category",
+			name: "delete non-existing profile",
 			fields: fields{
 				postgresDB: testConn,
 			},
@@ -306,7 +337,7 @@ func TestCategoryRepository_Delete(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := &CategoryRepository{
+			r := &ProfileRepository{
 				postgresDB: tt.fields.postgresDB,
 			}
 			if err := r.Delete(tt.args.ctx, tt.args.id); (err != nil) != tt.wantErr {
@@ -316,11 +347,15 @@ func TestCategoryRepository_Delete(t *testing.T) {
 	}
 }
 
-func TestCategoryRepository_List(t *testing.T) {
-	defer truncateCategories()
+func TestProfileRepository_List(t *testing.T) {
+	defer func() {
+		truncateProfiles()
+		truncateCategories()
+	}()
 
 	c := addTestCategory(t.Context())
-	dc := addTestDeletedCategory(t.Context())
+	p := addTestProfile(t.Context(), c.ID)
+	dp := addTestDeletedProfile(t.Context(), c.ID)
 
 	type fields struct {
 		postgresDB *pgxpool.Pool
@@ -333,11 +368,11 @@ func TestCategoryRepository_List(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		want    []*model.Category
+		want    []*model.Profile
 		wantErr bool
 	}{
 		{
-			name: "list categories without deleted",
+			name: "list profiles without deleted",
 			fields: fields{
 				postgresDB: testConn,
 			},
@@ -345,16 +380,20 @@ func TestCategoryRepository_List(t *testing.T) {
 				ctx:         context.Background(),
 				withDeleted: false,
 			},
-			want: []*model.Category{
+			want: []*model.Profile{
 				{
-					ID:    c.ID,
-					Title: c.Title,
+					ID:    p.ID,
+					Title: p.Title,
+					Category: &model.Category{
+						ID:    c.ID,
+						Title: c.Title,
+					},
 				},
 			},
 			wantErr: false,
 		},
 		{
-			name: "list categories with deleted",
+			name: "list profiles with deleted",
 			fields: fields{
 				postgresDB: testConn,
 			},
@@ -362,15 +401,23 @@ func TestCategoryRepository_List(t *testing.T) {
 				ctx:         context.Background(),
 				withDeleted: true,
 			},
-			want: []*model.Category{
+			want: []*model.Profile{
 				{
-					ID:        dc.ID,
-					Title:     dc.Title,
-					DeletedAt: dc.DeletedAt,
+					ID:        dp.ID,
+					Title:     dp.Title,
+					DeletedAt: dp.DeletedAt,
+					Category: &model.Category{
+						ID:    c.ID,
+						Title: c.Title,
+					},
 				},
 				{
-					ID:    c.ID,
-					Title: c.Title,
+					ID:    p.ID,
+					Title: p.Title,
+					Category: &model.Category{
+						ID:    c.ID,
+						Title: c.Title,
+					},
 				},
 			},
 			wantErr: false,
@@ -378,7 +425,7 @@ func TestCategoryRepository_List(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := &CategoryRepository{
+			r := &ProfileRepository{
 				postgresDB: tt.fields.postgresDB,
 			}
 			got, err := r.List(tt.args.ctx, tt.args.withDeleted)
@@ -393,11 +440,14 @@ func TestCategoryRepository_List(t *testing.T) {
 	}
 }
 
-func TestCategoryRepository_Restore(t *testing.T) {
-	defer truncateCategories()
+func TestProfileRepository_Restore(t *testing.T) {
+	defer func() {
+		truncateProfiles()
+		truncateCategories()
+	}()
 
 	c := addTestCategory(t.Context())
-	dc := addTestDeletedCategory(t.Context())
+	p := addTestDeletedProfile(t.Context(), c.ID)
 
 	type fields struct {
 		postgresDB *pgxpool.Pool
@@ -413,18 +463,18 @@ func TestCategoryRepository_Restore(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "restore category",
+			name: "restore profile",
 			fields: fields{
 				postgresDB: testConn,
 			},
 			args: args{
 				ctx: context.Background(),
-				id:  dc.ID,
+				id:  p.ID,
 			},
 			wantErr: false,
 		},
 		{
-			name: "restore non-existing category",
+			name: "restore non-existing profile",
 			fields: fields{
 				postgresDB: testConn,
 			},
@@ -434,21 +484,10 @@ func TestCategoryRepository_Restore(t *testing.T) {
 			},
 			wantErr: true,
 		},
-		{
-			name: "restore not deleted category",
-			fields: fields{
-				postgresDB: testConn,
-			},
-			args: args{
-				ctx: context.Background(),
-				id:  c.ID,
-			},
-			wantErr: true,
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := &CategoryRepository{
+			r := &ProfileRepository{
 				postgresDB: tt.fields.postgresDB,
 			}
 			if err := r.Restore(tt.args.ctx, tt.args.id); (err != nil) != tt.wantErr {

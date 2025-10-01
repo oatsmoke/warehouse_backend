@@ -57,14 +57,14 @@ func (h *CategoryHandler) Read(ctx *gin.Context) {
 }
 
 func (h *CategoryHandler) Update(ctx *gin.Context) {
-	var req *dto.Category
-	if err := ctx.BindJSON(&req); err != nil {
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
 		logger.ErrResponse(ctx, err, http.StatusBadRequest)
 		return
 	}
 
-	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
-	if err != nil {
+	var req *dto.Category
+	if err := ctx.BindJSON(&req); err != nil {
 		logger.ErrResponse(ctx, err, http.StatusBadRequest)
 		return
 	}

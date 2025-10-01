@@ -81,12 +81,12 @@ type Category interface {
 }
 
 type Profile interface {
-	Create(ctx context.Context, title string, categoryId int64) error
-	Update(ctx context.Context, id int64, title string, categoryId int64) error
+	Create(ctx context.Context, profile *model.Profile) error
+	Read(ctx context.Context, id int64) (*model.Profile, error)
+	Update(ctx context.Context, profile *model.Profile) error
 	Delete(ctx context.Context, id int64) error
 	Restore(ctx context.Context, id int64) error
-	GetAll(ctx context.Context, deleted bool) ([]*model.Profile, error)
-	GetById(ctx context.Context, id int64) (*model.Profile, error)
+	List(ctx context.Context, withDeleted bool) ([]*model.Profile, error)
 }
 
 type Equipment interface {

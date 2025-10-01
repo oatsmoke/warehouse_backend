@@ -2,7 +2,7 @@
 CREATE TABLE "public"."departments" (
   "id" bigserial NOT NULL,
   "title" character varying(100) NOT NULL,
-  "deleted" boolean NOT NULL DEFAULT false,
+  "deleted_at" timestamptz NULL,
   PRIMARY KEY ("id"),
   CONSTRAINT "departments_title_key" UNIQUE ("title")
 );
@@ -20,7 +20,7 @@ CREATE TABLE "public"."employees" (
   "hidden" boolean NOT NULL DEFAULT false,
   "department" bigint NULL,
   "role" character varying(100) NOT NULL DEFAULT 'USER',
-  "deleted" boolean NOT NULL DEFAULT false,
+  "deleted_at" timestamptz NULL,
   PRIMARY KEY ("id"),
   CONSTRAINT "employees_phone_key" UNIQUE ("phone"),
   CONSTRAINT "employees_department_fkey" FOREIGN KEY ("department") REFERENCES "public"."departments" ("id") ON UPDATE NO ACTION ON DELETE RESTRICT
@@ -38,7 +38,7 @@ CREATE TABLE "public"."profiles" (
   "id" bigserial NOT NULL,
   "title" character varying(100) NOT NULL,
   "category" bigint NOT NULL,
-  "deleted" boolean NOT NULL DEFAULT false,
+  "deleted_at" timestamptz NULL,
   PRIMARY KEY ("id"),
   CONSTRAINT "profiles_title_key" UNIQUE ("title"),
   CONSTRAINT "profiles_category_fkey" FOREIGN KEY ("category") REFERENCES "public"."categories" ("id") ON UPDATE NO ACTION ON DELETE RESTRICT
@@ -50,7 +50,7 @@ CREATE TABLE "public"."equipments" (
   "id" bigserial NOT NULL,
   "serial_number" character varying(100) NOT NULL,
   "profile" bigint NOT NULL,
-  "deleted" boolean NOT NULL DEFAULT false,
+  "deleted_at" timestamptz NULL,
   PRIMARY KEY ("id"),
   CONSTRAINT "equipments_serial_number_key" UNIQUE ("serial_number"),
   CONSTRAINT "equipments_profile_fkey" FOREIGN KEY ("profile") REFERENCES "public"."profiles" ("id") ON UPDATE NO ACTION ON DELETE RESTRICT
@@ -61,7 +61,7 @@ CREATE INDEX "idx_equipments_profile" ON "public"."equipments" ("profile");
 CREATE TABLE "public"."companies" (
   "id" bigserial NOT NULL,
   "title" character varying(100) NOT NULL,
-  "deleted" boolean NOT NULL DEFAULT false,
+  "deleted_at" timestamptz NULL,
   PRIMARY KEY ("id"),
   CONSTRAINT "companies_title_key" UNIQUE ("title")
 );
@@ -70,7 +70,7 @@ CREATE TABLE "public"."contracts" (
   "id" bigserial NOT NULL,
   "number" character varying(100) NOT NULL,
   "address" character varying(100) NOT NULL,
-  "deleted" boolean NOT NULL DEFAULT false,
+  "deleted_at" timestamptz NULL,
   PRIMARY KEY ("id"),
   CONSTRAINT "contracts_number_key" UNIQUE ("number")
 );

@@ -1,125 +1,134 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/oatsmoke/warehouse_backend/internal/dto"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
 	"github.com/oatsmoke/warehouse_backend/internal/service"
 )
 
 type ProfileHandler struct {
-	ProfileService service.Profile
+	profileService service.Profile
 }
 
 func NewProfileHandler(profileService service.Profile) *ProfileHandler {
 	return &ProfileHandler{
-		ProfileService: profileService,
+		profileService: profileService,
 	}
 }
 
-// Create is profile create
 func (h *ProfileHandler) Create(ctx *gin.Context) {
-	var profile *model.Profile
-	if err := ctx.BindJSON(&profile); err != nil {
+	var req *dto.Profile
+	if err := ctx.BindJSON(&req); err != nil {
 		logger.ErrResponse(ctx, err, http.StatusBadRequest)
 		return
 	}
 
-	if err := h.ProfileService.Create(ctx, profile.Title, profile.Category.ID); err != nil {
+	profile := &model.Profile{
+		Title: req.Title,
+		Category: &model.Category{
+			ID: req.CategoryID,
+		},
+	}
+
+	if err := h.profileService.Create(ctx, profile); err != nil {
 		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
 		return
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("%s created", profile.Title))
-	ctx.JSON(http.StatusOK, "")
+	ctx.JSON(http.StatusCreated, "")
 }
 
-// Update is profile update
-func (h *ProfileHandler) Update(ctx *gin.Context) {
-	var profile *model.Profile
-	if err := ctx.BindJSON(&profile); err != nil {
+func (h *ProfileHandler) Read(ctx *gin.Context) {
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
 		logger.ErrResponse(ctx, err, http.StatusBadRequest)
 		return
 	}
 
-	if err := h.ProfileService.Update(ctx, profile.ID, profile.Title, profile.Category.ID); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
-		return
-	}
-
-	logger.InfoInConsole(fmt.Sprintf("%s updated", profile.Title))
-	ctx.JSON(http.StatusOK, "")
-}
-
-// Delete is profile delete
-func (h *ProfileHandler) Delete(ctx *gin.Context) {
-	var profile *model.Profile
-	if err := ctx.BindJSON(&profile); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
-		return
-	}
-
-	if err := h.ProfileService.Delete(ctx, profile.ID); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
-		return
-	}
-
-	logger.InfoInConsole(fmt.Sprintf("%d deleted", profile.ID))
-	ctx.JSON(http.StatusOK, "")
-}
-
-// Restore is profile restore
-func (h *ProfileHandler) Restore(ctx *gin.Context) {
-	var profile *model.Category
-	if err := ctx.BindJSON(&profile); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
-		return
-	}
-
-	if err := h.ProfileService.Restore(ctx, profile.ID); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
-		return
-	}
-
-	logger.InfoInConsole(fmt.Sprintf("%d restored", profile.ID))
-	ctx.JSON(http.StatusOK, "")
-}
-
-// GetAll is to get all profiles
-func (h *ProfileHandler) GetAll(ctx *gin.Context) {
-	var deleted bool
-	if err := ctx.BindJSON(&deleted); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
-		return
-	}
-
-	res, err := h.ProfileService.GetAll(ctx, deleted)
+	res, err := h.profileService.Read(ctx, id)
 	if err != nil {
 		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
 		return
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("profiles list sended (deleted = %t)", deleted))
 	ctx.JSON(http.StatusOK, res)
 }
 
-// GetById is to get profile by id
-func (h *ProfileHandler) GetById(ctx *gin.Context) {
-	var profile *model.Profile
-	if err := ctx.BindJSON(&profile); err != nil {
+func (h *ProfileHandler) Update(ctx *gin.Context) {
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
 		logger.ErrResponse(ctx, err, http.StatusBadRequest)
 		return
 	}
 
-	res, err := h.ProfileService.GetById(ctx, profile.ID)
+	var req *dto.Profile
+	if err := ctx.BindJSON(&req); err != nil {
+		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		return
+	}
+
+	profile := &model.Profile{
+		ID:    id,
+		Title: req.Title,
+		Category: &model.Category{
+			ID: req.CategoryID,
+		},
+	}
+
+	if err := h.profileService.Update(ctx, profile); err != nil {
+		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		return
+	}
+
+	ctx.JSON(http.StatusNoContent, "")
+}
+
+func (h *ProfileHandler) Delete(ctx *gin.Context) {
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		return
+	}
+
+	if err := h.profileService.Delete(ctx, id); err != nil {
+		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		return
+	}
+
+	ctx.JSON(http.StatusNoContent, "")
+}
+
+func (h *ProfileHandler) Restore(ctx *gin.Context) {
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		return
+	}
+
+	if err := h.profileService.Restore(ctx, id); err != nil {
+		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		return
+	}
+
+	ctx.JSON(http.StatusNoContent, "")
+}
+
+func (h *ProfileHandler) List(ctx *gin.Context) {
+	var withDeleted bool
+	if ctx.Query("deleted") == "true" {
+		withDeleted = true
+	}
+
+	res, err := h.profileService.List(ctx, withDeleted)
 	if err != nil {
 		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
 		return
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("profile %s found", res.Title))
 	ctx.JSON(http.StatusOK, res)
 }

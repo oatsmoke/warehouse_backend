@@ -7,10 +7,10 @@ create table categories
 
 create table profiles
 (
-    id       bigserial primary key,
-    title    varchar(100) not null unique,
-    category bigint       not null references categories (id) on delete restrict,
-    deleted  boolean      not null default false
+    id         bigserial primary key,
+    title      varchar(100) not null unique,
+    category   bigint       not null references categories (id) on delete restrict,
+    deleted_at timestamp with time zone
 );
 
 create table equipments
@@ -18,14 +18,14 @@ create table equipments
     id            bigserial primary key,
     serial_number varchar(100) not null unique,
     profile       bigint       not null references profiles (id) on delete restrict,
-    deleted       boolean      not null default false
+    deleted_at    timestamp with time zone
 );
 
 create table departments
 (
-    id      bigserial primary key,
-    title   varchar(100) not null unique,
-    deleted boolean      not null default false
+    id         bigserial primary key,
+    title      varchar(100) not null unique,
+    deleted_at timestamp with time zone
 );
 
 create table employees
@@ -42,22 +42,22 @@ create table employees
     hidden             boolean      not null default false,
     department         bigint references departments (id) on delete restrict,
     role               varchar(100) not null default 'USER',
-    deleted            boolean      not null default false
+    deleted_at         timestamp with time zone
 );
 
 create table contracts
 (
-    id      bigserial primary key,
-    number  varchar(100) not null unique,
-    address varchar(100) not null,
-    deleted boolean      not null default false
+    id         bigserial primary key,
+    number     varchar(100) not null unique,
+    address    varchar(100) not null,
+    deleted_at timestamp with time zone
 );
 
 create table companies
 (
-    id      bigserial primary key,
-    title   varchar(100) not null unique,
-    deleted boolean      not null default false
+    id         bigserial primary key,
+    title      varchar(100) not null unique,
+    deleted_at timestamp with time zone
 );
 
 create table locations
@@ -81,8 +81,7 @@ create table locations
 create table replaces
 (
     id            bigserial primary key,
-    transfer_from bigint not null references locations on delete cascade,
-    transfer_to   bigint not null references locations on delete cascade
+    transfer_from bigint not null references locations on delete cascade,   transfer_to   bigint not null references locations on delete cascade
 );
 
 create index idx_profiles_category on profiles (category);

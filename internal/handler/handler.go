@@ -99,14 +99,14 @@ func (h *Handler) InitRoutes() *gin.Engine {
 			category.GET("", h.Category.List)
 		}
 
-		profile := api.Group("/profile")
+		profile := api.Group("/profiles")
 		{
-			profile.POST("/create", h.Profile.Create)
-			profile.POST("/update", h.Profile.Update)
-			profile.POST("/delete", h.Profile.Delete)
-			profile.POST("/restore", h.Profile.Restore)
-			profile.POST("/getAll", h.Profile.GetAll)
-			profile.POST("/getById", h.Profile.GetById)
+			profile.POST("", h.Profile.Create)
+			profile.GET("/:id", h.Profile.Read)
+			profile.PUT("/:id", h.Profile.Update)
+			profile.DELETE("/:id", h.Profile.Delete)
+			profile.PUT("/:id/restore", h.Profile.Restore)
+			profile.GET("", h.Profile.List)
 		}
 
 		equipment := api.Group("/equipment")

@@ -6,9 +6,13 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/oatsmoke/warehouse_backend/internal/lib/env"
+	"github.com/oatsmoke/warehouse_backend/internal/lib/postgresql"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
 	"github.com/redis/go-redis/v9"
 )
+
+var testConn = postgresql.Connect(context.Background(), env.GetTestPostgresDsn())
 
 type Repository struct {
 	Auth       *AuthRepository
@@ -87,14 +91,12 @@ type Category interface {
 }
 
 type Profile interface {
-	Create(ctx context.Context, title string, categoryId int64) error
-	Update(ctx context.Context, id int64, title string, categoryId int64) error
+	Create(ctx context.Context, profile *model.Profile) (int64, error)
+	Read(ctx context.Context, id int64) (*model.Profile, error)
+	Update(ctx context.Context, profile *model.Profile) error
 	Delete(ctx context.Context, id int64) error
 	Restore(ctx context.Context, id int64) error
-	GetAll(ctx context.Context, deleted bool) ([]*model.Profile, error)
-	GetById(ctx context.Context, profile *model.Profile) (*model.Profile, error)
-	//GetByCategory(ctx context.Context, categoryId int64) ([]*model.Profile, error)
-	//FindByTitle(ctx context.Context, title string) (int64, error)
+	List(ctx context.Context, withDeleted bool) ([]*model.Profile, error)
 }
 
 type Equipment interface {

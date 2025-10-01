@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
@@ -9,72 +10,68 @@ import (
 )
 
 type ProfileService struct {
-	ProfileRepository repository.Profile
+	profileRepository repository.Profile
 }
 
 func NewProfileService(profileRepository repository.Profile) *ProfileService {
 	return &ProfileService{
-		ProfileRepository: profileRepository,
+		profileRepository: profileRepository,
 	}
 }
 
-// Create is profile create
-func (s *ProfileService) Create(ctx context.Context, title string, category int64) error {
-	if err := s.ProfileRepository.Create(ctx, title, category); err != nil {
-		return logger.Err(err, "")
+func (s *ProfileService) Create(ctx context.Context, profile *model.Profile) error {
+	id, err := s.profileRepository.Create(ctx, profile)
+	if err != nil {
+		return err
 	}
 
+	logger.InfoInConsole(fmt.Sprintf("profile with id %d created", id))
 	return nil
 }
 
-// Update is profile update
-func (s *ProfileService) Update(ctx context.Context, id int64, title string, category int64) error {
-	if err := s.ProfileRepository.Update(ctx, id, title, category); err != nil {
-		return logger.Err(err, "")
+func (s *ProfileService) Read(ctx context.Context, id int64) (*model.Profile, error) {
+	read, err := s.profileRepository.Read(ctx, id)
+	if err != nil {
+		return nil, err
 	}
 
+	logger.InfoInConsole(fmt.Sprintf("profile with id %d read", id))
+	return read, nil
+}
+
+func (s *ProfileService) Update(ctx context.Context, profile *model.Profile) error {
+	if err := s.profileRepository.Update(ctx, profile); err != nil {
+		return err
+	}
+
+	logger.InfoInConsole(fmt.Sprintf("profile with id %d updated", profile.ID))
 	return nil
 }
 
-// Delete is profile delete
 func (s *ProfileService) Delete(ctx context.Context, id int64) error {
-	if err := s.ProfileRepository.Delete(ctx, id); err != nil {
-		return logger.Err(err, "")
+	if err := s.profileRepository.Delete(ctx, id); err != nil {
+		return err
 	}
 
+	logger.InfoInConsole(fmt.Sprintf("profile with id %d deleted", id))
 	return nil
 }
 
-// Restore is profile restore
 func (s *ProfileService) Restore(ctx context.Context, id int64) error {
-	if err := s.ProfileRepository.Restore(ctx, id); err != nil {
-		return logger.Err(err, "")
+	if err := s.profileRepository.Restore(ctx, id); err != nil {
+		return err
 	}
 
+	logger.InfoInConsole(fmt.Sprintf("profile with id %d restored", id))
 	return nil
 }
 
-// GetAll is to get all profiles
-func (s *ProfileService) GetAll(ctx context.Context, deleted bool) ([]*model.Profile, error) {
-	res, err := s.ProfileRepository.GetAll(ctx, deleted)
+func (s *ProfileService) List(ctx context.Context, withDeleted bool) ([]*model.Profile, error) {
+	list, err := s.profileRepository.List(ctx, withDeleted)
 	if err != nil {
-		return nil, logger.Err(err, "")
+		return nil, err
 	}
 
-	return res, nil
-}
-
-// GetById is to get profile by id
-func (s *ProfileService) GetById(ctx context.Context, id int64) (*model.Profile, error) {
-	profile := &model.Profile{
-		ID:       id,
-		Category: &model.Category{},
-	}
-
-	res, err := s.ProfileRepository.GetById(ctx, profile)
-	if err != nil {
-		return nil, logger.Err(err, "")
-	}
-
-	return res, nil
+	logger.InfoInConsole(fmt.Sprintf("%d profile listed", len(list)))
+	return list, nil
 }
