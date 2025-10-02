@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
@@ -9,71 +10,68 @@ import (
 )
 
 type ContractService struct {
-	ContractRepository repository.Contract
+	contractRepository repository.Contract
 }
 
 func NewContractService(contractRepository repository.Contract) *ContractService {
 	return &ContractService{
-		ContractRepository: contractRepository,
+		contractRepository: contractRepository,
 	}
 }
 
-// Create is contract create
-func (s *ContractService) Create(ctx context.Context, number, address string) error {
-	if err := s.ContractRepository.Create(ctx, number, address); err != nil {
-		return logger.Err(err, "")
+func (s *ContractService) Create(ctx context.Context, contract *model.Contract) error {
+	id, err := s.contractRepository.Create(ctx, contract)
+	if err != nil {
+		return err
 	}
 
+	logger.InfoInConsole(fmt.Sprintf("contract with id %d created", id))
 	return nil
 }
 
-// Update is contract create
-func (s *ContractService) Update(ctx context.Context, id int64, number, address string) error {
-	if err := s.ContractRepository.Update(ctx, id, number, address); err != nil {
-		return logger.Err(err, "")
+func (s *ContractService) Read(ctx context.Context, id int64) (*model.Contract, error) {
+	read, err := s.contractRepository.Read(ctx, id)
+	if err != nil {
+		return nil, err
 	}
 
+	logger.InfoInConsole(fmt.Sprintf("contract with id %d read", id))
+	return read, nil
+}
+
+func (s *ContractService) Update(ctx context.Context, contract *model.Contract) error {
+	if err := s.contractRepository.Update(ctx, contract); err != nil {
+		return err
+	}
+
+	logger.InfoInConsole(fmt.Sprintf("contract with id %d updated", contract.ID))
 	return nil
 }
 
-// Delete is contract delete
 func (s *ContractService) Delete(ctx context.Context, id int64) error {
-	if err := s.ContractRepository.Delete(ctx, id); err != nil {
-		return logger.Err(err, "")
+	if err := s.contractRepository.Delete(ctx, id); err != nil {
+		return err
 	}
 
+	logger.InfoInConsole(fmt.Sprintf("contract with id %d deleted", id))
 	return nil
 }
 
-// Restore is contract restore
 func (s *ContractService) Restore(ctx context.Context, id int64) error {
-	if err := s.ContractRepository.Restore(ctx, id); err != nil {
-		return logger.Err(err, "")
+	if err := s.contractRepository.Restore(ctx, id); err != nil {
+		return err
 	}
 
+	logger.InfoInConsole(fmt.Sprintf("contract with id %d restored", id))
 	return nil
 }
 
-// GetAll is to get all contracts
-func (s *ContractService) GetAll(ctx context.Context, deleted bool) ([]*model.Contract, error) {
-	res, err := s.ContractRepository.GetAll(ctx, deleted)
+func (s *ContractService) List(ctx context.Context, withDeleted bool) ([]*model.Contract, error) {
+	list, err := s.contractRepository.List(ctx, withDeleted)
 	if err != nil {
-		return nil, logger.Err(err, "")
+		return nil, err
 	}
 
-	return res, nil
-}
-
-// GetById is to get contract by id
-func (s *ContractService) GetById(ctx context.Context, id int64) (*model.Contract, error) {
-	contract := &model.Contract{
-		ID: id,
-	}
-
-	res, err := s.ContractRepository.GetById(ctx, contract)
-	if err != nil {
-		return nil, logger.Err(err, "")
-	}
-
-	return res, nil
+	logger.InfoInConsole(fmt.Sprintf("%d contract listed", len(list)))
+	return list, nil
 }

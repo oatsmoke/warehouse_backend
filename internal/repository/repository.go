@@ -134,13 +134,12 @@ type Location interface {
 }
 
 type Contract interface {
-	Create(ctx context.Context, number, address string) error
-	Update(ctx context.Context, id int64, number, address string) error
+	Create(ctx context.Context, contract *model.Contract) (int64, error)
+	Read(ctx context.Context, id int64) (*model.Contract, error)
+	Update(ctx context.Context, contract *model.Contract) error
 	Delete(ctx context.Context, id int64) error
 	Restore(ctx context.Context, id int64) error
-	GetAll(ctx context.Context, deleted bool) ([]*model.Contract, error)
-	GetById(ctx context.Context, contract *model.Contract) (*model.Contract, error)
-	//FindByNumber(ctx context.Context, number string) (int64, error)
+	List(ctx context.Context, withDeleted bool) ([]*model.Contract, error)
 }
 
 type Company interface {
