@@ -1,125 +1,128 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/oatsmoke/warehouse_backend/internal/dto"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
 	"github.com/oatsmoke/warehouse_backend/internal/service"
 )
 
 type CompanyHandler struct {
-	CompanyService service.Company
+	companyService service.Company
 }
 
 func NewCompanyHandler(companyService service.Company) *CompanyHandler {
 	return &CompanyHandler{
-		CompanyService: companyService,
+		companyService: companyService,
 	}
 }
 
-// Create is company create
 func (h *CompanyHandler) Create(ctx *gin.Context) {
-	var company *model.Company
-	if err := ctx.BindJSON(&company); err != nil {
+	var req *dto.Company
+	if err := ctx.BindJSON(&req); err != nil {
 		logger.ErrResponse(ctx, err, http.StatusBadRequest)
 		return
 	}
 
-	if err := h.CompanyService.Create(ctx, company.Title); err != nil {
+	company := &model.Company{
+		Title: req.Title,
+	}
+
+	if err := h.companyService.Create(ctx, company); err != nil {
 		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
 		return
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("%s created", company.Title))
-	ctx.JSON(http.StatusOK, "")
+	ctx.JSON(http.StatusCreated, "")
 }
 
-// Update is company update
-func (h *CompanyHandler) Update(ctx *gin.Context) {
-	var company *model.Company
-	if err := ctx.BindJSON(&company); err != nil {
+func (h *CompanyHandler) Read(ctx *gin.Context) {
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
 		logger.ErrResponse(ctx, err, http.StatusBadRequest)
 		return
 	}
 
-	if err := h.CompanyService.Update(ctx, company.ID, company.Title); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
-		return
-	}
-
-	logger.InfoInConsole(fmt.Sprintf("%s updated", company.Title))
-	ctx.JSON(http.StatusOK, "")
-}
-
-// Delete is company delete
-func (h *CompanyHandler) Delete(ctx *gin.Context) {
-	var company *model.Company
-	if err := ctx.BindJSON(&company); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
-		return
-	}
-
-	if err := h.CompanyService.Delete(ctx, company.ID); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
-		return
-	}
-
-	logger.InfoInConsole(fmt.Sprintf("%d deleted", company.ID))
-	ctx.JSON(http.StatusOK, "")
-}
-
-// Restore is a company restore
-func (h *CompanyHandler) Restore(ctx *gin.Context) {
-	var company *model.Company
-	if err := ctx.BindJSON(&company); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
-		return
-	}
-
-	if err := h.CompanyService.Restore(ctx, company.ID); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
-		return
-	}
-
-	logger.InfoInConsole(fmt.Sprintf("%d restored", company.ID))
-	ctx.JSON(http.StatusOK, "")
-}
-
-// GetAll is to get all companies
-func (h *CompanyHandler) GetAll(ctx *gin.Context) {
-	var deleted bool
-	if err := ctx.BindJSON(&deleted); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
-		return
-	}
-
-	res, err := h.CompanyService.GetAll(ctx, deleted)
+	res, err := h.companyService.Read(ctx, id)
 	if err != nil {
 		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
 		return
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("companies list sended (deleted = %t)", deleted))
 	ctx.JSON(http.StatusOK, res)
 }
 
-// GetById is to get company by id
-func (h *CompanyHandler) GetById(ctx *gin.Context) {
-	var company *model.Company
-	if err := ctx.BindJSON(&company); err != nil {
+func (h *CompanyHandler) Update(ctx *gin.Context) {
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
 		logger.ErrResponse(ctx, err, http.StatusBadRequest)
 		return
 	}
 
-	res, err := h.CompanyService.GetById(ctx, company.ID)
+	var req *dto.Company
+	if err := ctx.BindJSON(&req); err != nil {
+		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		return
+	}
+
+	company := &model.Company{
+		ID:    id,
+		Title: req.Title,
+	}
+
+	if err := h.companyService.Update(ctx, company); err != nil {
+		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		return
+	}
+
+	ctx.JSON(http.StatusNoContent, "")
+}
+
+func (h *CompanyHandler) Delete(ctx *gin.Context) {
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		return
+	}
+
+	if err := h.companyService.Delete(ctx, id); err != nil {
+		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		return
+	}
+
+	ctx.JSON(http.StatusNoContent, "")
+}
+
+func (h *CompanyHandler) Restore(ctx *gin.Context) {
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		return
+	}
+
+	if err := h.companyService.Restore(ctx, id); err != nil {
+		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		return
+	}
+
+	ctx.JSON(http.StatusNoContent, "")
+}
+
+func (h *CompanyHandler) List(ctx *gin.Context) {
+	var withDeleted bool
+	if ctx.Query("deleted") == "true" {
+		withDeleted = true
+	}
+
+	res, err := h.companyService.List(ctx, withDeleted)
 	if err != nil {
 		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
 		return
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("company %s found", res.Title))
 	ctx.JSON(http.StatusOK, res)
 }

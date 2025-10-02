@@ -1,7 +1,9 @@
 package model
 
+import "time"
+
 type Company struct {
-	ID      int64  `json:"id,omitempty"`
-	Title   string `json:"title,omitempty"`
-	Deleted bool   `json:"deleted,omitempty"`
+	ID        int64      `json:"id,omitempty"`
+	Title     string     `json:"title,omitempty"`
+	DeletedAt *time.Time `json:"deleted_at,omitempty"`
 }

@@ -144,13 +144,12 @@ type Contract interface {
 }
 
 type Company interface {
-	Create(ctx context.Context, title string) error
-	Update(ctx context.Context, id int64, title string) error
+	Create(ctx context.Context, company *model.Company) (int64, error)
+	Read(ctx context.Context, id int64) (*model.Company, error)
+	Update(ctx context.Context, company *model.Company) error
 	Delete(ctx context.Context, id int64) error
 	Restore(ctx context.Context, id int64) error
-	GetAll(ctx context.Context, deleted bool) ([]*model.Company, error)
-	GetById(ctx context.Context, company *model.Company) (*model.Company, error)
-	//FindByTitle(ctx context.Context, title string) (int64, error)
+	List(ctx context.Context, withDeleted bool) ([]*model.Company, error)
 }
 
 type Replace interface {

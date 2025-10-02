@@ -70,10 +70,10 @@ func (h *CategoryHandler) Update(ctx *gin.Context) {
 	}
 
 	category := &model.Category{
+		ID:    id,
 		Title: req.Title,
 	}
 
-	category.ID = id
 	if err := h.categoryService.Update(ctx, category); err != nil {
 		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
 		return

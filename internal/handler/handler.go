@@ -140,14 +140,14 @@ func (h *Handler) InitRoutes() *gin.Engine {
 			contract.POST("/getById", h.Contract.GetById)
 		}
 
-		company := api.Group("/company")
+		company := api.Group("/companies")
 		{
-			company.POST("/create", h.Company.Create)
-			company.POST("/update", h.Company.Update)
-			company.POST("/delete", h.Company.Delete)
-			company.POST("/restore", h.Company.Restore)
-			company.POST("/getAll", h.Company.GetAll)
-			company.POST("/getById", h.Company.GetById)
+			company.POST("", h.Company.Create)
+			company.GET("/:id", h.Company.Read)
+			company.PUT("/:id", h.Company.Update)
+			company.DELETE("/:id", h.Company.Delete)
+			company.PUT("/:id/restore", h.Company.Restore)
+			company.GET("", h.Company.List)
 		}
 	}
 
