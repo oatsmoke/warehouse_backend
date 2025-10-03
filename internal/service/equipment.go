@@ -3,86 +3,96 @@ package service
 import (
 	"context"
 	"fmt"
-	"strings"
 
+	"github.com/oatsmoke/warehouse_backend/internal/dto"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
 	"github.com/oatsmoke/warehouse_backend/internal/repository"
 )
 
 type EquipmentService struct {
-	EquipmentRepository repository.Equipment
+	equipmentRepository repository.Equipment
 }
 
 func NewEquipmentService(equipmentRepository repository.Equipment) *EquipmentService {
 	return &EquipmentService{
-		EquipmentRepository: equipmentRepository,
+		equipmentRepository: equipmentRepository,
 	}
 }
 
-// Create is equipment create
-func (s *EquipmentService) Create(ctx context.Context, serialNumber string, profileId int64) (int64, error) {
-	id, err := s.EquipmentRepository.Create(ctx, strings.ToUpper(serialNumber), profileId)
+func (s *EquipmentService) Create(ctx context.Context, equipment *model.Equipment) error {
+	id, err := s.equipmentRepository.Create(ctx, equipment)
 	if err != nil {
-		return 0, logger.Err(err, "")
+		return err
 	}
 
-	return id, nil
-}
-
-// Update is equipment update
-func (s *EquipmentService) Update(ctx context.Context, id int64, serialNumber string, profileId int64) error {
-	if err := s.EquipmentRepository.Update(ctx, id, strings.ToUpper(serialNumber), profileId); err != nil {
-		return logger.Err(err, "")
-	}
-
+	logger.InfoInConsole(fmt.Sprintf("equipment with id %d created", id))
 	return nil
 }
 
-// Delete is equipment delete
+func (s *EquipmentService) Read(ctx context.Context, id int64) (*model.Equipment, error) {
+	read, err := s.equipmentRepository.Read(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	logger.InfoInConsole(fmt.Sprintf("equipment with id %d read", id))
+	return read, nil
+}
+
+func (s *EquipmentService) Update(ctx context.Context, equipment *model.Equipment) error {
+	if err := s.equipmentRepository.Update(ctx, equipment); err != nil {
+		return err
+	}
+
+	logger.InfoInConsole(fmt.Sprintf("equipment with id %d updated", equipment.ID))
+	return nil
+}
+
 func (s *EquipmentService) Delete(ctx context.Context, id int64) error {
-	if err := s.EquipmentRepository.Delete(ctx, id); err != nil {
-		return logger.Err(err, "")
+	if err := s.equipmentRepository.Delete(ctx, id); err != nil {
+		return err
 	}
 
+	logger.InfoInConsole(fmt.Sprintf("equipment with id %d deleted", id))
 	return nil
 }
 
-// Restore is equipment restore
 func (s *EquipmentService) Restore(ctx context.Context, id int64) error {
-	if err := s.EquipmentRepository.Restore(ctx, id); err != nil {
-		return logger.Err(err, "")
+	if err := s.equipmentRepository.Restore(ctx, id); err != nil {
+		return err
 	}
 
+	logger.InfoInConsole(fmt.Sprintf("equipment with id %d restored", id))
 	return nil
 }
 
-// GetAll is to get all equipment
-func (s *EquipmentService) GetAll(ctx context.Context) ([]*model.Equipment, error) {
-	res, err := s.EquipmentRepository.GetAll(ctx)
+func (s *EquipmentService) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Equipment, error) {
+	list, err := s.equipmentRepository.List(ctx, qp)
 	if err != nil {
-		return nil, logger.Err(err, "")
+		return nil, err
 	}
 
-	return res, nil
+	logger.InfoInConsole(fmt.Sprintf("%d equipment listed", len(list)))
+	return list, nil
 }
 
-// GetByIds is equipment get by id
-func (s *EquipmentService) GetByIds(ctx context.Context, ids []int64) ([]*model.Equipment, error) {
-	res, err := s.EquipmentRepository.GetByIds(ctx, ids)
-	if err != nil {
-		return nil, logger.Err(err, "")
-	}
-
-	return res, nil
-}
-
-// FindBySerialNumber is equipment find by serial number
 func (s *EquipmentService) FindBySerialNumber(ctx context.Context, value string) ([]*model.Equipment, error) {
-	res, err := s.EquipmentRepository.FindBySerialNumber(ctx, fmt.Sprintf("%%%s%%", value))
+	list, err := s.equipmentRepository.FindBySerialNumber(ctx, fmt.Sprintf("%%%s%%", value))
 	if err != nil {
-		return nil, logger.Err(err, "")
+		return nil, err
 	}
 
-	return res, nil
+	logger.InfoInConsole(fmt.Sprintf("%d equipment listed", len(list)))
+	return list, nil
+}
+
+func (s *EquipmentService) GetByIds(ctx context.Context, ids []int64) ([]*model.Equipment, error) {
+	list, err := s.equipmentRepository.GetByIds(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	logger.InfoInConsole(fmt.Sprintf("%d equipment listed", len(list)))
+	return list, nil
 }

@@ -2,100 +2,148 @@ package repository
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/oatsmoke/warehouse_backend/internal/dto"
+	"github.com/oatsmoke/warehouse_backend/internal/lib/list_filter"
+	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
 )
 
 type EquipmentRepository struct {
-	DB *pgxpool.Pool
+	postgresDB *pgxpool.Pool
 }
 
-func NewEquipmentRepository(db *pgxpool.Pool) *EquipmentRepository {
-	return &EquipmentRepository{DB: db}
+func NewEquipmentRepository(postgresDB *pgxpool.Pool) *EquipmentRepository {
+	return &EquipmentRepository{
+		postgresDB: postgresDB,
+	}
 }
 
-// Create is equipment create
-func (r *EquipmentRepository) Create(ctx context.Context, serialNumber string, profileId int64) (int64, error) {
+func (r *EquipmentRepository) Create(ctx context.Context, equipment *model.Equipment) (int64, error) {
 	const query = `
 		INSERT INTO equipments (serial_number, profile) 
 		VALUES ($1, $2)
 		RETURNING id;`
 
-	var equipmentId int64
-	if err := r.DB.QueryRow(ctx, query, serialNumber, profileId).Scan(&equipmentId); err != nil {
+	var id int64
+	if err := r.postgresDB.QueryRow(ctx, query, equipment.SerialNumber, equipment.Profile.ID).Scan(&id); err != nil {
 		return 0, err
 	}
 
-	return equipmentId, nil
+	if id == 0 {
+		return 0, logger.NoRowsAffected
+	}
+
+	return id, nil
 }
 
-// Update is equipment update
-func (r *EquipmentRepository) Update(ctx context.Context, id int64, serialNumber string, profileId int64) error {
+func (r *EquipmentRepository) Read(ctx context.Context, id int64) (*model.Equipment, error) {
+	const query = `
+		SELECT e.id, e.serial_number, p.deleted_at,
+		       p.id, p.title,
+			   c.id, c.title
+		FROM equipments e
+		LEFT JOIN profiles p ON p.id = e.profile
+		LEFT JOIN categories c ON c.id = p.category
+		WHERE e.id = $1;`
+
+	equipment := newEquipment()
+	if err := r.postgresDB.QueryRow(ctx, query, id).Scan(
+		&equipment.ID,
+		&equipment.SerialNumber,
+		&equipment.DeletedAt,
+		&equipment.Profile.ID,
+		&equipment.Profile.Title,
+		&equipment.Profile.Category.ID,
+		&equipment.Profile.Category.Title,
+	); err != nil {
+		return nil, err
+	}
+
+	return equipment, nil
+}
+
+func (r *EquipmentRepository) Update(ctx context.Context, equipment *model.Equipment) error {
 	const query = `
 		UPDATE equipments 
 		SET serial_number = $2, profile = $3
 		WHERE id = $1;`
 
-	if _, err := r.DB.Exec(ctx, query, id, serialNumber, profileId); err != nil {
+	ct, err := r.postgresDB.Exec(ctx, query, equipment.ID, equipment.SerialNumber, equipment.Profile.ID)
+	if err != nil {
 		return err
+	}
+
+	if ct.RowsAffected() == 0 {
+		return logger.NoRowsAffected
 	}
 
 	return nil
 }
 
-// Delete is equipment delete
 func (r *EquipmentRepository) Delete(ctx context.Context, id int64) error {
-	query := `
-			UPDATE equipments 
-			SET deleted = true
-       		WHERE id = $1;`
-
-	if _, err := r.DB.Exec(ctx, query, id); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// Restore is equipment restore
-func (r *EquipmentRepository) Restore(ctx context.Context, id int64) error {
-	query := `
-			UPDATE equipments 
-			SET deleted = false
-       		WHERE id = $1;`
-
-	if _, err := r.DB.Exec(ctx, query, id); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// GetAll is equipment get all
-func (r *EquipmentRepository) GetAll(ctx context.Context) ([]*model.Equipment, error) {
-	var equipments []*model.Equipment
-
 	const query = `
-		SELECT equipments.id, equipments.serial_number, 
-		       profiles.id, profiles.title, 
-		       categories.id, categories.title
-		FROM equipments
-		LEFT JOIN profiles ON profiles.id = equipments.profile
-		LEFT JOIN categories ON categories.id = profiles.category
-		WHERE equipments.deleted = FALSE
-		ORDER BY profiles.title;`
+		UPDATE equipments 
+		SET deleted_at = now()
+       	WHERE id = $1 AND deleted_at IS NULL;`
 
-	rows, err := r.DB.Query(ctx, query)
+	ct, err := r.postgresDB.Exec(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	if ct.RowsAffected() == 0 {
+		return logger.NoRowsAffected
+	}
+
+	return nil
+}
+
+func (r *EquipmentRepository) Restore(ctx context.Context, id int64) error {
+	const query = `
+		UPDATE equipments 
+		SET deleted_at = NULL 
+       	WHERE id = $1 AND deleted_at IS NOT NULL;`
+
+	ct, err := r.postgresDB.Exec(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	if ct.RowsAffected() == 0 {
+		return logger.NoRowsAffected
+	}
+
+	return nil
+}
+
+func (r *EquipmentRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Equipment, error) {
+	str, args := list_filter.BuildQuery(qp, []string{"e.serial_number", "p.title", "c.title"}, "e")
+	query := `
+		SELECT e.id, e.serial_number, e.deleted_at,
+		       p.id, p.title, 
+		       c.id, c.title
+		FROM equipments e
+		LEFT JOIN profiles p ON p.id = e.profile
+		LEFT JOIN categories c ON c.id = p.category
+		` + str
+	fmt.Println("[Q]: ", query)
+	fmt.Printf("[A]: %+v\n", args)
+	rows, err := r.postgresDB.Query(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
+	var equipments []*model.Equipment
 	for rows.Next() {
-		equipment := new(model.Equipment)
+		equipment := newEquipment()
 		if err := rows.Scan(
 			&equipment.ID,
 			&equipment.SerialNumber,
+			&equipment.DeletedAt,
 			&equipment.Profile.ID,
 			&equipment.Profile.Title,
 			&equipment.Profile.Category.ID,
@@ -106,31 +154,67 @@ func (r *EquipmentRepository) GetAll(ctx context.Context) ([]*model.Equipment, e
 		equipments = append(equipments, equipment)
 	}
 
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
 	return equipments, nil
 }
 
-// GetByIds is equipment get by ids
-func (r *EquipmentRepository) GetByIds(ctx context.Context, ids []int64) ([]*model.Equipment, error) {
-	var equipments []*model.Equipment
-
+func (r *EquipmentRepository) FindBySerialNumber(ctx context.Context, value string) ([]*model.Equipment, error) {
 	const query = `
 		SELECT equipments.id, equipments.serial_number,
-		       profiles.id, profiles.title
+		       profiles.title
 		FROM equipments
 		LEFT JOIN profiles ON profiles.id = equipments.profile
-		WHERE equipments.id = ANY($1);`
+		WHERE LOWER(serial_number) LIKE LOWER($1);`
 
-	rows, err := r.DB.Query(ctx, query, ids)
+	rows, err := r.postgresDB.Query(ctx, query, value)
 	if err != nil {
 		return nil, err
 	}
 
+	var equipments []*model.Equipment
 	for rows.Next() {
-		equipment := new(model.Equipment)
-		equipment.Profile = new(model.Profile)
+		equipment := newEquipment()
 		if err := rows.Scan(
 			&equipment.ID,
 			&equipment.SerialNumber,
+			&equipment.Profile.Title,
+		); err != nil {
+			return nil, err
+		}
+		equipments = append(equipments, equipment)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return equipments, nil
+}
+
+func (r *EquipmentRepository) GetByIds(ctx context.Context, ids []int64) ([]*model.Equipment, error) {
+	const query = `
+		SELECT e.id, e.serial_number, p.deleted_at,
+		       p.id, p.title
+		FROM equipments e
+		LEFT JOIN profiles p ON p.id = e.profile
+		WHERE e.id = ANY($1);`
+
+	rows, err := r.postgresDB.Query(ctx, query, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var equipments []*model.Equipment
+	for rows.Next() {
+		equipment := newEquipment()
+		if err := rows.Scan(
+			&equipment.ID,
+			&equipment.SerialNumber,
+			&equipment.DeletedAt,
 			&equipment.Profile.ID,
 			&equipment.Profile.Title,
 		); err != nil {
@@ -139,66 +223,17 @@ func (r *EquipmentRepository) GetByIds(ctx context.Context, ids []int64) ([]*mod
 		equipments = append(equipments, equipment)
 	}
 
-	return equipments, nil
-}
-
-// FindBySerialNumber is equipment find by serial number
-func (r *EquipmentRepository) FindBySerialNumber(ctx context.Context, value string) ([]*model.Equipment, error) {
-	var equipments []*model.Equipment
-
-	const query = `
-		SELECT equipments.id, equipments.serial_number,
-		       profiles.title
-		FROM equipments
-		LEFT JOIN profiles ON profiles.id = equipments.profile
-		WHERE LOWER(serial_number) LIKE LOWER($1);`
-
-	rows, err := r.DB.Query(ctx, query, value)
-	if err != nil {
+	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
-	for rows.Next() {
-		equipment := new(model.Equipment)
-		equipment.Profile = new(model.Profile)
-		if err := rows.Scan(
-			&equipment.ID,
-			&equipment.SerialNumber,
-			&equipment.Profile.Title,
-		); err != nil {
-			return nil, err
-		}
-		equipments = append(equipments, equipment)
-	}
-
 	return equipments, nil
 }
 
-//// GetByProfile is equipment get by profile
-//func (r *EquipmentRepository) GetByProfile(ctx context.Context, id int64) ([]*model.Equipment, error) {
-//	var equipments []*model.Equipment
-//
-//	const query = `
-//		SELECT equipments.id, equipments.serial_number
-//		FROM equipments
-//		LEFT JOIN profiles ON profiles.id = equipments.profile
-//		WHERE profiles.id = $1;`
-//
-//	rows, err := r.DB.Query(ctx, query, id)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	for rows.Next() {
-//		equipment := new(model.Equipment)
-//		if err := rows.Scan(
-//			&equipment.ID,
-//			&equipment.SerialNumber,
-//		); err != nil {
-//			return nil, err
-//		}
-//		equipments = append(equipments, equipment)
-//	}
-//
-//	return equipments, nil
-//}
+func newEquipment() *model.Equipment {
+	return &model.Equipment{
+		Profile: &model.Profile{
+			Category: &model.Category{},
+		},
+	}
+}

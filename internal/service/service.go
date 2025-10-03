@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/oatsmoke/warehouse_backend/internal/dto"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/jwt_auth"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
 	"github.com/oatsmoke/warehouse_backend/internal/repository"
@@ -90,13 +91,14 @@ type Profile interface {
 }
 
 type Equipment interface {
-	Create(ctx context.Context, serialNumber string, profileId int64) (int64, error)
-	Update(ctx context.Context, id int64, serialNumber string, profileId int64) error
+	Create(ctx context.Context, equipment *model.Equipment) error
+	Read(ctx context.Context, id int64) (*model.Equipment, error)
+	Update(ctx context.Context, equipment *model.Equipment) error
 	Delete(ctx context.Context, id int64) error
 	Restore(ctx context.Context, id int64) error
-	GetAll(ctx context.Context) ([]*model.Equipment, error)
-	GetByIds(ctx context.Context, ids []int64) ([]*model.Equipment, error)
+	List(ctx context.Context, qp *dto.QueryParams) ([]*model.Equipment, error)
 	FindBySerialNumber(ctx context.Context, value string) ([]*model.Equipment, error)
+	GetByIds(ctx context.Context, ids []int64) ([]*model.Equipment, error)
 }
 
 type Location interface {

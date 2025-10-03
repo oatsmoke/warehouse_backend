@@ -7,11 +7,12 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/oatsmoke/warehouse_backend/internal/lib/postgresql"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
 )
 
 func truncateProfiles() {
-	_, err := testConn.Exec(context.Background(), "TRUNCATE profiles RESTART IDENTITY CASCADE;")
+	_, err := postgresql.ConnectTest().Exec(context.Background(), "TRUNCATE profiles RESTART IDENTITY CASCADE;")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -25,7 +26,7 @@ func addTestProfile(ctx context.Context, categoryID int64) *model.Profile {
 		VALUES ($1, $2)
 		RETURNING id, title;`
 
-	if err := testConn.QueryRow(ctx, query, "test_profile", categoryID).
+	if err := postgresql.ConnectTest().QueryRow(ctx, query, "test_profile", categoryID).
 		Scan(&p.ID, &p.Title); err != nil {
 		log.Fatalf("failed to insert test profile: %v\n", err)
 	}
@@ -41,7 +42,7 @@ func addTestDeletedProfile(ctx context.Context, categoryID int64) *model.Profile
 		VALUES ($1, $2, now())
 		RETURNING id, title, deleted_at;`
 
-	if err := testConn.QueryRow(ctx, query, "delete_profile", categoryID).
+	if err := postgresql.ConnectTest().QueryRow(ctx, query, "delete_profile", categoryID).
 		Scan(&p.ID, &p.Title, &p.DeletedAt); err != nil {
 		log.Fatalf("failed to insert test profile: %v\n", err)
 	}
@@ -61,10 +62,10 @@ func TestNewProfileRepository(t *testing.T) {
 		{
 			name: "create profile repository",
 			args: args{
-				postgresDB: testConn,
+				postgresDB: postgresql.ConnectTest(),
 			},
 			want: &ProfileRepository{
-				postgresDB: testConn,
+				postgresDB: postgresql.ConnectTest(),
 			},
 		},
 	}
@@ -102,7 +103,7 @@ func TestProfileRepository_Create(t *testing.T) {
 		{
 			name: "create profile",
 			fields: fields{
-				postgresDB: testConn,
+				postgresDB: postgresql.ConnectTest(),
 			},
 			args: args{
 				ctx: context.Background(),
@@ -119,7 +120,7 @@ func TestProfileRepository_Create(t *testing.T) {
 		{
 			name: "create duplicate profile",
 			fields: fields{
-				postgresDB: testConn,
+				postgresDB: postgresql.ConnectTest(),
 			},
 			args: args{
 				ctx: context.Background(),
@@ -176,7 +177,7 @@ func TestProfileRepository_Read(t *testing.T) {
 		{
 			name: "read profile",
 			fields: fields{
-				postgresDB: testConn,
+				postgresDB: postgresql.ConnectTest(),
 			},
 			args: args{
 				ctx: context.Background(),
@@ -195,7 +196,7 @@ func TestProfileRepository_Read(t *testing.T) {
 		{
 			name: "read non-existing profile",
 			fields: fields{
-				postgresDB: testConn,
+				postgresDB: postgresql.ConnectTest(),
 			},
 			args: args{
 				ctx: context.Background(),
@@ -246,7 +247,7 @@ func TestProfileRepository_Update(t *testing.T) {
 		{
 			name: "update profile",
 			fields: fields{
-				postgresDB: testConn,
+				postgresDB: postgresql.ConnectTest(),
 			},
 			args: args{
 				ctx: context.Background(),
@@ -263,7 +264,7 @@ func TestProfileRepository_Update(t *testing.T) {
 		{
 			name: "update non-existing profile",
 			fields: fields{
-				postgresDB: testConn,
+				postgresDB: postgresql.ConnectTest(),
 			},
 			args: args{
 				ctx: context.Background(),
@@ -315,7 +316,7 @@ func TestProfileRepository_Delete(t *testing.T) {
 		{
 			name: "delete profile",
 			fields: fields{
-				postgresDB: testConn,
+				postgresDB: postgresql.ConnectTest(),
 			},
 			args: args{
 				ctx: context.Background(),
@@ -326,7 +327,7 @@ func TestProfileRepository_Delete(t *testing.T) {
 		{
 			name: "delete non-existing profile",
 			fields: fields{
-				postgresDB: testConn,
+				postgresDB: postgresql.ConnectTest(),
 			},
 			args: args{
 				ctx: context.Background(),
@@ -374,7 +375,7 @@ func TestProfileRepository_List(t *testing.T) {
 		{
 			name: "list profiles without deleted",
 			fields: fields{
-				postgresDB: testConn,
+				postgresDB: postgresql.ConnectTest(),
 			},
 			args: args{
 				ctx:         context.Background(),
@@ -395,7 +396,7 @@ func TestProfileRepository_List(t *testing.T) {
 		{
 			name: "list profiles with deleted",
 			fields: fields{
-				postgresDB: testConn,
+				postgresDB: postgresql.ConnectTest(),
 			},
 			args: args{
 				ctx:         context.Background(),
@@ -465,7 +466,7 @@ func TestProfileRepository_Restore(t *testing.T) {
 		{
 			name: "restore profile",
 			fields: fields{
-				postgresDB: testConn,
+				postgresDB: postgresql.ConnectTest(),
 			},
 			args: args{
 				ctx: context.Background(),
@@ -476,7 +477,7 @@ func TestProfileRepository_Restore(t *testing.T) {
 		{
 			name: "restore non-existing profile",
 			fields: fields{
-				postgresDB: testConn,
+				postgresDB: postgresql.ConnectTest(),
 			},
 			args: args{
 				ctx: context.Background(),

@@ -7,11 +7,12 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/oatsmoke/warehouse_backend/internal/lib/postgresql"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
 )
 
 func truncateCategories() {
-	_, err := testConn.Exec(context.Background(), "TRUNCATE categories RESTART IDENTITY CASCADE;")
+	_, err := postgresql.ConnectTest().Exec(context.Background(), "TRUNCATE categories RESTART IDENTITY CASCADE;")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -25,7 +26,7 @@ func addTestCategory(ctx context.Context) *model.Category {
 		VALUES ($1) 
 		RETURNING id,title;`
 
-	if err := testConn.QueryRow(ctx, query, "test_category").
+	if err := postgresql.ConnectTest().QueryRow(ctx, query, "test_category").
 		Scan(&c.ID, &c.Title); err != nil {
 		log.Fatalf("failed to insert test category: %v\n", err)
 	}
@@ -41,7 +42,7 @@ func addTestDeletedCategory(ctx context.Context) *model.Category {
 		VALUES ($1, now()) 
 		RETURNING id,title,deleted_at;`
 
-	if err := testConn.QueryRow(ctx, query, "delete_category").
+	if err := postgresql.ConnectTest().QueryRow(ctx, query, "delete_category").
 		Scan(&c.ID, &c.Title, &c.DeletedAt); err != nil {
 		log.Fatalf("failed to insert test category: %v\n", err)
 	}
@@ -61,10 +62,10 @@ func TestNewCategoryRepository(t *testing.T) {
 		{
 			name: "create category repository",
 			args: args{
-				postgresDB: testConn,
+				postgresDB: postgresql.ConnectTest(),
 			},
 			want: &CategoryRepository{
-				postgresDB: testConn,
+				postgresDB: postgresql.ConnectTest(),
 			},
 		},
 	}
@@ -99,7 +100,7 @@ func TestCategoryRepository_Create(t *testing.T) {
 		{
 			name: "create category",
 			fields: fields{
-				postgresDB: testConn,
+				postgresDB: postgresql.ConnectTest(),
 			},
 			args: args{
 				ctx: context.Background(),
@@ -113,7 +114,7 @@ func TestCategoryRepository_Create(t *testing.T) {
 		{
 			name: "create duplicate category",
 			fields: fields{
-				postgresDB: testConn,
+				postgresDB: postgresql.ConnectTest(),
 			},
 			args: args{
 				ctx: context.Background(),
@@ -163,7 +164,7 @@ func TestCategoryRepository_Read(t *testing.T) {
 		{
 			name: "read category",
 			fields: fields{
-				postgresDB: testConn,
+				postgresDB: postgresql.ConnectTest(),
 			},
 			args: args{
 				ctx: context.Background(),
@@ -178,7 +179,7 @@ func TestCategoryRepository_Read(t *testing.T) {
 		{
 			name: "read non-existing category",
 			fields: fields{
-				postgresDB: testConn,
+				postgresDB: postgresql.ConnectTest(),
 			},
 			args: args{
 				ctx: context.Background(),
@@ -225,7 +226,7 @@ func TestCategoryRepository_Update(t *testing.T) {
 		{
 			name: "update category",
 			fields: fields{
-				postgresDB: testConn,
+				postgresDB: postgresql.ConnectTest(),
 			},
 			args: args{
 				ctx: context.Background(),
@@ -239,7 +240,7 @@ func TestCategoryRepository_Update(t *testing.T) {
 		{
 			name: "update non-existing category",
 			fields: fields{
-				postgresDB: testConn,
+				postgresDB: postgresql.ConnectTest(),
 			},
 			args: args{
 				ctx: context.Background(),
@@ -284,7 +285,7 @@ func TestCategoryRepository_Delete(t *testing.T) {
 		{
 			name: "delete category",
 			fields: fields{
-				postgresDB: testConn,
+				postgresDB: postgresql.ConnectTest(),
 			},
 			args: args{
 				ctx: context.Background(),
@@ -295,7 +296,7 @@ func TestCategoryRepository_Delete(t *testing.T) {
 		{
 			name: "delete non-existing category",
 			fields: fields{
-				postgresDB: testConn,
+				postgresDB: postgresql.ConnectTest(),
 			},
 			args: args{
 				ctx: context.Background(),
@@ -339,7 +340,7 @@ func TestCategoryRepository_List(t *testing.T) {
 		{
 			name: "list categories without deleted",
 			fields: fields{
-				postgresDB: testConn,
+				postgresDB: postgresql.ConnectTest(),
 			},
 			args: args{
 				ctx:         context.Background(),
@@ -356,7 +357,7 @@ func TestCategoryRepository_List(t *testing.T) {
 		{
 			name: "list categories with deleted",
 			fields: fields{
-				postgresDB: testConn,
+				postgresDB: postgresql.ConnectTest(),
 			},
 			args: args{
 				ctx:         context.Background(),
@@ -415,7 +416,7 @@ func TestCategoryRepository_Restore(t *testing.T) {
 		{
 			name: "restore category",
 			fields: fields{
-				postgresDB: testConn,
+				postgresDB: postgresql.ConnectTest(),
 			},
 			args: args{
 				ctx: context.Background(),
@@ -426,7 +427,7 @@ func TestCategoryRepository_Restore(t *testing.T) {
 		{
 			name: "restore non-existing category",
 			fields: fields{
-				postgresDB: testConn,
+				postgresDB: postgresql.ConnectTest(),
 			},
 			args: args{
 				ctx: context.Background(),
@@ -437,7 +438,7 @@ func TestCategoryRepository_Restore(t *testing.T) {
 		{
 			name: "restore not deleted category",
 			fields: fields{
-				postgresDB: testConn,
+				postgresDB: postgresql.ConnectTest(),
 			},
 			args: args{
 				ctx: context.Background(),

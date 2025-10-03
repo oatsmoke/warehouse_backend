@@ -158,7 +158,7 @@ func (r *LocationRepository) GetById(ctx context.Context, equipmentId int64) (*m
 	if err := r.DB.QueryRow(ctx, query, equipmentId).Scan(
 		&equipmentByLoc.Equipment.ID,
 		&equipmentByLoc.Equipment.SerialNumber,
-		&equipmentByLoc.Equipment.Deleted,
+		&equipmentByLoc.Equipment.DeletedAt,
 		&equipmentByLoc.Equipment.Profile.ID,
 		&equipmentByLoc.Equipment.Profile.Title,
 		&equipmentByLoc.Equipment.Profile.Category.ID,

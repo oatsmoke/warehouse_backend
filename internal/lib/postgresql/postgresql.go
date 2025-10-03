@@ -5,9 +5,9 @@ import (
 	"log"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/oatsmoke/warehouse_backend/internal/lib/env"
 )
 
-// Connect is a connection to the database
 func Connect(ctx context.Context, dsn string) *pgxpool.Pool {
 	connectDB, err := pgxpool.New(ctx, dsn)
 	if err != nil {
@@ -19,4 +19,8 @@ func Connect(ctx context.Context, dsn string) *pgxpool.Pool {
 	}
 
 	return connectDB
+}
+
+func ConnectTest() *pgxpool.Pool {
+	return Connect(context.Background(), env.GetTestPostgresDsn())
 }

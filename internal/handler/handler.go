@@ -27,7 +27,7 @@ func New(service *service.Service) *Handler {
 		Contract:   NewContractHandler(service.Contract),
 		Department: NewDepartmentHandler(service.Department),
 		Employee:   NewEmployeeHandler(service.Employee),
-		Equipment:  NewEquipmentHandler(service.Equipment, service.Location),
+		Equipment:  NewEquipmentHandler(service.Equipment),
 		Location:   NewLocationHandler(service.Location),
 		Profile:    NewProfileHandler(service.Profile),
 	}
@@ -109,15 +109,17 @@ func (h *Handler) InitRoutes() *gin.Engine {
 			profile.GET("", h.Profile.List)
 		}
 
-		equipment := api.Group("/equipment")
+		equipment := api.Group("/equipments")
 		{
-			equipment.POST("/create", h.Equipment.Create)
-			equipment.POST("/update", h.Equipment.Update)
-			equipment.POST("/delete", h.Equipment.Delete)
-			equipment.POST("/restore", h.Equipment.Restore)
-			equipment.POST("/getAll", h.Equipment.GetAll)
-			equipment.POST("/getByIds", h.Equipment.GetByIds)
-			equipment.POST("/findBySerialNumber", h.Equipment.FindBySerialNumber)
+			equipment.POST("", h.Equipment.Create)
+			equipment.GET("/:id", h.Equipment.Read)
+			equipment.PUT("/:id", h.Equipment.Update)
+			equipment.DELETE("/:id", h.Equipment.Delete)
+			equipment.PUT("/:id/restore", h.Equipment.Restore)
+			equipment.GET("", h.Equipment.List)
+
+			//equipment.POST("/findBySerialNumber", h.Equipment.FindBySerialNumber)
+			//equipment.POST("/getByIds", h.Equipment.GetByIds)
 		}
 
 		location := api.Group("/location")
