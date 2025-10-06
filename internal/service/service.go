@@ -26,7 +26,7 @@ func New(repository *repository.Repository) *Service {
 	return &Service{
 		Auth:       NewAuthService(repository.Auth),
 		Employee:   NewEmployeeService(repository.Employee, repository.Equipment, repository.Auth),
-		Department: NewDepartmentService(repository.Department, repository.Employee),
+		Department: NewDepartmentService(repository.Department),
 		Category:   NewCategoryService(repository.Category),
 		Profile:    NewProfileService(repository.Profile),
 		Equipment:  NewEquipmentService(repository.Equipment),
@@ -63,13 +63,13 @@ type Employee interface {
 }
 
 type Department interface {
-	Create(ctx context.Context, title string) error
-	Update(ctx context.Context, id int64, title string) error
+	Create(ctx context.Context, department *model.Department) error
+	Read(ctx context.Context, id int64) (*model.Department, error)
+	Update(ctx context.Context, department *model.Department) error
 	Delete(ctx context.Context, id int64) error
 	Restore(ctx context.Context, id int64) error
-	GetAll(ctx context.Context, deleted bool) ([]*model.Department, error)
-	GetById(ctx context.Context, id int64) (*model.Department, error)
-	GetAllButOne(ctx context.Context, id, employeeId int64) ([]*model.Department, error)
+	List(ctx context.Context, qp *dto.QueryParams) ([]*model.Department, error)
+	//GetAllButOne(ctx context.Context, id, employeeId int64) ([]*model.Department, error)
 }
 
 type Category interface {

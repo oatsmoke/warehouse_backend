@@ -1,148 +1,147 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/oatsmoke/warehouse_backend/internal/dto"
+	"github.com/oatsmoke/warehouse_backend/internal/lib/list_filter"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
 	"github.com/oatsmoke/warehouse_backend/internal/service"
 )
 
 type DepartmentHandler struct {
-	DepartmentService service.Department
+	departmentService service.Department
 }
 
 func NewDepartmentHandler(departmentService service.Department) *DepartmentHandler {
 	return &DepartmentHandler{
-		DepartmentService: departmentService,
+		departmentService: departmentService,
 	}
 }
 
-// Create is department create
 func (h *DepartmentHandler) Create(ctx *gin.Context) {
-	var department *model.Department
-	if err := ctx.BindJSON(&department); err != nil {
+	var req *dto.Department
+	if err := ctx.BindJSON(&req); err != nil {
 		logger.ErrResponse(ctx, err, http.StatusBadRequest)
 		return
 	}
 
-	if err := h.DepartmentService.Create(ctx, department.Title); err != nil {
+	department := &model.Department{
+		Title: req.Title,
+	}
+
+	if err := h.departmentService.Create(ctx, department); err != nil {
 		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
 		return
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("%s created", department.Title))
-	ctx.JSON(http.StatusOK, "")
+	ctx.JSON(http.StatusCreated, "")
 }
 
-// Update is department update
+func (h *DepartmentHandler) Read(ctx *gin.Context) {
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		return
+	}
+
+	res, err := h.departmentService.Read(ctx, id)
+	if err != nil {
+		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, res)
+}
+
 func (h *DepartmentHandler) Update(ctx *gin.Context) {
-	var department *model.Department
-	if err := ctx.BindJSON(&department); err != nil {
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		return
+	}
+	var req *dto.Department
+	if err := ctx.BindJSON(&req); err != nil {
 		logger.ErrResponse(ctx, err, http.StatusBadRequest)
 		return
 	}
 
-	if err := h.DepartmentService.Update(ctx, department.ID, department.Title); err != nil {
+	department := &model.Department{
+		ID:    id,
+		Title: req.Title,
+	}
+
+	if err := h.departmentService.Update(ctx, department); err != nil {
 		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
 		return
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("%s updated", department.Title))
-	ctx.JSON(http.StatusOK, "")
+	ctx.JSON(http.StatusNoContent, "")
 }
 
-// Delete is department delete
 func (h *DepartmentHandler) Delete(ctx *gin.Context) {
-	var department *model.Department
-	if err := ctx.BindJSON(&department); err != nil {
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
 		logger.ErrResponse(ctx, err, http.StatusBadRequest)
 		return
 	}
 
-	if err := h.DepartmentService.Delete(ctx, department.ID); err != nil {
+	if err := h.departmentService.Delete(ctx, id); err != nil {
 		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
 		return
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("%d deleted", department.ID))
-	ctx.JSON(http.StatusOK, "")
+	ctx.JSON(http.StatusNoContent, "")
 }
 
-// Restore is department restore
 func (h *DepartmentHandler) Restore(ctx *gin.Context) {
-	var department *model.Department
-	if err := ctx.BindJSON(&department); err != nil {
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
 		logger.ErrResponse(ctx, err, http.StatusBadRequest)
 		return
 	}
 
-	if err := h.DepartmentService.Restore(ctx, department.ID); err != nil {
+	if err := h.departmentService.Restore(ctx, id); err != nil {
 		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
 		return
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("%d restored", department.ID))
-	ctx.JSON(http.StatusOK, "")
+	ctx.JSON(http.StatusNoContent, "")
 }
 
-// GetAll is to get all departments
-func (h *DepartmentHandler) GetAll(ctx *gin.Context) {
-	var deleted bool
-	if err := ctx.BindJSON(&deleted); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
-		return
-	}
+func (h *DepartmentHandler) List(ctx *gin.Context) {
+	req := list_filter.ParseQueryParams(ctx)
 
-	res, err := h.DepartmentService.GetAll(ctx, deleted)
+	res, err := h.departmentService.List(ctx, req)
 	if err != nil {
 		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
 		return
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("departments list sent (deleted = %t)", deleted))
 	ctx.JSON(http.StatusOK, res)
 }
 
-// GetById is to get department by id
-func (h *DepartmentHandler) GetById(ctx *gin.Context) {
-	var department *model.Department
-	if err := ctx.BindJSON(&department); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
-		return
-	}
-
-	res, err := h.DepartmentService.GetById(ctx, department.ID)
-	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
-		return
-	}
-
-	logger.InfoInConsole(fmt.Sprintf("department %s found", res.Title))
-	ctx.JSON(http.StatusOK, res)
-}
-
-// GetAllButOne is to get all departments but one
-func (h *DepartmentHandler) GetAllButOne(ctx *gin.Context) {
-	employeeId, err := getUserId(ctx)
-	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusUnauthorized)
-		return
-	}
-
-	var department *model.Department
-	if err := ctx.BindJSON(&department); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
-		return
-	}
-	res, err := h.DepartmentService.GetAllButOne(ctx, department.ID, employeeId)
-	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
-		return
-	}
-
-	logger.InfoInConsole(fmt.Sprintf("departments list sended (except = %d)", department.ID))
-	ctx.JSON(http.StatusOK, res)
-}
+//func (h *DepartmentHandler) GetAllButOne(ctx *gin.Context) {
+//	employeeId, err := getUserId(ctx)
+//	if err != nil {
+//		logger.ErrResponse(ctx, err, http.StatusUnauthorized)
+//		return
+//	}
+//
+//	var department *model.Department
+//	if err := ctx.BindJSON(&department); err != nil {
+//		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+//		return
+//	}
+//	res, err := h.DepartmentService.GetAllButOne(ctx, department.ID, employeeId)
+//	if err != nil {
+//		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+//		return
+//	}
+//
+//	logger.InfoInConsole(fmt.Sprintf("departments list sended (except = %d)", department.ID))
+//	ctx.JSON(http.StatusOK, res)
+//}

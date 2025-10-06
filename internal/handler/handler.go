@@ -78,15 +78,15 @@ func (h *Handler) InitRoutes() *gin.Engine {
 			employee.POST("/changeRole", h.Employee.ChangeRole)
 		}
 
-		department := api.Group("/department")
+		department := api.Group("/departments")
 		{
-			department.POST("/create", h.Department.Create)
-			department.POST("/update", h.Department.Update)
-			department.POST("/delete", h.Department.Delete)
-			department.POST("/restore", h.Department.Restore)
-			department.POST("/getAll", h.Department.GetAll)
-			department.POST("/getById", h.Department.GetById)
-			department.POST("/getAllButOne", h.Department.GetAllButOne)
+			department.POST("", h.Department.Create)
+			department.GET("/:id", h.Department.Read)
+			department.PUT("/:id", h.Department.Update)
+			department.DELETE("/:id", h.Department.Delete)
+			department.PUT("/:id/restore", h.Department.Restore)
+			department.GET("", h.Department.List)
+			//department.POST("/getAllButOne", h.Department.GetAllButOne)
 		}
 
 		category := api.Group("/categories")
