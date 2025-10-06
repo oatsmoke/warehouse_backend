@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/oatsmoke/warehouse_backend/internal/dto"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
 	"github.com/oatsmoke/warehouse_backend/internal/repository"
@@ -66,8 +67,8 @@ func (s *ContractService) Restore(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (s *ContractService) List(ctx context.Context, withDeleted bool) ([]*model.Contract, error) {
-	list, err := s.contractRepository.List(ctx, withDeleted)
+func (s *ContractService) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Contract, error) {
+	list, err := s.contractRepository.List(ctx, qp)
 	if err != nil {
 		return nil, err
 	}

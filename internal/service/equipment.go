@@ -76,23 +76,3 @@ func (s *EquipmentService) List(ctx context.Context, qp *dto.QueryParams) ([]*mo
 	logger.InfoInConsole(fmt.Sprintf("%d equipment listed", len(list)))
 	return list, nil
 }
-
-func (s *EquipmentService) FindBySerialNumber(ctx context.Context, value string) ([]*model.Equipment, error) {
-	list, err := s.equipmentRepository.FindBySerialNumber(ctx, fmt.Sprintf("%%%s%%", value))
-	if err != nil {
-		return nil, err
-	}
-
-	logger.InfoInConsole(fmt.Sprintf("%d equipment listed", len(list)))
-	return list, nil
-}
-
-func (s *EquipmentService) GetByIds(ctx context.Context, ids []int64) ([]*model.Equipment, error) {
-	list, err := s.equipmentRepository.GetByIds(ctx, ids)
-	if err != nil {
-		return nil, err
-	}
-
-	logger.InfoInConsole(fmt.Sprintf("%d equipment listed", len(list)))
-	return list, nil
-}

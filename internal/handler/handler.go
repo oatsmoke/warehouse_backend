@@ -117,9 +117,6 @@ func (h *Handler) InitRoutes() *gin.Engine {
 			equipment.DELETE("/:id", h.Equipment.Delete)
 			equipment.PUT("/:id/restore", h.Equipment.Restore)
 			equipment.GET("", h.Equipment.List)
-
-			//equipment.POST("/findBySerialNumber", h.Equipment.FindBySerialNumber)
-			//equipment.POST("/getByIds", h.Equipment.GetByIds)
 		}
 
 		location := api.Group("/location")

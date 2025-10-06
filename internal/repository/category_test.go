@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/oatsmoke/warehouse_backend/internal/dto"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/postgresql"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
 )
@@ -327,8 +328,8 @@ func TestCategoryRepository_List(t *testing.T) {
 		postgresDB *pgxpool.Pool
 	}
 	type args struct {
-		ctx         context.Context
-		withDeleted bool
+		ctx context.Context
+		qp  *dto.QueryParams
 	}
 	tests := []struct {
 		name    string
@@ -343,8 +344,10 @@ func TestCategoryRepository_List(t *testing.T) {
 				postgresDB: postgresql.ConnectTest(),
 			},
 			args: args{
-				ctx:         context.Background(),
-				withDeleted: false,
+				ctx: context.Background(),
+				qp: &dto.QueryParams{
+					WithDeleted: false,
+				},
 			},
 			want: []*model.Category{
 				{
@@ -360,8 +363,10 @@ func TestCategoryRepository_List(t *testing.T) {
 				postgresDB: postgresql.ConnectTest(),
 			},
 			args: args{
-				ctx:         context.Background(),
-				withDeleted: true,
+				ctx: context.Background(),
+				qp: &dto.QueryParams{
+					WithDeleted: false,
+				},
 			},
 			want: []*model.Category{
 				{
@@ -382,7 +387,7 @@ func TestCategoryRepository_List(t *testing.T) {
 			r := &CategoryRepository{
 				postgresDB: tt.fields.postgresDB,
 			}
-			got, err := r.List(tt.args.ctx, tt.args.withDeleted)
+			got, err := r.List(tt.args.ctx, tt.args.qp)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("List() error = %v, wantErr %v", err, tt.wantErr)
 				return

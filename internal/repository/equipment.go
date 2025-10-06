@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/oatsmoke/warehouse_backend/internal/dto"
@@ -120,17 +119,18 @@ func (r *EquipmentRepository) Restore(ctx context.Context, id int64) error {
 }
 
 func (r *EquipmentRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Equipment, error) {
-	str, args := list_filter.BuildQuery(qp, []string{"e.serial_number", "p.title", "c.title"}, "e")
+	fields := []string{"e.serial_number", "p.title", "c.title"}
+	str, args := list_filter.BuildQuery(qp, fields, "e")
+
 	query := `
 		SELECT e.id, e.serial_number, e.deleted_at,
-		       p.id, p.title, 
+		       p.id, p.title,
 		       c.id, c.title
 		FROM equipments e
 		LEFT JOIN profiles p ON p.id = e.profile
 		LEFT JOIN categories c ON c.id = p.category
 		` + str
-	fmt.Println("[Q]: ", query)
-	fmt.Printf("[A]: %+v\n", args)
+
 	rows, err := r.postgresDB.Query(ctx, query, args...)
 	if err != nil {
 		return nil, err
@@ -148,75 +148,6 @@ func (r *EquipmentRepository) List(ctx context.Context, qp *dto.QueryParams) ([]
 			&equipment.Profile.Title,
 			&equipment.Profile.Category.ID,
 			&equipment.Profile.Category.Title,
-		); err != nil {
-			return nil, err
-		}
-		equipments = append(equipments, equipment)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return equipments, nil
-}
-
-func (r *EquipmentRepository) FindBySerialNumber(ctx context.Context, value string) ([]*model.Equipment, error) {
-	const query = `
-		SELECT equipments.id, equipments.serial_number,
-		       profiles.title
-		FROM equipments
-		LEFT JOIN profiles ON profiles.id = equipments.profile
-		WHERE LOWER(serial_number) LIKE LOWER($1);`
-
-	rows, err := r.postgresDB.Query(ctx, query, value)
-	if err != nil {
-		return nil, err
-	}
-
-	var equipments []*model.Equipment
-	for rows.Next() {
-		equipment := newEquipment()
-		if err := rows.Scan(
-			&equipment.ID,
-			&equipment.SerialNumber,
-			&equipment.Profile.Title,
-		); err != nil {
-			return nil, err
-		}
-		equipments = append(equipments, equipment)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return equipments, nil
-}
-
-func (r *EquipmentRepository) GetByIds(ctx context.Context, ids []int64) ([]*model.Equipment, error) {
-	const query = `
-		SELECT e.id, e.serial_number, p.deleted_at,
-		       p.id, p.title
-		FROM equipments e
-		LEFT JOIN profiles p ON p.id = e.profile
-		WHERE e.id = ANY($1);`
-
-	rows, err := r.postgresDB.Query(ctx, query, ids)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var equipments []*model.Equipment
-	for rows.Next() {
-		equipment := newEquipment()
-		if err := rows.Scan(
-			&equipment.ID,
-			&equipment.SerialNumber,
-			&equipment.DeletedAt,
-			&equipment.Profile.ID,
-			&equipment.Profile.Title,
 		); err != nil {
 			return nil, err
 		}

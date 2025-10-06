@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/oatsmoke/warehouse_backend/internal/dto"
+	"github.com/oatsmoke/warehouse_backend/internal/lib/list_filter"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
 )
@@ -109,14 +111,16 @@ func (r *ContractRepository) Restore(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (r *ContractRepository) List(ctx context.Context, withDeleted bool) ([]*model.Contract, error) {
-	const query = `
-		SELECT id, number, address, deleted_at
-		FROM contracts
-		WHERE $1 OR deleted_at IS NULL
-		ORDER BY number;`
+func (r *ContractRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Contract, error) {
+	fields := []string{"number", "address"}
+	str, args := list_filter.BuildQuery(qp, fields, "c")
 
-	rows, err := r.postgresDB.Query(ctx, query, withDeleted)
+	query := `
+		SELECT id, number, address, deleted_at
+		FROM contracts c
+		` + str
+
+	rows, err := r.postgresDB.Query(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}

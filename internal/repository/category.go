@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/oatsmoke/warehouse_backend/internal/dto"
+	"github.com/oatsmoke/warehouse_backend/internal/lib/list_filter"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
 )
@@ -108,14 +110,16 @@ func (r *CategoryRepository) Restore(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (r *CategoryRepository) List(ctx context.Context, withDeleted bool) ([]*model.Category, error) {
-	const query = `
-		SELECT id, title, deleted_at
-		FROM categories
-		WHERE $1 OR deleted_at IS NULL
-		ORDER BY title;`
+func (r *CategoryRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Category, error) {
+	fields := []string{"title"}
+	str, args := list_filter.BuildQuery(qp, fields, "c")
 
-	rows, err := r.postgresDB.Query(ctx, query, withDeleted)
+	query := `
+		SELECT id, title, deleted_at
+		FROM categories c
+		` + str
+
+	rows, err := r.postgresDB.Query(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}

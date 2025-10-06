@@ -84,7 +84,7 @@ type Category interface {
 	Update(ctx context.Context, category *model.Category) error
 	Delete(ctx context.Context, id int64) error
 	Restore(ctx context.Context, id int64) error
-	List(ctx context.Context, withDeleted bool) ([]*model.Category, error)
+	List(ctx context.Context, qp *dto.QueryParams) ([]*model.Category, error)
 }
 
 type Profile interface {
@@ -93,7 +93,7 @@ type Profile interface {
 	Update(ctx context.Context, profile *model.Profile) error
 	Delete(ctx context.Context, id int64) error
 	Restore(ctx context.Context, id int64) error
-	List(ctx context.Context, withDeleted bool) ([]*model.Profile, error)
+	List(ctx context.Context, qp *dto.QueryParams) ([]*model.Profile, error)
 }
 
 type Equipment interface {
@@ -103,8 +103,6 @@ type Equipment interface {
 	Delete(ctx context.Context, id int64) error
 	Restore(ctx context.Context, id int64) error
 	List(ctx context.Context, qp *dto.QueryParams) ([]*model.Equipment, error)
-	FindBySerialNumber(ctx context.Context, value string) ([]*model.Equipment, error)
-	GetByIds(ctx context.Context, ids []int64) ([]*model.Equipment, error)
 }
 
 type Location interface {
@@ -135,7 +133,7 @@ type Contract interface {
 	Update(ctx context.Context, contract *model.Contract) error
 	Delete(ctx context.Context, id int64) error
 	Restore(ctx context.Context, id int64) error
-	List(ctx context.Context, withDeleted bool) ([]*model.Contract, error)
+	List(ctx context.Context, qp *dto.QueryParams) ([]*model.Contract, error)
 }
 
 type Company interface {
@@ -144,7 +142,7 @@ type Company interface {
 	Update(ctx context.Context, company *model.Company) error
 	Delete(ctx context.Context, id int64) error
 	Restore(ctx context.Context, id int64) error
-	List(ctx context.Context, withDeleted bool) ([]*model.Company, error)
+	List(ctx context.Context, qp *dto.QueryParams) ([]*model.Company, error)
 }
 
 type Replace interface {

@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/oatsmoke/warehouse_backend/internal/dto"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
 	"github.com/oatsmoke/warehouse_backend/internal/repository"
@@ -214,7 +215,7 @@ func (s *LocationService) ReportByCategory(ctx context.Context, departmentId int
 		return nil, logger.Err(err, "")
 	}
 	toDate := parseTime.AddDate(0, 1, 0)
-	categories, err := s.CategoryRepository.List(ctx, false)
+	categories, err := s.CategoryRepository.List(ctx, &dto.QueryParams{WithDeleted: false})
 	if err != nil {
 		return nil, logger.Err(err, "")
 	}

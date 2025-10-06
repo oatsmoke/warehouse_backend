@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/oatsmoke/warehouse_backend/internal/dto"
+	"github.com/oatsmoke/warehouse_backend/internal/lib/list_filter"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
 	"github.com/oatsmoke/warehouse_backend/internal/service"
@@ -113,12 +114,9 @@ func (h *CompanyHandler) Restore(ctx *gin.Context) {
 }
 
 func (h *CompanyHandler) List(ctx *gin.Context) {
-	var withDeleted bool
-	if ctx.Query("deleted") == "true" {
-		withDeleted = true
-	}
+	req := list_filter.ParseQueryParams(ctx)
 
-	res, err := h.companyService.List(ctx, withDeleted)
+	res, err := h.companyService.List(ctx, req)
 	if err != nil {
 		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
 		return

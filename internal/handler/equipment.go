@@ -143,10 +143,6 @@ func (h *EquipmentHandler) Restore(ctx *gin.Context) {
 }
 
 func (h *EquipmentHandler) List(ctx *gin.Context) {
-	//var withDeleted bool
-	//if ctx.Query("deleted") == "true" {
-	//	withDeleted = true
-	//}
 	req := list_filter.ParseQueryParams(ctx)
 
 	res, err := h.equipmentService.List(ctx, req)
@@ -157,40 +153,3 @@ func (h *EquipmentHandler) List(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, res)
 }
-
-//func (h *EquipmentHandler) FindBySerialNumber(ctx *gin.Context) {
-//	req := make(map[string]string)
-//	if err := ctx.BindJSON(&req); err != nil {
-//		logger.ErrResponse(ctx, err, http.StatusBadRequest)
-//		return
-//	}
-//
-//	res, err := h.equipmentService.FindBySerialNumber(ctx, req["search"])
-//	if err != nil {
-//		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
-//		return
-//	}
-//
-//	logger.InfoInConsole(fmt.Sprintf("%s, find", req))
-//	ctx.JSON(http.StatusOK, res)
-//}
-//
-//// GetByIds is equipment get by id
-//func (h *EquipmentHandler) GetByIds(ctx *gin.Context) {
-//	var req []int64
-//	if err := ctx.BindJSON(&req); err != nil {
-//		logger.ErrResponse(ctx, err, http.StatusBadRequest)
-//		return
-//	}
-//
-//	res, err := h.equipmentService.GetByIds(ctx, req)
-//	if err != nil {
-//		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
-//		return
-//	}
-//
-//	logger.InfoInConsole(fmt.Sprintf("%d, get", req))
-//	ctx.JSON(http.StatusOK, res)
-//}
-
-// FindBySerialNumber is equipment find by serial number

@@ -2,6 +2,7 @@ package list_filter
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -21,15 +22,20 @@ func ParseQueryParams(c *gin.Context) *dto.QueryParams {
 
 	qp.Search = c.Query("search")
 
-	qp.SortBy = c.Query("sort_by")
+	ids := c.QueryArray("ids")
+	for _, id := range ids {
+		if parsedId, err := strconv.ParseInt(id, 10, 64); err == nil {
+			qp.Ids = append(qp.Ids, parsedId)
+		}
+	}
 
+	qp.SortBy = c.Query("sort_by")
 	qp.Order = strings.ToUpper(c.DefaultQuery("order", defaultOrder))
 	if qp.Order != "ASC" && qp.Order != "DESC" {
 		qp.Order = defaultOrder
 	}
 
 	qp.Offset = c.DefaultQuery("offset", defaultOffset)
-
 	qp.Limit = c.DefaultQuery("limit", defaultLimit)
 
 	return qp
@@ -37,13 +43,17 @@ func ParseQueryParams(c *gin.Context) *dto.QueryParams {
 
 func BuildQuery(qp *dto.QueryParams, fields []string, table string) (string, []interface{}) {
 	i := 1
-	var args []interface{}
+	var (
+		args   []interface{}
+		search string
+		ids    string
+		exist  bool
+	)
 
 	withDeleted := fmt.Sprintf("WHERE ($%d OR %s.deleted_at IS NULL)", i, table)
 	args = append(args, qp.WithDeleted)
 	i++
 
-	var search string
 	if qp.Search != "" {
 		first := true
 		qp.Search = fmt.Sprintf("%%%s%%", qp.Search)
@@ -62,7 +72,12 @@ func BuildQuery(qp *dto.QueryParams, fields []string, table string) (string, []i
 		search += ")"
 	}
 
-	var exist bool
+	if len(qp.Ids) > 0 {
+		ids = fmt.Sprintf(" AND %s.id = ANY($%d)", table, i)
+		args = append(args, qp.Ids)
+		i++
+	}
+
 	defaultSortBy := fmt.Sprintf("%s.id", table)
 	for _, field := range fields {
 		if qp.SortBy == field || qp.SortBy == defaultSortBy {
@@ -78,5 +93,5 @@ func BuildQuery(qp *dto.QueryParams, fields []string, table string) (string, []i
 	limit := fmt.Sprintf(" LIMIT $%d OFFSET $%d", i, i+1)
 	args = append(args, qp.Limit, qp.Offset)
 
-	return fmt.Sprintf("%s%s%s%s;", withDeleted, search, order, limit), args
+	return fmt.Sprintf("%s%s%s%s%s;", withDeleted, search, ids, order, limit), args
 }
