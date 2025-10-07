@@ -49,7 +49,7 @@ func (h *AuthHandler) SignIn(ctx *gin.Context) {
 	//	return
 	//}
 
-	employee, err := h.EmployeeService.GetById(ctx, user.UserID)
+	employee, err := h.EmployeeService.Read(ctx, user.UserID)
 	if err != nil {
 		logger.ErrResponse(ctx, err, http.StatusBadRequest)
 		return
@@ -57,7 +57,7 @@ func (h *AuthHandler) SignIn(ctx *gin.Context) {
 
 	setCookie(ctx, user.Access, user.Refresh)
 
-	logger.InfoInConsole(fmt.Sprintf("%s authenticated", employee.Name))
+	logger.InfoInConsole(fmt.Sprintf("%s authenticated", employee.FirstName))
 	ctx.JSON(http.StatusOK, employee)
 }
 
@@ -69,13 +69,13 @@ func (h *AuthHandler) GetUser(ctx *gin.Context) {
 		return
 	}
 
-	employee, err := h.EmployeeService.GetById(ctx, id)
+	employee, err := h.EmployeeService.Read(ctx, id)
 	if err != nil {
 		logger.ErrResponse(ctx, err, http.StatusBadRequest)
 		return
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("%s authenticated", employee.Name))
+	logger.InfoInConsole(fmt.Sprintf("%s authenticated", employee.FirstName))
 	ctx.JSON(http.StatusOK, employee)
 }
 

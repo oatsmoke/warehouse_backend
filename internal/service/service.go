@@ -25,7 +25,7 @@ type Service struct {
 func New(repository *repository.Repository) *Service {
 	return &Service{
 		Auth:       NewAuthService(repository.Auth),
-		Employee:   NewEmployeeService(repository.Employee, repository.Equipment, repository.Auth),
+		Employee:   NewEmployeeService(repository.Employee),
 		Department: NewDepartmentService(repository.Department),
 		Category:   NewCategoryService(repository.Category),
 		Profile:    NewProfileService(repository.Profile),
@@ -44,22 +44,22 @@ type Auth interface {
 }
 
 type Employee interface {
-	Create(ctx context.Context, name, phone, email string) error
-	Update(ctx context.Context, id int64, name, phone, email string) error
+	Create(ctx context.Context, employee *model.Employee) error
+	Read(ctx context.Context, id int64) (*model.Employee, error)
+	Update(ctx context.Context, employee *model.Employee) error
 	Delete(ctx context.Context, id int64) error
 	Restore(ctx context.Context, id int64) error
-	GetAll(ctx context.Context, deleted bool) ([]*model.Employee, error)
-	GetAllShort(ctx context.Context, deleted bool) ([]*model.Employee, error)
-	GetAllButOne(ctx context.Context, id int64, deleted bool) ([]*model.Employee, error)
-	GetById(ctx context.Context, id int64) (*model.Employee, error)
-	GetFree(ctx context.Context) ([]*model.Employee, error)
-	GetByDepartment(ctx context.Context, ids []int64, id int64) ([]*model.Employee, error)
-	AddToDepartment(ctx context.Context, id, department int64) error
-	RemoveFromDepartment(ctx context.Context, idDepartment, idEmployee int64) error
-	Activate(ctx context.Context, id int64) error
-	Deactivate(ctx context.Context, id int64) error
-	ResetPassword(ctx context.Context, id int64) error
-	ChangeRole(ctx context.Context, id int64, role string) error
+	List(ctx context.Context, qp *dto.QueryParams) ([]*model.Employee, error)
+	//GetAllShort(ctx context.Context, deleted bool) ([]*model.Employee, error)
+	//GetAllButOne(ctx context.Context, id int64, deleted bool) ([]*model.Employee, error)
+	//GetFree(ctx context.Context) ([]*model.Employee, error)
+	//GetByDepartment(ctx context.Context, ids []int64, id int64) ([]*model.Employee, error)
+	//AddToDepartment(ctx context.Context, id, department int64) error
+	//RemoveFromDepartment(ctx context.Context, idDepartment, idEmployee int64) error
+	//Activate(ctx context.Context, id int64) error
+	//Deactivate(ctx context.Context, id int64) error
+	//ResetPassword(ctx context.Context, id int64) error
+	//ChangeRole(ctx context.Context, id int64, role string) error
 }
 
 type Department interface {

@@ -10,7 +10,6 @@ import (
 	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
 	"github.com/oatsmoke/warehouse_backend/internal/repository"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthService struct {
@@ -34,13 +33,13 @@ func (s *AuthService) AuthUser(ctx context.Context, login, password string) (*jw
 		}
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
-		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
-			return nil, logger.Err(err, "wrong login or password")
-		} else {
-			return nil, logger.Err(err, "something wrong")
-		}
-	}
+	//if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+	//	if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+	//		return nil, logger.Err(err, "wrong login or password")
+	//	} else {
+	//		return nil, logger.Err(err, "something wrong")
+	//	}
+	//}
 	t := &jwt_auth.Token{}
 	claims, err := t.New(user.ID)
 	if err != nil {

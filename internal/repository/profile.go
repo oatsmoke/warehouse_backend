@@ -46,7 +46,7 @@ func (r *ProfileRepository) Read(ctx context.Context, id int64) (*model.Profile,
 		LEFT JOIN categories c ON c.id = p.category
 		WHERE p.id = $1;`
 
-	profile := newProfile()
+	profile := model.NewProfile()
 	if err := r.postgresDB.QueryRow(ctx, query, id).Scan(
 		&profile.ID,
 		&profile.Title,
@@ -66,7 +66,12 @@ func (r *ProfileRepository) Update(ctx context.Context, profile *model.Profile) 
 		SET title = $2, category = $3
 		WHERE id = $1;`
 
-	ct, err := r.postgresDB.Exec(ctx, query, profile.ID, profile.Title, profile.Category.ID)
+	ct, err := r.postgresDB.Exec(
+		ctx,
+		query,
+		profile.ID,
+		profile.Title,
+		profile.Category.ID)
 	if err != nil {
 		return err
 	}
@@ -133,7 +138,7 @@ func (r *ProfileRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*m
 
 	var profiles []*model.Profile
 	for rows.Next() {
-		profile := newProfile()
+		profile := model.NewProfile()
 		if err := rows.Scan(
 			&profile.ID,
 			&profile.Title,
@@ -151,10 +156,4 @@ func (r *ProfileRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*m
 	}
 
 	return profiles, nil
-}
-
-func newProfile() *model.Profile {
-	return &model.Profile{
-		Category: &model.Category{},
-	}
 }

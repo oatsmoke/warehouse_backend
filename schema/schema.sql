@@ -30,19 +30,25 @@ create table departments
 
 create table employees
 (
-    id                 bigserial primary key,
-    name               varchar(100) not null,
-    phone              varchar(100) not null unique,
-    email              varchar(100) not null,
-    password           varchar(100) not null,
-    hash               varchar(100) not null,
-    registration_date  timestamp with time zone,
-    authorization_date timestamp with time zone,
-    activate           boolean      not null default false,
-    hidden             boolean      not null default false,
-    department         bigint references departments (id) on delete restrict,
-    role               varchar(100) not null default 'USER',
-    deleted_at         timestamp with time zone
+    id          bigserial primary key,
+    last_name   varchar(100) not null,
+    first_name  varchar(100) not null,
+    middle_name varchar(100) not null,
+    phone       varchar(100) not null unique,
+    email       varchar(100) not null,
+    department  bigint references departments (id) on delete restrict,
+    deleted_at  timestamp with time zone
+);
+
+create table users
+(
+    id            bigserial primary key,
+    username      varchar(100) not null,
+    password_hash varchar(100) not null,
+    role          varchar(100) not null,
+    enabled       boolean      not null default true,
+    last_login_at timestamp with time zone,
+    employee      bigint references employees (id) on delete restrict
 );
 
 create table contracts
@@ -81,30 +87,33 @@ create table locations
 create table replaces
 (
     id            bigserial primary key,
-    transfer_from bigint not null references locations on delete cascade,   transfer_to   bigint not null references locations on delete cascade
+    transfer_from bigint not null references locations on delete cascade,
+    transfer_to   bigint not null references locations on delete cascade
 );
 
 create index idx_profiles_category on profiles (category);
 create index idx_equipments_profile on equipments (profile);
+create index idx_employees_department on employees (department);
+create index idx_users_employee on users (employee);
 create index idx_locations_equipment on locations (equipment);
 create index idx_locations_employee on locations (employee);
 create index idx_locations_company on locations (company);
 
-insert into employees (name,
-                       phone,
-                       email,
-                       password,
-                       hash,
-                       registration_date,
-                       activate,
-                       hidden,
-                       role)
-values ('Администратор',
-        'root',
-        'root@root.ru',
-        '$2a$10$sYMtJhDQzFKHk6169kJ4ru8t0phSYEF6NTKjhS9vEewtnXTVcdoIi',
-        '',
-        now(),
-        true,
-        true,
-        'ADMIN');
+-- insert into employees (name,
+--                        phone,
+--                        email,
+--                        password,
+--                        hash,
+--                        registration_date,
+--                        activate,
+--                        hidden,
+--                        role)
+-- values ('Администратор',
+--         'root',
+--         'root@root.ru',
+--         '$2a$10$sYMtJhDQzFKHk6169kJ4ru8t0phSYEF6NTKjhS9vEewtnXTVcdoIi',
+--         '',
+--         now(),
+--         true,
+--         true,
+--         'ADMIN');

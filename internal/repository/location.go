@@ -178,7 +178,7 @@ func (r *LocationRepository) GetById(ctx context.Context, equipmentId int64) (*m
 	equipmentByLoc.TransferType = validString(transferType)
 	equipmentByLoc.Price = validString(price)
 	equipmentByLoc.ToDepartment.Title = validString(toDepartmentTitle)
-	equipmentByLoc.ToEmployee.Name = validString(toEmployeeName)
+	equipmentByLoc.ToEmployee.FirstName = validString(toEmployeeName)
 	equipmentByLoc.ToContract.Number = validString(toContractNumber)
 	equipmentByLoc.ToContract.Address = validString(toContractAddress)
 
@@ -227,7 +227,7 @@ func (r *LocationRepository) GetHistory(ctx context.Context, equipmentId int64) 
 			&location.Code,
 			&transferType,
 			&price,
-			&location.Employee.Name,
+			&location.Employee.FirstName,
 			&location.Company.Title,
 			&toDepartmentTitle,
 			&toEmployeeName,
@@ -240,7 +240,7 @@ func (r *LocationRepository) GetHistory(ctx context.Context, equipmentId int64) 
 		location.TransferType = validString(transferType)
 		location.Price = validString(price)
 		location.ToDepartment.Title = validString(toDepartmentTitle)
-		location.ToEmployee.Name = validString(toEmployeeName)
+		location.ToEmployee.FirstName = validString(toEmployeeName)
 		location.ToContract.Number = validString(toContractNumber)
 		location.ToContract.Address = validString(toContractAddress)
 
@@ -381,7 +381,7 @@ func (r *LocationRepository) GetByLocationDepartment(ctx context.Context, toDepa
 		equipmentByLoc.ToDepartment.ID = validInt64(toDepartmentId)
 		equipmentByLoc.ToDepartment.Title = validString(toDepartmentTitle)
 		equipmentByLoc.ToEmployee.ID = validInt64(toEmployeeId)
-		equipmentByLoc.ToEmployee.Name = validString(toEmployeeName)
+		equipmentByLoc.ToEmployee.FirstName = validString(toEmployeeName)
 
 		equipmentsByLoc = append(equipmentsByLoc, equipmentByLoc)
 	}
@@ -439,7 +439,7 @@ func (r *LocationRepository) GetByLocationEmployee(ctx context.Context, toEmploy
 		}
 
 		equipmentByLoc.ToDepartment.Title = validString(toDepartmentTitle)
-		equipmentByLoc.ToEmployee.Name = validString(toEmployeeName)
+		equipmentByLoc.ToEmployee.FirstName = validString(toEmployeeName)
 
 		equipmentsByLoc = append(equipmentsByLoc, equipmentByLoc)
 	}
@@ -551,7 +551,7 @@ func (r *LocationRepository) GetByLocationDepartmentEmployee(ctx context.Context
 		}
 
 		equipmentByLoc.ToDepartment.Title = validString(toDepartmentTitle)
-		equipmentByLoc.ToEmployee.Name = validString(toEmployeeName)
+		equipmentByLoc.ToEmployee.FirstName = validString(toEmployeeName)
 
 		equipmentsByLoc = append(equipmentsByLoc, equipmentByLoc)
 	}
@@ -774,18 +774,4 @@ func newLocation() *model.Location {
 		ToEmployee:     &model.Employee{},
 		ToContract:     &model.Contract{},
 	}
-}
-
-func validInt64(num sql.NullInt64) int64 {
-	if num.Valid {
-		return num.Int64
-	}
-	return 0
-}
-
-func validString(num sql.NullString) string {
-	if num.Valid {
-		return num.String
-	}
-	return ""
 }

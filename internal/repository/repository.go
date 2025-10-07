@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -48,22 +49,22 @@ type Auth interface {
 }
 
 type Employee interface {
-	Create(ctx context.Context, name, phone, email string) error
-	Update(ctx context.Context, id int64, name, phone, email string) error
+	Create(ctx context.Context, employee *model.Employee) (int64, error)
+	Read(ctx context.Context, id int64) (*model.Employee, error)
+	Update(ctx context.Context, employee *model.Employee) error
 	Delete(ctx context.Context, id int64) error
 	Restore(ctx context.Context, id int64) error
-	GetAll(ctx context.Context, deleted bool) ([]*model.Employee, error)
-	GetAllShort(ctx context.Context, deleted bool) ([]*model.Employee, error)
-	GetAllButOne(ctx context.Context, id int64, deleted bool) ([]*model.Employee, error)
-	GetById(ctx context.Context, employee *model.Employee) (*model.Employee, error)
-	GetFree(ctx context.Context) ([]*model.Employee, error)
-	GetByDepartment(ctx context.Context, ids []int64, departmentId int64) ([]*model.Employee, error)
-	AddToDepartment(ctx context.Context, id, department int64) error
-	RemoveFromDepartment(ctx context.Context, id int64) error
-	Activate(ctx context.Context, id int64, password string) error
-	Deactivate(ctx context.Context, id int64) error
-	ResetPassword(ctx context.Context, id int64, password string) error
-	ChangeRole(ctx context.Context, id int64, role string) error
+	List(ctx context.Context, qp *dto.QueryParams) ([]*model.Employee, error)
+	//GetAllShort(ctx context.Context, deleted bool) ([]*model.Employee, error)
+	//GetAllButOne(ctx context.Context, id int64, deleted bool) ([]*model.Employee, error)
+	//GetFree(ctx context.Context) ([]*model.Employee, error)
+	//GetByDepartment(ctx context.Context, ids []int64, departmentId int64) ([]*model.Employee, error)
+	//AddToDepartment(ctx context.Context, id, department int64) error
+	//RemoveFromDepartment(ctx context.Context, id int64) error
+	//Activate(ctx context.Context, id int64, password string) error
+	//Deactivate(ctx context.Context, id int64) error
+	//ResetPassword(ctx context.Context, id int64, password string) error
+	//ChangeRole(ctx context.Context, id int64, role string) error
 }
 
 type Department interface {
@@ -148,4 +149,18 @@ type Company interface {
 type Replace interface {
 	Create(ctx context.Context, transferIds []int64) error
 	FindByLocationId(ctx context.Context, locationId int64) (*model.Replace, error)
+}
+
+func validInt64(num sql.NullInt64) int64 {
+	if num.Valid {
+		return num.Int64
+	}
+	return 0
+}
+
+func validString(num sql.NullString) string {
+	if num.Valid {
+		return num.String
+	}
+	return ""
 }

@@ -48,7 +48,7 @@ func (r *EquipmentRepository) Read(ctx context.Context, id int64) (*model.Equipm
 		LEFT JOIN categories c ON c.id = p.category
 		WHERE e.id = $1;`
 
-	equipment := newEquipment()
+	equipment := model.NewEquipment()
 	if err := r.postgresDB.QueryRow(ctx, query, id).Scan(
 		&equipment.ID,
 		&equipment.SerialNumber,
@@ -139,7 +139,7 @@ func (r *EquipmentRepository) List(ctx context.Context, qp *dto.QueryParams) ([]
 
 	var equipments []*model.Equipment
 	for rows.Next() {
-		equipment := newEquipment()
+		equipment := model.NewEquipment()
 		if err := rows.Scan(
 			&equipment.ID,
 			&equipment.SerialNumber,
@@ -159,12 +159,4 @@ func (r *EquipmentRepository) List(ctx context.Context, qp *dto.QueryParams) ([]
 	}
 
 	return equipments, nil
-}
-
-func newEquipment() *model.Equipment {
-	return &model.Equipment{
-		Profile: &model.Profile{
-			Category: &model.Category{},
-		},
-	}
 }

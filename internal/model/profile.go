@@ -8,3 +8,9 @@ type Profile struct {
 	Category  *Category  `json:"category,omitempty"`
 	DeletedAt *time.Time `json:"deleted_at,omitempty"`
 }
+
+func NewProfile() *Profile {
+	return &Profile{
+		Category: &Category{},
+	}
+}

@@ -57,25 +57,25 @@ func (h *Handler) InitRoutes() *gin.Engine {
 	{
 		api.GET("/getUser", h.Auth.GetUser)
 
-		employee := api.Group("/employee")
+		employee := api.Group("/employees")
 		{
-			employee.POST("/create", h.Employee.Create)
-			employee.POST("/update", h.Employee.Update)
-			employee.POST("/delete", h.Employee.Delete)
-			employee.POST("/restore", h.Employee.Restore)
-			employee.POST("/getAll", h.Employee.GetAll)
-			employee.POST("/getAllShort", h.Employee.GetAllShort)
-			employee.POST("/getAllButAuth", h.Employee.GetAllButAuth)
-			employee.POST("/getAllButOne", h.Employee.GetAllButOne)
-			employee.POST("/getById", h.Employee.GetById)
-			employee.POST("/getFree", h.Employee.GetFree)
-			employee.POST("/getByDepartment", h.Employee.GetByDepartment)
-			employee.POST("/addToDepartment", h.Employee.AddToDepartment)
-			employee.POST("/removeFromDepartment", h.Employee.RemoveFromDepartment)
-			employee.POST("/activate", h.Employee.Activate)
-			employee.POST("/deactivate", h.Employee.Deactivate)
-			employee.POST("/resetPassword", h.Employee.ResetPassword)
-			employee.POST("/changeRole", h.Employee.ChangeRole)
+			employee.POST("", h.Employee.Create)
+			employee.GET("/:id", h.Employee.Read)
+			employee.PUT("/:id", h.Employee.Update)
+			employee.DELETE("/:id", h.Employee.Delete)
+			employee.PUT("/:id/restore", h.Employee.Restore)
+			employee.GET("", h.Employee.List)
+			//employee.POST("/getAllShort", h.Employee.GetAllShort)
+			//employee.POST("/getAllButAuth", h.Employee.GetAllButAuth)
+			//employee.POST("/getAllButOne", h.Employee.GetAllButOne)
+			//employee.POST("/getFree", h.Employee.GetFree)
+			//employee.POST("/getByDepartment", h.Employee.GetByDepartment)
+			//employee.POST("/addToDepartment", h.Employee.AddToDepartment)
+			//employee.POST("/removeFromDepartment", h.Employee.RemoveFromDepartment)
+			//employee.POST("/activate", h.Employee.Activate)
+			//employee.POST("/deactivate", h.Employee.Deactivate)
+			//employee.POST("/resetPassword", h.Employee.ResetPassword)
+			//employee.POST("/changeRole", h.Employee.ChangeRole)
 		}
 
 		department := api.Group("/departments")
@@ -87,6 +87,26 @@ func (h *Handler) InitRoutes() *gin.Engine {
 			department.PUT("/:id/restore", h.Department.Restore)
 			department.GET("", h.Department.List)
 			//department.POST("/getAllButOne", h.Department.GetAllButOne)
+		}
+
+		contract := api.Group("/contracts")
+		{
+			contract.POST("", h.Contract.Create)
+			contract.GET("/:id", h.Contract.Read)
+			contract.PUT("/:id", h.Contract.Update)
+			contract.DELETE("/:id", h.Contract.Delete)
+			contract.PUT("/:id/restore", h.Contract.Restore)
+			contract.GET("", h.Contract.List)
+		}
+
+		company := api.Group("/companies")
+		{
+			company.POST("", h.Company.Create)
+			company.GET("/:id", h.Company.Read)
+			company.PUT("/:id", h.Company.Update)
+			company.DELETE("/:id", h.Company.Delete)
+			company.PUT("/:id/restore", h.Company.Restore)
+			company.GET("", h.Company.List)
 		}
 
 		category := api.Group("/categories")
@@ -128,26 +148,6 @@ func (h *Handler) InitRoutes() *gin.Engine {
 			location.POST("/getHistory", h.Location.GetHistory)
 			location.POST("/getByLocation", h.Location.GetByLocation)
 			location.POST("/reportByCategory", h.Location.ReportByCategory)
-		}
-
-		contract := api.Group("/contracts")
-		{
-			contract.POST("", h.Contract.Create)
-			contract.GET("/:id", h.Contract.Read)
-			contract.PUT("/:id", h.Contract.Update)
-			contract.DELETE("/:id", h.Contract.Delete)
-			contract.PUT("/:id/restore", h.Contract.Restore)
-			contract.GET("", h.Contract.List)
-		}
-
-		company := api.Group("/companies")
-		{
-			company.POST("", h.Company.Create)
-			company.GET("/:id", h.Company.Read)
-			company.PUT("/:id", h.Company.Update)
-			company.DELETE("/:id", h.Company.Delete)
-			company.PUT("/:id/restore", h.Company.Restore)
-			company.GET("", h.Company.List)
 		}
 	}
 
