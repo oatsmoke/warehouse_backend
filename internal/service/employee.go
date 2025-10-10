@@ -77,6 +77,15 @@ func (s *EmployeeService) List(ctx context.Context, qp *dto.QueryParams) ([]*mod
 	return list, nil
 }
 
+func (s *EmployeeService) SetDepartment(ctx context.Context, id, departmentID int64) error {
+	if err := s.employeeRepository.SetDepartment(ctx, id, departmentID); err != nil {
+		return err
+	}
+
+	logger.InfoInConsole(fmt.Sprintf("employee with id %d set department id %d", id, departmentID))
+	return nil
+}
+
 // GetAllShort is to get all employees short
 //func (s *EmployeeService) GetAllShort(ctx context.Context, deleted bool) ([]*model.Employee, error) {
 //	res, err := s.employeeRepository.GetAllShort(ctx, deleted)

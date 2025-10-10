@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/oatsmoke/warehouse_backend/internal/lib/email"
@@ -138,4 +139,101 @@ func (s *UserService) List(ctx context.Context) ([]*model.User, error) {
 
 	logger.InfoInConsole(fmt.Sprintf("%d user listed", len(list)))
 	return list, nil
+}
+
+func (s *UserService) SetPassword(ctx context.Context, id int64, oldPassword, newPassword string) error {
+	oldPasswordHash, err := s.userRepository.GetPasswordHash(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(oldPasswordHash), []byte(oldPassword)); err != nil {
+		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+			return errors.New("wrong password")
+		} else {
+			return err
+		}
+	}
+
+	newPasswordHash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	err = s.userRepository.SetPasswordHash(ctx, id, string(newPasswordHash))
+	if err != nil {
+		return err
+	}
+
+	logger.InfoInConsole(fmt.Sprintf("user with id %d changed password", id))
+	return nil
+}
+
+func (s *UserService) ResetPassword(ctx context.Context, id int64) error {
+	newPassword := generate.RandString(10)
+	newPasswordHash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	err = s.userRepository.SetPasswordHash(ctx, id, string(newPasswordHash))
+	if err != nil {
+		return err
+	}
+
+	user, err := s.userRepository.Read(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	sendTo := &email.SendTo{
+		Name:     user.Employee.FirstName,
+		Email:    user.Email,
+		Username: user.Username,
+		Password: newPassword,
+	}
+
+	if err := email.Send([]*email.SendTo{sendTo}); err != nil {
+		return err
+	}
+
+	logger.InfoInConsole(fmt.Sprintf("user with id %d reset password", id))
+	return nil
+}
+
+func (s *UserService) SetRole(ctx context.Context, id int64, role role.Role) error {
+	if err := s.userRepository.SetRole(ctx, id, role); err != nil {
+		return err
+	}
+
+	logger.InfoInConsole(fmt.Sprintf("user with id %d changed role to %s", id, role))
+	return nil
+}
+
+func (s *UserService) SetEnabled(ctx context.Context, id int64, enabled bool) error {
+	if err := s.userRepository.SetEnabled(ctx, id, enabled); err != nil {
+		return err
+	}
+
+	logger.InfoInConsole(fmt.Sprintf("user with id %d set enabled to %t", id, enabled))
+	return nil
+}
+
+//func (s *UserService) SetLastLoginAt(ctx context.Context, id int64) error {
+//	loginAt := time.Now()
+//	if err := s.userRepository.SetLastLoginAt(ctx, id, loginAt); err != nil {
+//		return err
+//	}
+//
+//	logger.InfoInConsole(fmt.Sprintf("user with id %d login at %s", id, loginAt))
+//	return nil
+//}
+
+func (s *UserService) SetEmployee(ctx context.Context, id, employeeID int64) error {
+	if err := s.userRepository.SetEmployee(ctx, id, employeeID); err != nil {
+		return err
+	}
+
+	logger.InfoInConsole(fmt.Sprintf("user with id %d set employee id %d", id, employeeID))
+	return nil
 }

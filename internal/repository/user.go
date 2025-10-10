@@ -3,10 +3,12 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
+	"github.com/oatsmoke/warehouse_backend/internal/lib/role"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
 )
 
@@ -27,11 +29,11 @@ func (r *UserRepository) Create(ctx context.Context, user *model.User) (int64, e
 		RETURNING id;`
 
 	var id int64
-	var employeeID pgtype.Int8
-	if user.Employee != nil && user.Employee.ID != 0 {
-		employeeID = pgtype.Int8{
+	employeeID := new(pgtype.Int8)
+	if user.Employee != nil {
+		employeeID = &pgtype.Int8{
 			Int64: user.Employee.ID,
-			Valid: true,
+			Valid: user.Employee.ID != 0,
 		}
 	}
 
@@ -45,6 +47,10 @@ func (r *UserRepository) Create(ctx context.Context, user *model.User) (int64, e
 		employeeID,
 	).Scan(&id); err != nil {
 		return 0, err
+	}
+
+	if id == 0 {
+		return 0, logger.NoRowsAffected
 	}
 
 	return id, nil
@@ -98,16 +104,8 @@ func (r *UserRepository) Read(ctx context.Context, id int64) (*model.User, error
 func (r *UserRepository) Update(ctx context.Context, user *model.User) error {
 	const query = `
 		UPDATE users
-		SET username = $2, email = $3, role = $4, employee = $5
+		SET username = $2, email = $3
 		WHERE id = $1;`
-
-	employeeID := new(pgtype.Int8)
-	if user.Employee != nil {
-		employeeID = &pgtype.Int8{
-			Int64: user.Employee.ID,
-			Valid: user.Employee.ID != 0,
-		}
-	}
 
 	ct, err := r.postgresDB.Exec(
 		ctx,
@@ -115,8 +113,6 @@ func (r *UserRepository) Update(ctx context.Context, user *model.User) error {
 		user.ID,
 		user.Username,
 		user.Email,
-		user.Role,
-		employeeID,
 	)
 	if err != nil {
 		return err
@@ -148,7 +144,7 @@ func (r *UserRepository) Delete(ctx context.Context, id int64) error {
 
 func (r *UserRepository) List(ctx context.Context) ([]*model.User, error) {
 	const query = `
-		SELECT u.id, u.username, e.email, e.role, u.enabled, u.last_login_at,
+		SELECT u.id, u.username, u.email, u.role, u.enabled, u.last_login_at,
 		       e.id, e.last_name, e.first_name, e.middle_name, e.phone,
 		       d.id, d.title
 		FROM users u
@@ -204,4 +200,145 @@ func (r *UserRepository) List(ctx context.Context) ([]*model.User, error) {
 	}
 
 	return users, nil
+}
+
+func (r *UserRepository) GetPasswordHash(ctx context.Context, id int64) (string, error) {
+	const query = `
+		SELECT password_hash
+		FROM users
+		WHERE id = $1;`
+
+	var passwordHash string
+	if err := r.postgresDB.QueryRow(ctx, query, id).Scan(&passwordHash); err != nil {
+		return "", err
+	}
+
+	if passwordHash == "" {
+		return "", logger.NoRowsAffected
+	}
+
+	return passwordHash, nil
+}
+
+func (r *UserRepository) SetPasswordHash(ctx context.Context, id int64, passwordHash string) error {
+	const query = `
+		UPDATE users
+		SET password_hash = $2
+		WHERE id = $1;`
+
+	ct, err := r.postgresDB.Exec(
+		ctx,
+		query,
+		id,
+		passwordHash,
+	)
+	if err != nil {
+		return err
+	}
+
+	if ct.RowsAffected() == 0 {
+		return logger.NoRowsAffected
+	}
+
+	return nil
+}
+
+func (r *UserRepository) SetRole(ctx context.Context, id int64, role role.Role) error {
+	const query = `
+		UPDATE users
+		SET role = $2
+		WHERE id = $1;`
+
+	ct, err := r.postgresDB.Exec(
+		ctx,
+		query,
+		id,
+		role,
+	)
+	if err != nil {
+		return err
+	}
+
+	if ct.RowsAffected() == 0 {
+		return logger.NoRowsAffected
+	}
+
+	return nil
+}
+
+func (r *UserRepository) SetEnabled(ctx context.Context, id int64, enabled bool) error {
+	const query = `
+		UPDATE users
+		SET enabled = $2
+		WHERE id = $1;`
+
+	ct, err := r.postgresDB.Exec(
+		ctx,
+		query,
+		id,
+		enabled,
+	)
+	if err != nil {
+		return err
+	}
+
+	if ct.RowsAffected() == 0 {
+		return logger.NoRowsAffected
+	}
+
+	return nil
+}
+
+func (r *UserRepository) SetLastLoginAt(ctx context.Context, id int64, loginAt time.Time) error {
+	const query = `
+		UPDATE users
+		SET last_login_at = &2
+		WHERE id = $1;`
+
+	ct, err := r.postgresDB.Exec(
+		ctx,
+		query,
+		id,
+		loginAt,
+	)
+	if err != nil {
+		return err
+	}
+
+	if ct.RowsAffected() == 0 {
+		return logger.NoRowsAffected
+	}
+
+	return nil
+}
+
+func (r *UserRepository) SetEmployee(ctx context.Context, id, employeeID int64) error {
+	e := new(pgtype.Int8)
+	if employeeID != 0 {
+		e = &pgtype.Int8{
+			Int64: employeeID,
+			Valid: true,
+		}
+	}
+
+	const query = `
+		UPDATE users
+		SET employee = $2
+		WHERE id = $1;`
+
+	ct, err := r.postgresDB.Exec(
+		ctx,
+		query,
+		id,
+		e,
+	)
+	if err != nil {
+		return err
+	}
+
+	if ct.RowsAffected() == 0 {
+		return logger.NoRowsAffected
+	}
+
+	return nil
 }

@@ -83,14 +83,8 @@ func (r *EmployeeRepository) Read(ctx context.Context, id int64) (*model.Employe
 func (r *EmployeeRepository) Update(ctx context.Context, employee *model.Employee) error {
 	const query = `
 		UPDATE employees
-		SET last_name = $2, first_name = $3, middle_name = $4, phone = $5, department = $6
+		SET last_name = $2, first_name = $3, middle_name = $4, phone = $5
 		WHERE id = $1;`
-
-	var departmentID pgtype.Int8
-	if employee.Department != nil && employee.Department.ID != 0 {
-		departmentID.Int64 = employee.Department.ID
-		departmentID.Valid = true
-	}
 
 	ct, err := r.postgresDB.Exec(
 		ctx,
@@ -100,7 +94,6 @@ func (r *EmployeeRepository) Update(ctx context.Context, employee *model.Employe
 		employee.FirstName,
 		employee.MiddleName,
 		employee.Phone,
-		departmentID,
 	)
 	if err != nil {
 		return err
@@ -193,6 +186,32 @@ func (r *EmployeeRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*
 	}
 
 	return employees, err
+}
+
+func (r *EmployeeRepository) SetDepartment(ctx context.Context, id, departmentID int64) error {
+	d := new(pgtype.Int8)
+	if departmentID != 0 {
+		d = &pgtype.Int8{
+			Int64: departmentID,
+			Valid: true,
+		}
+	}
+
+	const query = `
+		UPDATE employees
+		SET department = $2
+		WHERE id = $1;`
+
+	ct, err := r.postgresDB.Exec(ctx, query, id, d)
+	if err != nil {
+		return err
+	}
+
+	if ct.RowsAffected() == 0 {
+		return logger.NoRowsAffected
+	}
+
+	return nil
 }
 
 // GetAllShort is employee get all short

@@ -80,9 +80,6 @@ func (h *EmployeeHandler) Update(ctx *gin.Context) {
 		FirstName:  req.FirstName,
 		MiddleName: req.MiddleName,
 		Phone:      req.Phone,
-		Department: &model.Department{
-			ID: req.DepartmentID,
-		},
 	}
 
 	if err := h.serviceEmployee.Update(ctx, employee); err != nil {
@@ -133,6 +130,27 @@ func (h *EmployeeHandler) List(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, res)
+}
+
+func (h *EmployeeHandler) SetDepartment(ctx *gin.Context) {
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		return
+	}
+
+	var req *dto.EmployeeDepartmentUpdate
+	if err := ctx.BindJSON(&req); err != nil {
+		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		return
+	}
+
+	if err := h.serviceEmployee.SetDepartment(ctx, id, req.DepartmentID); err != nil {
+		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		return
+	}
+
+	ctx.JSON(http.StatusNoContent, "")
 }
 
 // GetAllShort is employee get all short

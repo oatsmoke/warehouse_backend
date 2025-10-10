@@ -8,6 +8,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/oatsmoke/warehouse_backend/internal/dto"
+	"github.com/oatsmoke/warehouse_backend/internal/lib/role"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
 	"github.com/redis/go-redis/v9"
 )
@@ -56,6 +57,12 @@ type User interface {
 	Update(ctx context.Context, user *model.User) error
 	Delete(ctx context.Context, id int64) error
 	List(ctx context.Context) ([]*model.User, error)
+	GetPasswordHash(ctx context.Context, id int64) (string, error)
+	SetPasswordHash(ctx context.Context, id int64, passwordHash string) error
+	SetRole(ctx context.Context, id int64, role role.Role) error
+	SetEnabled(ctx context.Context, id int64, enabled bool) error
+	SetLastLoginAt(ctx context.Context, id int64, loginAt time.Time) error
+	SetEmployee(ctx context.Context, id, employeeID int64) error
 }
 
 type Employee interface {
@@ -65,6 +72,7 @@ type Employee interface {
 	Delete(ctx context.Context, id int64) error
 	Restore(ctx context.Context, id int64) error
 	List(ctx context.Context, qp *dto.QueryParams) ([]*model.Employee, error)
+	SetDepartment(ctx context.Context, id, departmentID int64) error
 	//GetAllShort(ctx context.Context, deleted bool) ([]*model.Employee, error)
 	//GetAllButOne(ctx context.Context, id int64, deleted bool) ([]*model.Employee, error)
 	//GetFree(ctx context.Context) ([]*model.Employee, error)

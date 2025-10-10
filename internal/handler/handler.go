@@ -66,6 +66,11 @@ func (h *Handler) InitRoutes() *gin.Engine {
 			user.PUT("/:id", h.User.Update)
 			user.DELETE("/:id", h.User.Delete)
 			user.GET("", h.User.List)
+			user.PUT("/:id/set_password", h.User.SetPassword)
+			user.GET("/:id/reset_password", h.User.ResetPassword)
+			user.PUT("/:id/set_role", h.User.SetRole)
+			user.PUT("/:id/set_enabled", h.User.SetEnabled)
+			user.PUT("/:id/set_employee", h.User.SetEmployee)
 		}
 
 		employee := api.Group("/employees")
@@ -76,6 +81,7 @@ func (h *Handler) InitRoutes() *gin.Engine {
 			employee.DELETE("/:id", h.Employee.Delete)
 			employee.PUT("/:id/restore", h.Employee.Restore)
 			employee.GET("", h.Employee.List)
+			employee.PUT("/:id/set_department", h.Employee.SetDepartment)
 			//employee.POST("/getAllShort", h.Employee.GetAllShort)
 			//employee.POST("/getAllButAuth", h.Employee.GetAllButAuth)
 			//employee.POST("/getAllButOne", h.Employee.GetAllButOne)
