@@ -105,7 +105,7 @@ func (r *UserRepository) Update(ctx context.Context, user *model.User) error {
 	const query = `
 		UPDATE users
 		SET username = $2, email = $3
-		WHERE id = $1;`
+		WHERE id = $1 AND (username != $2 OR email != $3);`
 
 	ct, err := r.postgresDB.Exec(
 		ctx,

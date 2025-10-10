@@ -60,7 +60,7 @@ func (r *CategoryRepository) Update(ctx context.Context, category *model.Categor
 	const query = `
 		UPDATE categories 
 		SET title = $2
-		WHERE id = $1;`
+		WHERE id = $1 AND title != $2;`
 
 	ct, err := r.postgresDB.Exec(ctx, query, category.ID, category.Title)
 	if err != nil {

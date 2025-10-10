@@ -84,7 +84,7 @@ func (r *EmployeeRepository) Update(ctx context.Context, employee *model.Employe
 	const query = `
 		UPDATE employees
 		SET last_name = $2, first_name = $3, middle_name = $4, phone = $5
-		WHERE id = $1;`
+		WHERE id = $1 AND (last_name != $2 OR first_name != $3 OR middle_name != $4 OR phone != $5);`
 
 	ct, err := r.postgresDB.Exec(
 		ctx,

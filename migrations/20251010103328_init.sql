@@ -9,22 +9,18 @@ CREATE TABLE "public"."departments" (
 -- Create "employees" table
 CREATE TABLE "public"."employees" (
   "id" bigserial NOT NULL,
-  "name" character varying(100) NOT NULL,
+  "last_name" character varying(100) NOT NULL,
+  "first_name" character varying(100) NOT NULL,
+  "middle_name" character varying(100) NOT NULL,
   "phone" character varying(100) NOT NULL,
-  "email" character varying(100) NOT NULL,
-  "password" character varying(100) NOT NULL,
-  "hash" character varying(100) NOT NULL,
-  "registration_date" timestamptz NULL,
-  "authorization_date" timestamptz NULL,
-  "activate" boolean NOT NULL DEFAULT false,
-  "hidden" boolean NOT NULL DEFAULT false,
   "department" bigint NULL,
-  "role" character varying(100) NOT NULL DEFAULT 'USER',
   "deleted_at" timestamptz NULL,
   PRIMARY KEY ("id"),
   CONSTRAINT "employees_phone_key" UNIQUE ("phone"),
   CONSTRAINT "employees_department_fkey" FOREIGN KEY ("department") REFERENCES "public"."departments" ("id") ON UPDATE NO ACTION ON DELETE RESTRICT
 );
+-- Create index "idx_employees_department" to table: "employees"
+CREATE INDEX "idx_employees_department" ON "public"."employees" ("department");
 -- Create "categories" table
 CREATE TABLE "public"."categories" (
   "id" bigserial NOT NULL,
@@ -116,3 +112,19 @@ CREATE TABLE "public"."replaces" (
   CONSTRAINT "replaces_transfer_from_fkey" FOREIGN KEY ("transfer_from") REFERENCES "public"."locations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
   CONSTRAINT "replaces_transfer_to_fkey" FOREIGN KEY ("transfer_to") REFERENCES "public"."locations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE
 );
+-- Create "users" table
+CREATE TABLE "public"."users" (
+  "id" bigserial NOT NULL,
+  "username" character varying(100) NOT NULL,
+  "password_hash" character varying(100) NOT NULL,
+  "email" character varying(100) NOT NULL,
+  "role" character varying(100) NOT NULL,
+  "enabled" boolean NOT NULL DEFAULT true,
+  "last_login_at" timestamptz NULL,
+  "employee" bigint NULL,
+  PRIMARY KEY ("id"),
+  CONSTRAINT "users_username_key" UNIQUE ("username"),
+  CONSTRAINT "users_employee_fkey" FOREIGN KEY ("employee") REFERENCES "public"."employees" ("id") ON UPDATE NO ACTION ON DELETE RESTRICT
+);
+-- Create index "idx_users_employee" to table: "users"
+CREATE INDEX "idx_users_employee" ON "public"."users" ("employee");

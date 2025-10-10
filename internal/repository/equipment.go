@@ -68,7 +68,7 @@ func (r *EquipmentRepository) Update(ctx context.Context, equipment *model.Equip
 	const query = `
 		UPDATE equipments 
 		SET serial_number = $2, profile = $3
-		WHERE id = $1;`
+		WHERE id = $1 AND (serial_number != $2 OR profile != $3);`
 
 	ct, err := r.postgresDB.Exec(ctx, query, equipment.ID, equipment.SerialNumber, equipment.Profile.ID)
 	if err != nil {

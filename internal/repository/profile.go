@@ -69,7 +69,7 @@ func (r *ProfileRepository) Update(ctx context.Context, profile *model.Profile) 
 	const query = `
 		UPDATE profiles 
 		SET title = $2, category = $3
-		WHERE id = $1;`
+		WHERE id = $1 AND (title != $2 OR category != $3);`
 
 	ct, err := r.postgresDB.Exec(
 		ctx,

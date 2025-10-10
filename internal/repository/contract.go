@@ -61,7 +61,7 @@ func (r *ContractRepository) Update(ctx context.Context, contract *model.Contrac
 	const query = `
 		UPDATE contracts 
 		SET number = $2, address = $3
-		WHERE id = $1;`
+		WHERE id = $1 AND (number != $2 OR address != $3);`
 
 	ct, err := r.postgresDB.Exec(ctx, query, contract.ID, contract.Number, contract.Address)
 	if err != nil {
