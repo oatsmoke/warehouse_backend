@@ -9,6 +9,7 @@ import (
 
 type Handler struct {
 	Auth       *AuthHandler
+	User       *UserHandler
 	Category   *CategoryHandler
 	Company    *CompanyHandler
 	Contract   *ContractHandler
@@ -22,6 +23,7 @@ type Handler struct {
 func New(service *service.Service) *Handler {
 	return &Handler{
 		Auth:       NewAuthHandler(service.Auth, service.Employee),
+		User:       NewUserHandler(service.User),
 		Category:   NewCategoryHandler(service.Category),
 		Company:    NewCompanyHandler(service.Company),
 		Contract:   NewContractHandler(service.Contract),
@@ -56,6 +58,15 @@ func (h *Handler) InitRoutes() *gin.Engine {
 	api := router.Group("/api") //, h.Auth.UserIdentity
 	{
 		api.GET("/getUser", h.Auth.GetUser)
+
+		user := api.Group("/users")
+		{
+			user.POST("", h.User.Create)
+			user.GET("/:id", h.User.Read)
+			user.PUT("/:id", h.User.Update)
+			user.DELETE("/:id", h.User.Delete)
+			user.GET("", h.User.List)
+		}
 
 		employee := api.Group("/employees")
 		{

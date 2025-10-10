@@ -35,7 +35,6 @@ create table employees
     first_name  varchar(100) not null,
     middle_name varchar(100) not null,
     phone       varchar(100) not null unique,
-    email       varchar(100) not null,
     department  bigint references departments (id) on delete restrict,
     deleted_at  timestamp with time zone
 );
@@ -43,8 +42,9 @@ create table employees
 create table users
 (
     id            bigserial primary key,
-    username      varchar(100) not null,
+    username      varchar(100) not null unique,
     password_hash varchar(100) not null,
+    email         varchar(100) not null,
     role          varchar(100) not null,
     enabled       boolean      not null default true,
     last_login_at timestamp with time zone,

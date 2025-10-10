@@ -12,6 +12,7 @@ import (
 
 type Service struct {
 	Auth       *AuthService
+	User       *UserService
 	Employee   *EmployeeService
 	Department *DepartmentService
 	Category   *CategoryService
@@ -25,6 +26,7 @@ type Service struct {
 func New(repository *repository.Repository) *Service {
 	return &Service{
 		Auth:       NewAuthService(repository.Auth),
+		User:       NewUserService(repository.User, repository.Employee),
 		Employee:   NewEmployeeService(repository.Employee),
 		Department: NewDepartmentService(repository.Department),
 		Category:   NewCategoryService(repository.Category),
@@ -41,6 +43,14 @@ type Auth interface {
 	Check(ctx context.Context, token *jwt_auth.Token) (*jwt_auth.Token, error)
 	//GenerateHash(ctx context.Context, id int64) (string, error)
 	//FindByHash(ctx context.Context, hash string) (int64, error)
+}
+
+type User interface {
+	Create(ctx context.Context, user *model.User) error
+	Read(ctx context.Context, id int64) (*model.User, error)
+	Update(ctx context.Context, user *model.User) error
+	Delete(ctx context.Context, id int64) error
+	List(ctx context.Context) ([]*model.User, error)
 }
 
 type Employee interface {

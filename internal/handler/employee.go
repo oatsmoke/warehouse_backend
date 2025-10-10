@@ -35,7 +35,6 @@ func (h *EmployeeHandler) Create(ctx *gin.Context) {
 		FirstName:  req.FirstName,
 		MiddleName: req.MiddleName,
 		Phone:      req.Phone,
-		Email:      req.Email,
 	}
 
 	if err := h.serviceEmployee.Create(ctx, employee); err != nil {
@@ -81,7 +80,6 @@ func (h *EmployeeHandler) Update(ctx *gin.Context) {
 		FirstName:  req.FirstName,
 		MiddleName: req.MiddleName,
 		Phone:      req.Phone,
-		Email:      req.Email,
 		Department: &model.Department{
 			ID: req.DepartmentID,
 		},

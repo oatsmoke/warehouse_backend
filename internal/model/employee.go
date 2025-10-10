@@ -8,7 +8,6 @@ type Employee struct {
 	FirstName  string      `json:"first_name,omitempty"`
 	MiddleName string      `json:"middle_name,omitempty"`
 	Phone      string      `json:"phone,omitempty"`
-	Email      string      `json:"email,omitempty"`
 	Department *Department `json:"department,omitempty"`
 	DeletedAt  *time.Time  `json:"deleted_at,omitempty"`
 }

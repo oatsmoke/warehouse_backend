@@ -1,9 +1,9 @@
 package email
 
 import (
+	"embed"
 	htmltemplate "html/template"
 	"log"
-	"os"
 	texttemplate "text/template"
 
 	"github.com/oatsmoke/warehouse_backend/internal/lib/env"
@@ -13,31 +13,40 @@ import (
 type SendTo struct {
 	Name     string
 	Email    string
-	Phone    string
+	Username string
 	Password string
 }
 
-func Send(dates []*SendTo) error {
-	textTpl, err := texttemplate.ParseFiles("internal/lib/templates/email.txt")
-	if err != nil {
-		return err
-	}
+//go:embed templates/*.txt templates/*.html
+var templatesFS embed.FS
 
-	htmlTpl, err := htmltemplate.ParseFiles("internal/lib/templates/email.html")
+func Send(data []*SendTo) error {
+	textFS, err := texttemplate.ParseFS(templatesFS, "templates/email.txt")
 	if err != nil {
 		return err
 	}
+	textTpl := texttemplate.Must(textFS, err)
+
+	htmlFS, err := htmltemplate.ParseFS(templatesFS, "templates/email.html")
+	if err != nil {
+		return err
+	}
+	htmlTpl := htmltemplate.Must(htmlFS, err)
 
 	var messages []*mail.Msg
 
-	for _, date := range dates {
+	for _, d := range data {
+		if d.Name == "" {
+			d.Name = d.Username
+		}
+
 		message := mail.NewMsg()
 
-		if err := message.FromFormat("System", os.Getenv("SMTP_USER")); err != nil {
+		if err := message.FromFormat("System", env.GetSmtpUser()); err != nil {
 			return err
 		}
 
-		if err := message.AddToFormat(date.Name, date.Email); err != nil {
+		if err := message.AddToFormat(d.Name, d.Email); err != nil {
 			return err
 		}
 
@@ -46,11 +55,11 @@ func Send(dates []*SendTo) error {
 		message.SetBulk()
 		message.Subject("Authorization data")
 
-		if err := message.SetBodyTextTemplate(textTpl, date); err != nil {
+		if err := message.SetBodyTextTemplate(textTpl, d); err != nil {
 			return err
 		}
 
-		if err := message.AddAlternativeHTMLTemplate(htmlTpl, date); err != nil {
+		if err := message.AddAlternativeHTMLTemplate(htmlTpl, d); err != nil {
 			return err
 		}
 

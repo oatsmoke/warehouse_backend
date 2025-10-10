@@ -27,7 +27,12 @@ func (r *ProfileRepository) Create(ctx context.Context, profile *model.Profile) 
 		RETURNING id;`
 
 	var id int64
-	if err := r.postgresDB.QueryRow(ctx, query, profile.Title, profile.Category.ID).Scan(&id); err != nil {
+	if err := r.postgresDB.QueryRow(
+		ctx,
+		query,
+		profile.Title,
+		profile.Category.ID,
+	).Scan(&id); err != nil {
 		return 0, err
 	}
 

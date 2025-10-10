@@ -24,8 +24,8 @@ func NewEmployeeRepository(postgresDB *pgxpool.Pool) *EmployeeRepository {
 
 func (r *EmployeeRepository) Create(ctx context.Context, employee *model.Employee) (int64, error) {
 	const query = `
-		INSERT INTO employees (last_name, first_name, middle_name, phone, email)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO employees (last_name, first_name, middle_name, phone)
+		VALUES ($1, $2, $3, $4)
 		RETURNING id;`
 
 	var id int64
@@ -36,7 +36,6 @@ func (r *EmployeeRepository) Create(ctx context.Context, employee *model.Employe
 		employee.FirstName,
 		employee.MiddleName,
 		employee.Phone,
-		employee.Email,
 	).Scan(&id); err != nil {
 		return 0, err
 	}
@@ -50,7 +49,7 @@ func (r *EmployeeRepository) Create(ctx context.Context, employee *model.Employe
 
 func (r *EmployeeRepository) Read(ctx context.Context, id int64) (*model.Employee, error) {
 	const query = `
-		SELECT e.id, e.last_name, e.first_name, e.middle_name, e.phone, e.email, e.deleted_at,
+		SELECT e.id, e.last_name, e.first_name, e.middle_name, e.phone, e.deleted_at,
 		       d.id, d.title
 		FROM employees e
 		LEFT JOIN departments d ON d.id = e.department
@@ -68,7 +67,6 @@ func (r *EmployeeRepository) Read(ctx context.Context, id int64) (*model.Employe
 		&employee.FirstName,
 		&employee.MiddleName,
 		&employee.Phone,
-		&employee.Email,
 		&employee.DeletedAt,
 		&departmentID,
 		&departmentTitle,
@@ -84,12 +82,12 @@ func (r *EmployeeRepository) Read(ctx context.Context, id int64) (*model.Employe
 
 func (r *EmployeeRepository) Update(ctx context.Context, employee *model.Employee) error {
 	const query = `
-		UPDATE employees 
-		SET last_name = $2, first_name = $3, middle_name = $4, phone = $5, email = $6, department = $7 
+		UPDATE employees
+		SET last_name = $2, first_name = $3, middle_name = $4, phone = $5, department = $6
 		WHERE id = $1;`
 
 	var departmentID pgtype.Int8
-	if employee.Department.ID != 0 {
+	if employee.Department != nil && employee.Department.ID != 0 {
 		departmentID.Int64 = employee.Department.ID
 		departmentID.Valid = true
 	}
@@ -102,7 +100,6 @@ func (r *EmployeeRepository) Update(ctx context.Context, employee *model.Employe
 		employee.FirstName,
 		employee.MiddleName,
 		employee.Phone,
-		employee.Email,
 		departmentID,
 	)
 	if err != nil {
@@ -157,7 +154,7 @@ func (r *EmployeeRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*
 	str, args := list_filter.BuildQuery(qp, fields, "e")
 
 	query := `
-		SELECT e.id, e.last_name, e.first_name, e.middle_name, e.phone, e.email, e.deleted_at,
+		SELECT e.id, e.last_name, e.first_name, e.middle_name, e.phone, e.deleted_at,
 		       d.id, d.title
 		FROM employees e
 		LEFT JOIN public.departments d ON d.id = e.department
@@ -183,7 +180,6 @@ func (r *EmployeeRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*
 			&employee.FirstName,
 			&employee.MiddleName,
 			&employee.Phone,
-			&employee.Email,
 			&employee.DeletedAt,
 			&departmentID,
 			&departmentTitle,

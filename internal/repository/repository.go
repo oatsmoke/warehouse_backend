@@ -14,6 +14,7 @@ import (
 
 type Repository struct {
 	Auth       *AuthRepository
+	User       *UserRepository
 	Employee   *EmployeeRepository
 	Department *DepartmentRepository
 	Category   *CategoryRepository
@@ -28,6 +29,7 @@ type Repository struct {
 func New(postgresDB *pgxpool.Pool, redisDB *redis.Client) *Repository {
 	return &Repository{
 		Auth:       NewAuthRepository(postgresDB, redisDB),
+		User:       NewUserRepository(postgresDB),
 		Employee:   NewEmployeeRepository(postgresDB),
 		Department: NewDepartmentRepository(postgresDB),
 		Category:   NewCategoryRepository(postgresDB),
@@ -46,6 +48,14 @@ type Auth interface {
 	Get(ctx context.Context, key string) (bool, error)
 	//SetHash(ctx context.Context, id int64, hash string) error
 	//FindByHash(ctx context.Context, user *model.Employee) (*model.Employee, error)
+}
+
+type User interface {
+	Create(ctx context.Context, user *model.User) (int64, error)
+	Read(ctx context.Context, id int64) (*model.User, error)
+	Update(ctx context.Context, user *model.User) error
+	Delete(ctx context.Context, id int64) error
+	List(ctx context.Context) ([]*model.User, error)
 }
 
 type Employee interface {
