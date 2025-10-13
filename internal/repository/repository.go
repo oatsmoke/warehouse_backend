@@ -29,7 +29,7 @@ type Repository struct {
 
 func New(postgresDB *pgxpool.Pool, redisDB *redis.Client) *Repository {
 	return &Repository{
-		Auth:       NewAuthRepository(postgresDB, redisDB),
+		Auth:       NewAuthRepository(redisDB),
 		User:       NewUserRepository(postgresDB),
 		Employee:   NewEmployeeRepository(postgresDB),
 		Department: NewDepartmentRepository(postgresDB),
@@ -44,11 +44,8 @@ func New(postgresDB *pgxpool.Pool, redisDB *redis.Client) *Repository {
 }
 
 type Auth interface {
-	FindByPhone(ctx context.Context, user *model.Employee) (*model.Employee, error)
-	Set(ctx context.Context, claims *jwt.RegisteredClaims, revoked bool) error
 	Get(ctx context.Context, key string) (bool, error)
-	//SetHash(ctx context.Context, id int64, hash string) error
-	//FindByHash(ctx context.Context, user *model.Employee) (*model.Employee, error)
+	Set(ctx context.Context, claims *jwt.RegisteredClaims, revoked bool) error
 }
 
 type User interface {
@@ -63,6 +60,7 @@ type User interface {
 	SetEnabled(ctx context.Context, id int64, enabled bool) error
 	SetLastLoginAt(ctx context.Context, id int64, loginAt time.Time) error
 	SetEmployee(ctx context.Context, id, employeeID int64) error
+	GetByUsername(ctx context.Context, username string) (*model.User, error)
 }
 
 type Employee interface {

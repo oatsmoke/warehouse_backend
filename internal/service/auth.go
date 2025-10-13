@@ -3,96 +3,100 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/oatsmoke/warehouse_backend/internal/dto"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/jwt_auth"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
-	"github.com/oatsmoke/warehouse_backend/internal/model"
 	"github.com/oatsmoke/warehouse_backend/internal/repository"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthService struct {
-	AuthRepository repository.Auth
+	authRepository repository.Auth
+	userRepository repository.User
 }
 
-func NewAuthService(authRepository repository.Auth) *AuthService {
+func NewAuthService(authRepository repository.Auth, userRepository repository.User) *AuthService {
 	return &AuthService{
-		AuthRepository: authRepository,
+		authRepository: authRepository,
+		userRepository: userRepository,
 	}
 }
 
-// AuthUser is user authentication for login
-func (s *AuthService) AuthUser(ctx context.Context, login, password string) (*jwt_auth.Token, error) {
-	user, err := s.AuthRepository.FindByPhone(ctx, &model.Employee{Phone: login})
+func (s *AuthService) AuthUser(ctx context.Context, login *dto.UserLogin) (*jwt_auth.Token, error) {
+	user, err := s.userRepository.GetByUsername(ctx, login.Username)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, logger.Err(err, "wrong login or password")
+			return nil, logger.WrongUsernameOrPassword
 		} else {
-			return nil, logger.Err(err, "something wrong")
+			return nil, err
 		}
 	}
 
-	//if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
-	//	if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
-	//		return nil, logger.Err(err, "wrong login or password")
-	//	} else {
-	//		return nil, logger.Err(err, "something wrong")
-	//	}
-	//}
-	t := &jwt_auth.Token{}
-	claims, err := t.New(user.ID)
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(login.Password)); err != nil {
+		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+			return nil, logger.WrongUsernameOrPassword
+		} else {
+			return nil, err
+		}
+	}
+
+	token := &jwt_auth.Token{}
+	claims, err := token.New(user.ID)
 	if err != nil {
-		return nil, logger.Err(err, "")
+		return nil, err
 	}
 
-	if err := s.AuthRepository.Set(ctx, claims, false); err != nil {
-		return nil, logger.Err(err, "")
+	if err := s.authRepository.Set(ctx, claims, false); err != nil {
+		return nil, err
 	}
 
-	return t, nil
-	//return user.ID, nil
+	logger.InfoInConsole(fmt.Sprintf("User %s logged in", user.Username))
+	return token, nil
 }
 
-func (s *AuthService) Check(ctx context.Context, token *jwt_auth.Token) (*jwt_auth.Token, error) {
+func (s *AuthService) CheckToken(ctx context.Context, token *jwt_auth.Token) (*jwt_auth.Token, error) {
 	if claims, err := jwt_auth.CheckToken(token.Access); err != nil {
 		logger.WarnInConsole(err.Error())
 
 		claims, err := jwt_auth.CheckToken(token.Refresh)
 		if err != nil {
-			return nil, logger.Err(err, "")
+			return nil, err
 		}
 
-		revoked, err := s.AuthRepository.Get(ctx, claims.ID)
+		revoked, err := s.authRepository.Get(ctx, claims.ID)
 		if err != nil {
-			return nil, logger.Err(err, "")
+			return nil, err
 		}
 
 		if revoked {
-			return nil, logger.Err(errors.New("token is revoked"), "")
+			return nil, logger.TokenIsRevoked
 		}
 
-		if err := s.AuthRepository.Set(ctx, claims, true); err != nil {
-			return nil, logger.Err(err, "")
+		if err := s.authRepository.Set(ctx, claims, true); err != nil {
+			return nil, err
 		}
 
 		userId, err := strconv.ParseInt(claims.Subject, 10, 64)
 		if err != nil {
-			return nil, logger.Err(err, "")
+			return nil, err
 		}
 
 		newClaims, err := token.New(userId)
 		if err != nil {
-			return nil, logger.Err(err, "")
+			return nil, err
 		}
 
-		if err := s.AuthRepository.Set(ctx, newClaims, false); err != nil {
-			return nil, logger.Err(err, "")
+		if err := s.authRepository.Set(ctx, newClaims, false); err != nil {
+			return nil, err
 		}
 	} else {
 		userId, err := strconv.ParseInt(claims.Subject, 10, 64)
 		if err != nil {
-			return nil, logger.Err(err, "")
+			return nil, err
 		}
 
 		token.UserID = userId
@@ -100,24 +104,3 @@ func (s *AuthService) Check(ctx context.Context, token *jwt_auth.Token) (*jwt_au
 
 	return token, nil
 }
-
-// GenerateHash is to generate hash
-//func (s *AuthService) GenerateHash(ctx context.Context, id int64) (string, error) {
-//	str := generate.RandString(10)
-//
-//	if err := s.AuthRepository.SetHash(ctx, id, str); err != nil {
-//		return "", logger.Err(err, "")
-//	}
-//
-//	return str, nil
-//}
-
-// FindByHash is to find by hash
-//func (s *AuthService) FindByHash(ctx context.Context, hash string) (int64, error) {
-//	user, err := s.AuthRepository.FindByHash(ctx, &model.Employee{Hash: hash})
-//	if err != nil {
-//		return 0, logger.Err(err, "")
-//	}
-//
-//	return user.ID, nil
-//}

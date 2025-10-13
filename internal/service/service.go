@@ -26,7 +26,7 @@ type Service struct {
 
 func New(repository *repository.Repository) *Service {
 	return &Service{
-		Auth:       NewAuthService(repository.Auth),
+		Auth:       NewAuthService(repository.Auth, repository.User),
 		User:       NewUserService(repository.User, repository.Employee),
 		Employee:   NewEmployeeService(repository.Employee),
 		Department: NewDepartmentService(repository.Department),
@@ -40,10 +40,8 @@ func New(repository *repository.Repository) *Service {
 }
 
 type Auth interface {
-	AuthUser(ctx context.Context, login, password string) (*jwt_auth.Token, error)
-	Check(ctx context.Context, token *jwt_auth.Token) (*jwt_auth.Token, error)
-	//GenerateHash(ctx context.Context, id int64) (string, error)
-	//FindByHash(ctx context.Context, hash string) (int64, error)
+	AuthUser(ctx context.Context, login *dto.UserLogin) (*jwt_auth.Token, error)
+	CheckToken(ctx context.Context, token *jwt_auth.Token) (*jwt_auth.Token, error)
 }
 
 type User interface {

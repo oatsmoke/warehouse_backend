@@ -342,3 +342,25 @@ func (r *UserRepository) SetEmployee(ctx context.Context, id, employeeID int64) 
 
 	return nil
 }
+
+func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*model.User, error) {
+	const query = `
+		SELECT id, username, password_hash, email, role, enabled, last_login_at
+		FROM users 
+		WHERE username = $1;`
+
+	user := new(model.User)
+	if err := r.postgresDB.QueryRow(ctx, query, username).Scan(
+		&user.ID,
+		&user.Username,
+		&user.PasswordHash,
+		&user.Email,
+		&user.Role,
+		&user.Enabled,
+		&user.LastLoginAt,
+	); err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}

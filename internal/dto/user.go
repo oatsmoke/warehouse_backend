@@ -32,3 +32,8 @@ type UserEnabledUpdate struct {
 type UserEmployeeUpdate struct {
 	EmployeeID int64 `json:"employee_id,omitempty"`
 }
+
+type UserLogin struct {
+	Username string `json:"username,omitempty" binding:"required"`
+	Password string `json:"password,omitempty" binding:"required"`
+}

@@ -21,11 +21,11 @@ const (
 )
 
 var (
-	RequestBodyIsEmpty  = errors.New("request body is empty")
-	NoRowsAffected      = errors.New("no rows affected")
-	MethodNotAllowed    = errors.New("method not allowed")
-	LaterDate           = errors.New("StartDate is later than EndDate")
-	EmptyRequiredValues = errors.New("empty required values")
+	NoRowsAffected          = errors.New("no rows affected")
+	WrongUsernameOrPassword = errors.New("wrong username or password")
+	InvalidToken            = errors.New("invalid token")
+	InvalidClaims           = errors.New("invalid claims")
+	TokenIsRevoked          = errors.New("token is revoked")
 )
 
 var mu sync.Mutex

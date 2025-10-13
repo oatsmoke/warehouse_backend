@@ -22,7 +22,7 @@ type Handler struct {
 
 func New(service *service.Service) *Handler {
 	return &Handler{
-		Auth:       NewAuthHandler(service.Auth, service.Employee),
+		Auth:       NewAuthHandler(service.Auth, service.User),
 		User:       NewUserHandler(service.User),
 		Category:   NewCategoryHandler(service.Category),
 		Company:    NewCompanyHandler(service.Company),
@@ -52,12 +52,12 @@ func (h *Handler) InitRoutes() *gin.Engine {
 
 	auth := router.Group("/auth")
 	{
-		auth.POST("/singIn", h.Auth.SignIn)
+		auth.POST("/login", h.Auth.Login)
 	}
 
-	api := router.Group("/api") //, h.Auth.UserIdentity
+	api := router.Group("/api", h.Auth.UserIdentity) //
 	{
-		api.GET("/getUser", h.Auth.GetUser)
+		api.GET("/user", h.Auth.GetUser)
 
 		user := api.Group("/users")
 		{

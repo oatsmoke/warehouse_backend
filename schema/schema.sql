@@ -8,18 +8,20 @@ create table categories
 create table profiles
 (
     id         bigserial primary key,
-    title      varchar(100) not null unique,
-    category   bigint       not null references categories (id) on delete restrict,
+    title      varchar(100)                                         not null unique,
+    category   bigint references categories (id) on delete restrict not null,
     deleted_at timestamp with time zone
 );
+create index idx_profiles_category on profiles (category);
 
 create table equipments
 (
     id            bigserial primary key,
-    serial_number varchar(100) not null unique,
-    profile       bigint       not null references profiles (id) on delete restrict,
+    serial_number varchar(100)                                       not null unique,
+    profile       bigint references profiles (id) on delete restrict not null,
     deleted_at    timestamp with time zone
 );
+create index idx_equipments_profile on equipments (profile);
 
 create table departments
 (
@@ -38,6 +40,7 @@ create table employees
     department  bigint references departments (id) on delete restrict,
     deleted_at  timestamp with time zone
 );
+create index idx_employees_department on employees (department);
 
 create table users
 (
@@ -50,6 +53,7 @@ create table users
     last_login_at timestamp with time zone,
     employee      bigint references employees (id) on delete restrict
 );
+create index idx_users_employee on users (employee);
 
 create table contracts
 (
@@ -69,11 +73,11 @@ create table companies
 create table locations
 (
     id              bigserial primary key,
-    date            timestamp with time zone not null default now(),
-    code            varchar(100)             not null,
-    equipment       bigint                   not null references equipments (id) on delete restrict,
-    employee        bigint                   not null references employees (id) on delete restrict,
-    company         bigint                   not null references companies (id) on delete restrict,
+    date            timestamp with time zone                             not null default now(),
+    code            varchar(100)                                         not null,
+    equipment       bigint references equipments (id) on delete restrict not null,
+    employee        bigint references employees (id) on delete restrict  not null,
+    company         bigint references companies (id) on delete restrict  not null,
     from_department bigint references departments (id) on delete restrict,
     from_employee   bigint references employees (id) on delete restrict,
     from_contract   bigint references contracts (id) on delete restrict,
@@ -83,21 +87,16 @@ create table locations
     transfer_type   varchar(100),
     price           varchar(100)
 );
+create index idx_locations_equipment on locations (equipment);
+create index idx_locations_employee on locations (employee);
+create index idx_locations_company on locations (company);
 
 create table replaces
 (
     id            bigserial primary key,
-    transfer_from bigint not null references locations on delete cascade,
-    transfer_to   bigint not null references locations on delete cascade
+    transfer_from bigint references locations on delete cascade not null,
+    transfer_to   bigint references locations on delete cascade not null
 );
-
-create index idx_profiles_category on profiles (category);
-create index idx_equipments_profile on equipments (profile);
-create index idx_employees_department on employees (department);
-create index idx_users_employee on users (employee);
-create index idx_locations_equipment on locations (equipment);
-create index idx_locations_employee on locations (employee);
-create index idx_locations_company on locations (company);
 
 -- insert into employees (name,
 --                        phone,

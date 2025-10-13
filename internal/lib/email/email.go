@@ -3,7 +3,6 @@ package email
 import (
 	"embed"
 	htmltemplate "html/template"
-	"log"
 	texttemplate "text/template"
 
 	"github.com/oatsmoke/warehouse_backend/internal/lib/env"
@@ -78,8 +77,6 @@ func Send(data []*SendTo) error {
 	if err := client.DialAndSend(messages...); err != nil {
 		return err
 	}
-
-	log.Println("Test mail successfully delivered.")
 
 	return nil
 }
