@@ -30,7 +30,6 @@ var (
 
 var mu sync.Mutex
 
-// Init is logger initialization
 func Init(logLevel string) {
 	var level slog.Level
 
@@ -51,7 +50,6 @@ func Init(logLevel string) {
 	slog.SetDefault(logger)
 }
 
-// Err is the error returned
 func Err(err error, message string) error {
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) {
@@ -70,14 +68,12 @@ func Err(err error, message string) error {
 	return err
 }
 
-// ErrResponse is an error for the client
 func ErrResponse(ctx *gin.Context, err error, status int) {
 	//slog.Error(err.Error(), slog.String("status", strconv.Itoa(status)), slog.String("fn"))
 	template(slog.LevelError, red, err.Error())
 	ctx.AbortWithStatusJSON(status, map[string]string{"message": err.Error()})
 }
 
-// ErrInConsole is an error in the console
 func ErrInConsole(err error) {
 	template(slog.LevelError, red, err.Error())
 }
@@ -90,7 +86,6 @@ func WarnInConsole(message string) {
 	template(slog.LevelWarn, yellow, message)
 }
 
-// InfoInConsole is an info in the console
 func InfoInConsole(message string) {
 	template(slog.LevelInfo, blue, message)
 }

@@ -26,7 +26,6 @@ func New(ctx context.Context, port string, handlers *handler.Handler) *Server {
 	}
 }
 
-// Run is server startup
 func (s *Server) Run() {
 	go func() {
 		if err := s.httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -37,11 +36,10 @@ func (s *Server) Run() {
 	logger.InfoInConsole(fmt.Sprintf("http server start on %s", s.httpServer.Addr))
 }
 
-// Stop is server stop
 func (s *Server) Stop() {
 	if err := s.httpServer.Shutdown(s.ctx); err != nil {
 		log.Println(err)
 	}
 
-	logger.InfoInConsole("http server stop")
+	logger.InfoInConsole("http server stopped")
 }

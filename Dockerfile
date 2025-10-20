@@ -12,7 +12,19 @@ FROM alpine AS runner
 
 WORKDIR /user/src/app
 
+RUN apk add --no-cache curl bash netcat-openbsd
+
+RUN curl -sSf https://atlasgo.sh | sh
+
 COPY --from=builder /user/src/app/api .
 
+COPY migrations ./migrations
+COPY atlas.hcl .
+
+COPY scripts/entrypoint.sh .
+RUN chmod +x entrypoint.sh
+
 EXPOSE 8080
+
+ENTRYPOINT ["./entrypoint.sh"]
 CMD ["./api"]

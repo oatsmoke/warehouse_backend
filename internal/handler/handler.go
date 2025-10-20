@@ -55,7 +55,7 @@ func (h *Handler) InitRoutes() *gin.Engine {
 		auth.POST("/login", h.Auth.Login)
 	}
 
-	api := router.Group("/api", h.Auth.UserIdentity) //
+	api := router.Group("/api", h.Auth.UserIdentity)
 	{
 		api.GET("/user", h.Auth.GetUser)
 
@@ -67,7 +67,7 @@ func (h *Handler) InitRoutes() *gin.Engine {
 			user.DELETE("/:id", h.User.Delete)
 			user.GET("", h.User.List)
 			user.PUT("/:id/set_password", h.User.SetPassword)
-			user.GET("/:id/reset_password", h.User.ResetPassword)
+			user.PUT("/:id/reset_password", h.User.ResetPassword)
 			user.PUT("/:id/set_role", h.User.SetRole)
 			user.PUT("/:id/set_enabled", h.User.SetEnabled)
 			user.PUT("/:id/set_employee", h.User.SetEmployee)

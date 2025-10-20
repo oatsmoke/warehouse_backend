@@ -73,19 +73,20 @@ CREATE TABLE "public"."contracts" (
 -- Create "locations" table
 CREATE TABLE "public"."locations" (
   "id" bigserial NOT NULL,
-  "date" timestamptz NOT NULL DEFAULT now(),
-  "code" character varying(100) NOT NULL,
   "equipment" bigint NOT NULL,
   "employee" bigint NOT NULL,
   "company" bigint NOT NULL,
+  "move_at" timestamptz NOT NULL DEFAULT now(),
+  "move_code" character varying(100) NOT NULL,
+  "move_type" character varying(100) NULL,
+  "price" character varying(100) NULL,
   "from_department" bigint NULL,
   "from_employee" bigint NULL,
   "from_contract" bigint NULL,
   "to_department" bigint NULL,
   "to_employee" bigint NULL,
   "to_contract" bigint NULL,
-  "transfer_type" character varying(100) NULL,
-  "price" character varying(100) NULL,
+  "comment" character varying(100) NULL,
   PRIMARY KEY ("id"),
   CONSTRAINT "locations_company_fkey" FOREIGN KEY ("company") REFERENCES "public"."companies" ("id") ON UPDATE NO ACTION ON DELETE RESTRICT,
   CONSTRAINT "locations_employee_fkey" FOREIGN KEY ("employee") REFERENCES "public"."employees" ("id") ON UPDATE NO ACTION ON DELETE RESTRICT,
@@ -103,15 +104,33 @@ CREATE INDEX "idx_locations_company" ON "public"."locations" ("company");
 CREATE INDEX "idx_locations_employee" ON "public"."locations" ("employee");
 -- Create index "idx_locations_equipment" to table: "locations"
 CREATE INDEX "idx_locations_equipment" ON "public"."locations" ("equipment");
+-- Create index "idx_locations_from_contract" to table: "locations"
+CREATE INDEX "idx_locations_from_contract" ON "public"."locations" ("from_contract");
+-- Create index "idx_locations_from_department" to table: "locations"
+CREATE INDEX "idx_locations_from_department" ON "public"."locations" ("from_department");
+-- Create index "idx_locations_from_employee" to table: "locations"
+CREATE INDEX "idx_locations_from_employee" ON "public"."locations" ("from_employee");
+-- Create index "idx_locations_move_at" to table: "locations"
+CREATE INDEX "idx_locations_move_at" ON "public"."locations" ("move_at");
+-- Create index "idx_locations_to_contract" to table: "locations"
+CREATE INDEX "idx_locations_to_contract" ON "public"."locations" ("to_contract");
+-- Create index "idx_locations_to_department" to table: "locations"
+CREATE INDEX "idx_locations_to_department" ON "public"."locations" ("to_department");
+-- Create index "idx_locations_to_employee" to table: "locations"
+CREATE INDEX "idx_locations_to_employee" ON "public"."locations" ("to_employee");
 -- Create "replaces" table
 CREATE TABLE "public"."replaces" (
   "id" bigserial NOT NULL,
-  "transfer_from" bigint NOT NULL,
-  "transfer_to" bigint NOT NULL,
+  "move_in" bigint NOT NULL,
+  "move_out" bigint NOT NULL,
   PRIMARY KEY ("id"),
-  CONSTRAINT "replaces_transfer_from_fkey" FOREIGN KEY ("transfer_from") REFERENCES "public"."locations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
-  CONSTRAINT "replaces_transfer_to_fkey" FOREIGN KEY ("transfer_to") REFERENCES "public"."locations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE
+  CONSTRAINT "replaces_move_in_fkey" FOREIGN KEY ("move_in") REFERENCES "public"."locations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
+  CONSTRAINT "replaces_move_out_fkey" FOREIGN KEY ("move_out") REFERENCES "public"."locations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE
 );
+-- Create index "idx_replaces_move_in" to table: "replaces"
+CREATE INDEX "idx_replaces_move_in" ON "public"."replaces" ("move_in");
+-- Create index "idx_replaces_move_out" to table: "replaces"
+CREATE INDEX "idx_replaces_move_out" ON "public"."replaces" ("move_out");
 -- Create "users" table
 CREATE TABLE "public"."users" (
   "id" bigserial NOT NULL,

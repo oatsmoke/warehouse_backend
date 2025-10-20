@@ -9,6 +9,7 @@ ACCESS_TTL    # access token time life
 REFRESH_TTL   # refresh token time life 
 SIGNING_KEY   # secret for token
 POSTGRES_DSN  # DB connection string (postgres://postgres:password@localhost:5432/postgres)
+REDIS_DSN     # redis connection string (redis://localhost:6379/0)
 CLIENT_URL    # client url
 SMTP_HOST     # SMTP host
 SMTP_USER     # SMTP user

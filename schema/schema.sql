@@ -73,30 +73,40 @@ create table companies
 create table locations
 (
     id              bigserial primary key,
-    date            timestamp with time zone                             not null default now(),
-    code            varchar(100)                                         not null,
     equipment       bigint references equipments (id) on delete restrict not null,
     employee        bigint references employees (id) on delete restrict  not null,
     company         bigint references companies (id) on delete restrict  not null,
+    move_at         timestamp with time zone                             not null default now(),
+    move_code       varchar(100)                                         not null,
+    move_type       varchar(100),
+    price           varchar(100),
     from_department bigint references departments (id) on delete restrict,
     from_employee   bigint references employees (id) on delete restrict,
     from_contract   bigint references contracts (id) on delete restrict,
     to_department   bigint references departments (id) on delete restrict,
     to_employee     bigint references employees (id) on delete restrict,
     to_contract     bigint references contracts (id) on delete restrict,
-    transfer_type   varchar(100),
-    price           varchar(100)
+    comment         varchar(100)
 );
 create index idx_locations_equipment on locations (equipment);
 create index idx_locations_employee on locations (employee);
 create index idx_locations_company on locations (company);
+create index idx_locations_move_at on locations (move_at);
+create index idx_locations_from_department on locations (from_department);
+create index idx_locations_from_employee on locations (from_employee);
+create index idx_locations_from_contract on locations (from_contract);
+create index idx_locations_to_department on locations (to_department);
+create index idx_locations_to_employee on locations (to_employee);
+create index idx_locations_to_contract on locations (to_contract);
 
 create table replaces
 (
-    id            bigserial primary key,
-    transfer_from bigint references locations on delete cascade not null,
-    transfer_to   bigint references locations on delete cascade not null
+    id       bigserial primary key,
+    move_in  bigint references locations on delete cascade not null,
+    move_out bigint references locations on delete cascade not null
 );
+create index idx_replaces_move_in on replaces (move_in);
+create index idx_replaces_move_out on replaces (move_out);
 
 -- insert into employees (name,
 --                        phone,
