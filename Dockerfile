@@ -20,6 +20,7 @@ COPY --from=builder /user/src/app/api .
 
 COPY migrations ./migrations
 COPY atlas.hcl .
+COPY schema/root_user.sql .
 
 COPY scripts/entrypoint.sh .
 RUN chmod +x entrypoint.sh

@@ -10,7 +10,7 @@ echo "running Atlas migrations..."
 atlas migrate apply --url "$POSTGRES_DSN" --dir "file://migrations"
 
 echo "Add root user if not exists..."
-psql "$POSTGRES_DSN" -f /migrations/root_user.sql
+psql "$POSTGRES_DSN" -f root_user.sql
 
 echo "migrations applied. Starting application..."
 exec "$@"
