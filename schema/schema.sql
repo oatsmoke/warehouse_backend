@@ -107,22 +107,3 @@ create table replaces
 );
 create index idx_replaces_move_in on replaces (move_in);
 create index idx_replaces_move_out on replaces (move_out);
-
--- insert into employees (name,
---                        phone,
---                        email,
---                        password,
---                        hash,
---                        registration_date,
---                        activate,
---                        hidden,
---                        role)
--- values ('Администратор',
---         'root',
---         'root@root.ru',
---         '$2a$10$sYMtJhDQzFKHk6169kJ4ru8t0phSYEF6NTKjhS9vEewtnXTVcdoIi',
---         '',
---         now(),
---         true,
---         true,
---         'ADMIN');

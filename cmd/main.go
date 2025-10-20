@@ -29,7 +29,6 @@ func main() {
 	postgresDsn := env.GetPostgresDsn()
 	postgresDB := postgresql.Connect(ctx, postgresDsn)
 	defer postgresDB.Close()
-	//migration.Run(ctx, postgresDsn)
 
 	redisDB := redis.Connect()
 	defer redisDB.Disconnect()

@@ -12,7 +12,7 @@ FROM alpine AS runner
 
 WORKDIR /user/src/app
 
-RUN apk add --no-cache curl bash netcat-openbsd
+RUN apk add --no-cache curl bash netcat-openbsd postgresql-client
 
 RUN curl -sSf https://atlasgo.sh | sh
 
