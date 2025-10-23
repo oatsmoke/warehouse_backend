@@ -25,12 +25,12 @@ func NewUserHandler(userService service.User) *UserHandler {
 func (h *UserHandler) Create(ctx *gin.Context) {
 	var req *dto.UserCreate
 	if err := ctx.BindJSON(&req); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
 	if req != nil && req.Role != "" && req.Role.IsValid() == false {
-		logger.ErrResponse(ctx, errors.New("role is invalid"), http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToValidate, logger.ErrInvalidRole, http.StatusBadRequest)
 		return
 	}
 
@@ -45,7 +45,11 @@ func (h *UserHandler) Create(ctx *gin.Context) {
 
 	err := h.userService.Create(ctx, user)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		if errors.Is(err, logger.ErrAlreadyExists) {
+			logger.ResponseErr(ctx, logger.ErrAlreadyExists.Error(), err, http.StatusConflict)
+			return
+		}
+		logger.ResponseErr(ctx, logger.MsgFailedToInsert, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -55,13 +59,13 @@ func (h *UserHandler) Create(ctx *gin.Context) {
 func (h *UserHandler) Read(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
 	res, err := h.userService.Read(ctx, id)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		logger.ResponseErr(ctx, logger.MsgFailedToGet, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -71,13 +75,13 @@ func (h *UserHandler) Read(ctx *gin.Context) {
 func (h *UserHandler) Update(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
 	var req *dto.UserUpdate
 	if err := ctx.BindJSON(&req); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
@@ -89,7 +93,7 @@ func (h *UserHandler) Update(ctx *gin.Context) {
 
 	err = h.userService.Update(ctx, user)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		logger.ResponseErr(ctx, logger.MsgFailedToUpdate, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -99,12 +103,12 @@ func (h *UserHandler) Update(ctx *gin.Context) {
 func (h *UserHandler) Delete(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
 	if err := h.userService.Delete(ctx, id); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		logger.ResponseErr(ctx, logger.MsgFailedToDelete, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -114,7 +118,7 @@ func (h *UserHandler) Delete(ctx *gin.Context) {
 func (h *UserHandler) List(ctx *gin.Context) {
 	res, err := h.userService.List(ctx)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		logger.ResponseErr(ctx, logger.MsgFailedToGet, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -124,19 +128,19 @@ func (h *UserHandler) List(ctx *gin.Context) {
 func (h *UserHandler) SetPassword(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
 	var req *dto.UserPasswordUpdate
 	if err := ctx.BindJSON(&req); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
 	err = h.userService.SetPassword(ctx, id, req.OldPassword, req.NewPassword)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		logger.ResponseErr(ctx, logger.MsgFailedToUpdate, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -146,13 +150,13 @@ func (h *UserHandler) SetPassword(ctx *gin.Context) {
 func (h *UserHandler) ResetPassword(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
 	err = h.userService.ResetPassword(ctx, id)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		logger.ResponseErr(ctx, logger.MsgFailedToUpdate, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -162,24 +166,24 @@ func (h *UserHandler) ResetPassword(ctx *gin.Context) {
 func (h *UserHandler) SetRole(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
 	var req *dto.UserRoleUpdate
 	if err := ctx.BindJSON(&req); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
 	if req != nil && req.Role.IsValid() == false {
-		logger.ErrResponse(ctx, errors.New("role is invalid"), http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToValidate, logger.ErrInvalidRole, http.StatusBadRequest)
 		return
 	}
 
 	err = h.userService.SetRole(ctx, id, req.Role)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		logger.ResponseErr(ctx, logger.MsgFailedToUpdate, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -189,19 +193,19 @@ func (h *UserHandler) SetRole(ctx *gin.Context) {
 func (h *UserHandler) SetEnabled(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
 	var req *dto.UserEnabledUpdate
 	if err := ctx.BindJSON(&req); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
 	err = h.userService.SetEnabled(ctx, id, req.Enabled)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		logger.ResponseErr(ctx, logger.MsgFailedToUpdate, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -211,19 +215,19 @@ func (h *UserHandler) SetEnabled(ctx *gin.Context) {
 func (h *UserHandler) SetEmployee(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
 	var req *dto.UserEmployeeUpdate
 	if err := ctx.BindJSON(&req); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
 	err = h.userService.SetEmployee(ctx, id, req.EmployeeID)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		logger.ResponseErr(ctx, logger.MsgFailedToUpdate, err, http.StatusInternalServerError)
 		return
 	}
 

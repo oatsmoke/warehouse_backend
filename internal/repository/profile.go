@@ -33,11 +33,11 @@ func (r *ProfileRepository) Create(ctx context.Context, profile *model.Profile) 
 		profile.Title,
 		profile.Category.ID,
 	).Scan(&id); err != nil {
-		return 0, err
+		return 0, logger.Error(logger.MsgFailedToInsert, err)
 	}
 
 	if id == 0 {
-		return 0, logger.NoRowsAffected
+		return 0, logger.Error(logger.MsgFailedToInsert, logger.ErrNoRowsAffected)
 	}
 
 	return id, nil
@@ -59,7 +59,7 @@ func (r *ProfileRepository) Read(ctx context.Context, id int64) (*model.Profile,
 		&profile.Category.ID,
 		&profile.Category.Title,
 	); err != nil {
-		return nil, err
+		return nil, logger.Error(logger.MsgFailedToScan, err)
 	}
 
 	return profile, nil
@@ -78,11 +78,11 @@ func (r *ProfileRepository) Update(ctx context.Context, profile *model.Profile) 
 		profile.Title,
 		profile.Category.ID)
 	if err != nil {
-		return err
+		return logger.Error(logger.MsgFailedToUpdate, err)
 	}
 
 	if ct.RowsAffected() == 0 {
-		return logger.NoRowsAffected
+		return logger.Error(logger.MsgFailedToUpdate, logger.ErrNoRowsAffected)
 	}
 
 	return nil
@@ -96,11 +96,11 @@ func (r *ProfileRepository) Delete(ctx context.Context, id int64) error {
 
 	ct, err := r.postgresDB.Exec(ctx, query, id)
 	if err != nil {
-		return err
+		return logger.Error(logger.MsgFailedToDelete, err)
 	}
 
 	if ct.RowsAffected() == 0 {
-		return logger.NoRowsAffected
+		return logger.Error(logger.MsgFailedToDelete, logger.ErrNoRowsAffected)
 	}
 
 	return nil
@@ -114,11 +114,11 @@ func (r *ProfileRepository) Restore(ctx context.Context, id int64) error {
 
 	ct, err := r.postgresDB.Exec(ctx, query, id)
 	if err != nil {
-		return err
+		return logger.Error(logger.MsgFailedToRestore, err)
 	}
 
 	if ct.RowsAffected() == 0 {
-		return logger.NoRowsAffected
+		return logger.Error(logger.MsgFailedToRestore, logger.ErrNoRowsAffected)
 	}
 
 	return nil
@@ -137,7 +137,7 @@ func (r *ProfileRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*m
 
 	rows, err := r.postgresDB.Query(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, logger.Error(logger.MsgFailedToSelect, err)
 	}
 	defer rows.Close()
 
@@ -151,13 +151,13 @@ func (r *ProfileRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*m
 			&profile.Category.ID,
 			&profile.Category.Title,
 		); err != nil {
-			return nil, err
+			return nil, logger.Error(logger.MsgFailedToScan, err)
 		}
 		profiles = append(profiles, profile)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, logger.Error(logger.MsgFailedToIterateOverRows, err)
 	}
 
 	return profiles, nil

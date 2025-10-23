@@ -28,11 +28,11 @@ func (r *EquipmentRepository) Create(ctx context.Context, equipment *model.Equip
 
 	var id int64
 	if err := r.postgresDB.QueryRow(ctx, query, equipment.SerialNumber, equipment.Profile.ID).Scan(&id); err != nil {
-		return 0, err
+		return 0, logger.Error(logger.MsgFailedToInsert, err)
 	}
 
 	if id == 0 {
-		return 0, logger.NoRowsAffected
+		return 0, logger.Error(logger.MsgFailedToInsert, logger.ErrNoRowsAffected)
 	}
 
 	return id, nil
@@ -58,7 +58,7 @@ func (r *EquipmentRepository) Read(ctx context.Context, id int64) (*model.Equipm
 		&equipment.Profile.Category.ID,
 		&equipment.Profile.Category.Title,
 	); err != nil {
-		return nil, err
+		return nil, logger.Error(logger.MsgFailedToScan, err)
 	}
 
 	return equipment, nil
@@ -72,11 +72,11 @@ func (r *EquipmentRepository) Update(ctx context.Context, equipment *model.Equip
 
 	ct, err := r.postgresDB.Exec(ctx, query, equipment.ID, equipment.SerialNumber, equipment.Profile.ID)
 	if err != nil {
-		return err
+		return logger.Error(logger.MsgFailedToUpdate, err)
 	}
 
 	if ct.RowsAffected() == 0 {
-		return logger.NoRowsAffected
+		return logger.Error(logger.MsgFailedToUpdate, logger.ErrNoRowsAffected)
 	}
 
 	return nil
@@ -90,11 +90,11 @@ func (r *EquipmentRepository) Delete(ctx context.Context, id int64) error {
 
 	ct, err := r.postgresDB.Exec(ctx, query, id)
 	if err != nil {
-		return err
+		return logger.Error(logger.MsgFailedToDelete, err)
 	}
 
 	if ct.RowsAffected() == 0 {
-		return logger.NoRowsAffected
+		return logger.Error(logger.MsgFailedToDelete, logger.ErrNoRowsAffected)
 	}
 
 	return nil
@@ -108,11 +108,11 @@ func (r *EquipmentRepository) Restore(ctx context.Context, id int64) error {
 
 	ct, err := r.postgresDB.Exec(ctx, query, id)
 	if err != nil {
-		return err
+		return logger.Error(logger.MsgFailedToRestore, err)
 	}
 
 	if ct.RowsAffected() == 0 {
-		return logger.NoRowsAffected
+		return logger.Error(logger.MsgFailedToRestore, logger.ErrNoRowsAffected)
 	}
 
 	return nil
@@ -133,7 +133,7 @@ func (r *EquipmentRepository) List(ctx context.Context, qp *dto.QueryParams) ([]
 
 	rows, err := r.postgresDB.Query(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, logger.Error(logger.MsgFailedToSelect, err)
 	}
 	defer rows.Close()
 
@@ -149,13 +149,13 @@ func (r *EquipmentRepository) List(ctx context.Context, qp *dto.QueryParams) ([]
 			&equipment.Profile.Category.ID,
 			&equipment.Profile.Category.Title,
 		); err != nil {
-			return nil, err
+			return nil, logger.Error(logger.MsgFailedToScan, err)
 		}
 		equipments = append(equipments, equipment)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, logger.Error(logger.MsgFailedToIterateOverRows, err)
 	}
 
 	return equipments, nil

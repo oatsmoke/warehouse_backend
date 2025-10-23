@@ -26,7 +26,7 @@ func (s *EmployeeService) Create(ctx context.Context, employee *model.Employee) 
 		return err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("employee with id %d created", id))
+	logger.Info(fmt.Sprintf("employee with id %d created", id))
 	return nil
 }
 
@@ -36,7 +36,7 @@ func (s *EmployeeService) Read(ctx context.Context, id int64) (*model.Employee, 
 		return nil, err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("employee with id %d read", id))
+	logger.Info(fmt.Sprintf("employee with id %d read", id))
 	return read, nil
 }
 
@@ -45,7 +45,7 @@ func (s *EmployeeService) Update(ctx context.Context, employee *model.Employee) 
 		return err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("employee with id %d updated", employee.ID))
+	logger.Info(fmt.Sprintf("employee with id %d updated", employee.ID))
 	return nil
 }
 
@@ -54,7 +54,7 @@ func (s *EmployeeService) Delete(ctx context.Context, id int64) error {
 		return err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("employee with id %d deleted", id))
+	logger.Info(fmt.Sprintf("employee with id %d deleted", id))
 	return nil
 }
 
@@ -63,7 +63,7 @@ func (s *EmployeeService) Restore(ctx context.Context, id int64) error {
 		return err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("employee with id %d restored", id))
+	logger.Info(fmt.Sprintf("employee with id %d restored", id))
 	return nil
 }
 
@@ -73,7 +73,7 @@ func (s *EmployeeService) List(ctx context.Context, qp *dto.QueryParams) ([]*mod
 		return nil, err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("%d employee listed", len(list)))
+	logger.Info(fmt.Sprintf("%d employee listed", len(list)))
 	return list, nil
 }
 
@@ -82,7 +82,7 @@ func (s *EmployeeService) SetDepartment(ctx context.Context, id, departmentID in
 		return err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("employee with id %d set department id %d", id, departmentID))
+	logger.Info(fmt.Sprintf("employee with id %d set department id %d", id, departmentID))
 	return nil
 }
 

@@ -26,7 +26,7 @@ func (s *DepartmentService) Create(ctx context.Context, department *model.Depart
 		return err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("department with id %d created", id))
+	logger.Info(fmt.Sprintf("department with id %d created", id))
 	return nil
 }
 
@@ -36,7 +36,7 @@ func (s *DepartmentService) Read(ctx context.Context, id int64) (*model.Departme
 		return nil, err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("department with id %d read", id))
+	logger.Info(fmt.Sprintf("department with id %d read", id))
 	return read, nil
 }
 
@@ -45,7 +45,7 @@ func (s *DepartmentService) Update(ctx context.Context, department *model.Depart
 		return err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("department with id %d updated", department.ID))
+	logger.Info(fmt.Sprintf("department with id %d updated", department.ID))
 	return nil
 }
 
@@ -54,7 +54,7 @@ func (s *DepartmentService) Delete(ctx context.Context, id int64) error {
 		return err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("department with id %d deleted", id))
+	logger.Info(fmt.Sprintf("department with id %d deleted", id))
 	return nil
 }
 
@@ -63,7 +63,7 @@ func (s *DepartmentService) Restore(ctx context.Context, id int64) error {
 		return err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("department with id %d restored", id))
+	logger.Info(fmt.Sprintf("department with id %d restored", id))
 	return nil
 }
 
@@ -73,7 +73,7 @@ func (s *DepartmentService) List(ctx context.Context, qp *dto.QueryParams) ([]*m
 		return nil, err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("%d department listed", len(list)))
+	logger.Info(fmt.Sprintf("%d department listed", len(list)))
 	return list, nil
 }
 

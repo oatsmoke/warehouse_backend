@@ -58,7 +58,7 @@ type User interface {
 	SetPasswordHash(ctx context.Context, id int64, passwordHash string) error
 	SetRole(ctx context.Context, id int64, role role.Role) error
 	SetEnabled(ctx context.Context, id int64, enabled bool) error
-	SetLastLoginAt(ctx context.Context, id int64, loginAt time.Time) error
+	SetLastLoginAt(ctx context.Context, id int64) error
 	SetEmployee(ctx context.Context, id, employeeID int64) error
 	GetByUsername(ctx context.Context, username string) (*model.User, error)
 }

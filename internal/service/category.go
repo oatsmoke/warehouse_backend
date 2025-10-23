@@ -26,7 +26,7 @@ func (s *CategoryService) Create(ctx context.Context, category *model.Category) 
 		return err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("category with id %d created", id))
+	logger.Info(fmt.Sprintf("category with id %d created", id))
 	return nil
 }
 
@@ -36,7 +36,7 @@ func (s *CategoryService) Read(ctx context.Context, id int64) (*model.Category, 
 		return nil, err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("category with id %d read", id))
+	logger.Info(fmt.Sprintf("category with id %d read", id))
 	return read, err
 }
 
@@ -45,7 +45,7 @@ func (s *CategoryService) Update(ctx context.Context, category *model.Category) 
 		return err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("category with id %d updated", category.ID))
+	logger.Info(fmt.Sprintf("category with id %d updated", category.ID))
 	return nil
 }
 
@@ -54,7 +54,7 @@ func (s *CategoryService) Delete(ctx context.Context, id int64) error {
 		return err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("category with id %d deleted", id))
+	logger.Info(fmt.Sprintf("category with id %d deleted", id))
 	return nil
 }
 
@@ -63,7 +63,7 @@ func (s *CategoryService) Restore(ctx context.Context, id int64) error {
 		return err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("category with id %d restored", id))
+	logger.Info(fmt.Sprintf("category with id %d restored", id))
 	return nil
 }
 
@@ -73,6 +73,6 @@ func (s *CategoryService) List(ctx context.Context, qp *dto.QueryParams) ([]*mod
 		return nil, err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("%d category listed", len(list)))
+	logger.Info(fmt.Sprintf("%d category listed", len(list)))
 	return list, nil
 }

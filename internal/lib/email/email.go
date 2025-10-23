@@ -6,6 +6,7 @@ import (
 	texttemplate "text/template"
 
 	"github.com/oatsmoke/warehouse_backend/internal/lib/env"
+	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
 	"github.com/wneessen/go-mail"
 )
 
@@ -22,13 +23,13 @@ var templatesFS embed.FS
 func Send(data []*SendTo) error {
 	textFS, err := texttemplate.ParseFS(templatesFS, "templates/email.txt")
 	if err != nil {
-		return err
+		return logger.Error(logger.MsgFailedToParse, err)
 	}
 	textTpl := texttemplate.Must(textFS, err)
 
 	htmlFS, err := htmltemplate.ParseFS(templatesFS, "templates/email.html")
 	if err != nil {
-		return err
+		return logger.Error(logger.MsgFailedToParse, err)
 	}
 	htmlTpl := htmltemplate.Must(htmlFS, err)
 
@@ -42,11 +43,11 @@ func Send(data []*SendTo) error {
 		message := mail.NewMsg()
 
 		if err := message.FromFormat("System", env.GetSmtpUser()); err != nil {
-			return err
+			return logger.Error(logger.MsgFailedToSetSenderAddress, err)
 		}
 
 		if err := message.AddToFormat(d.Name, d.Email); err != nil {
-			return err
+			return logger.Error(logger.MsgFailedToAddRecipientAddress, err)
 		}
 
 		message.SetDate()
@@ -55,11 +56,11 @@ func Send(data []*SendTo) error {
 		message.Subject("Authorization data")
 
 		if err := message.SetBodyTextTemplate(textTpl, d); err != nil {
-			return err
+			return logger.Error(logger.MsgFailedToSetBodyText, err)
 		}
 
 		if err := message.AddAlternativeHTMLTemplate(htmlTpl, d); err != nil {
-			return err
+			return logger.Error(logger.MsgFailedToSetBodyHTML, err)
 		}
 
 		messages = append(messages, message)
@@ -71,11 +72,11 @@ func Send(data []*SendTo) error {
 		mail.WithPassword(env.GetSmtpPassword()),
 	)
 	if err != nil {
-		return err
+		return logger.Error(logger.MsgFailedToSetMailClient, err)
 	}
 
 	if err := client.DialAndSend(messages...); err != nil {
-		return err
+		return logger.Error(logger.MsgFailedToSendMail, err)
 	}
 
 	return nil

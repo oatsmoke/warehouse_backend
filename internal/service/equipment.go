@@ -26,7 +26,7 @@ func (s *EquipmentService) Create(ctx context.Context, equipment *model.Equipmen
 		return err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("equipment with id %d created", id))
+	logger.Info(fmt.Sprintf("equipment with id %d created", id))
 	return nil
 }
 
@@ -36,7 +36,7 @@ func (s *EquipmentService) Read(ctx context.Context, id int64) (*model.Equipment
 		return nil, err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("equipment with id %d read", id))
+	logger.Info(fmt.Sprintf("equipment with id %d read", id))
 	return read, nil
 }
 
@@ -45,7 +45,7 @@ func (s *EquipmentService) Update(ctx context.Context, equipment *model.Equipmen
 		return err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("equipment with id %d updated", equipment.ID))
+	logger.Info(fmt.Sprintf("equipment with id %d updated", equipment.ID))
 	return nil
 }
 
@@ -54,7 +54,7 @@ func (s *EquipmentService) Delete(ctx context.Context, id int64) error {
 		return err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("equipment with id %d deleted", id))
+	logger.Info(fmt.Sprintf("equipment with id %d deleted", id))
 	return nil
 }
 
@@ -63,7 +63,7 @@ func (s *EquipmentService) Restore(ctx context.Context, id int64) error {
 		return err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("equipment with id %d restored", id))
+	logger.Info(fmt.Sprintf("equipment with id %d restored", id))
 	return nil
 }
 
@@ -73,6 +73,6 @@ func (s *EquipmentService) List(ctx context.Context, qp *dto.QueryParams) ([]*mo
 		return nil, err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("%d equipment listed", len(list)))
+	logger.Info(fmt.Sprintf("%d equipment listed", len(list)))
 	return list, nil
 }

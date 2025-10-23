@@ -26,7 +26,7 @@ func (s *CompanyService) Create(ctx context.Context, company *model.Company) err
 		return err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("company with id %d created", id))
+	logger.Info(fmt.Sprintf("company with id %d created", id))
 	return nil
 }
 
@@ -36,7 +36,7 @@ func (s *CompanyService) Read(ctx context.Context, id int64) (*model.Company, er
 		return nil, err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("company with id %d read", id))
+	logger.Info(fmt.Sprintf("company with id %d read", id))
 	return read, nil
 }
 
@@ -45,7 +45,7 @@ func (s *CompanyService) Update(ctx context.Context, company *model.Company) err
 		return err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("company with id %d updated", company.ID))
+	logger.Info(fmt.Sprintf("company with id %d updated", company.ID))
 	return nil
 }
 
@@ -54,7 +54,7 @@ func (s *CompanyService) Delete(ctx context.Context, id int64) error {
 		return err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("company with id %d deleted", id))
+	logger.Info(fmt.Sprintf("company with id %d deleted", id))
 	return nil
 }
 
@@ -63,7 +63,7 @@ func (s *CompanyService) Restore(ctx context.Context, id int64) error {
 		return err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("company with id %d restored", id))
+	logger.Info(fmt.Sprintf("company with id %d restored", id))
 	return nil
 }
 
@@ -73,6 +73,6 @@ func (s *CompanyService) List(ctx context.Context, qp *dto.QueryParams) ([]*mode
 		return nil, err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("%d company listed", len(list)))
+	logger.Info(fmt.Sprintf("%d company listed", len(list)))
 	return list, nil
 }

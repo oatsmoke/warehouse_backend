@@ -26,7 +26,7 @@ func (s *ProfileService) Create(ctx context.Context, profile *model.Profile) err
 		return err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("profile with id %d created", id))
+	logger.Info(fmt.Sprintf("profile with id %d created", id))
 	return nil
 }
 
@@ -36,7 +36,7 @@ func (s *ProfileService) Read(ctx context.Context, id int64) (*model.Profile, er
 		return nil, err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("profile with id %d read", id))
+	logger.Info(fmt.Sprintf("profile with id %d read", id))
 	return read, nil
 }
 
@@ -45,7 +45,7 @@ func (s *ProfileService) Update(ctx context.Context, profile *model.Profile) err
 		return err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("profile with id %d updated", profile.ID))
+	logger.Info(fmt.Sprintf("profile with id %d updated", profile.ID))
 	return nil
 }
 
@@ -54,7 +54,7 @@ func (s *ProfileService) Delete(ctx context.Context, id int64) error {
 		return err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("profile with id %d deleted", id))
+	logger.Info(fmt.Sprintf("profile with id %d deleted", id))
 	return nil
 }
 
@@ -63,7 +63,7 @@ func (s *ProfileService) Restore(ctx context.Context, id int64) error {
 		return err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("profile with id %d restored", id))
+	logger.Info(fmt.Sprintf("profile with id %d restored", id))
 	return nil
 }
 
@@ -73,6 +73,6 @@ func (s *ProfileService) List(ctx context.Context, qp *dto.QueryParams) ([]*mode
 		return nil, err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("%d profile listed", len(list)))
+	logger.Info(fmt.Sprintf("%d profile listed", len(list)))
 	return list, nil
 }

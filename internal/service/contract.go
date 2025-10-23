@@ -26,7 +26,7 @@ func (s *ContractService) Create(ctx context.Context, contract *model.Contract) 
 		return err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("contract with id %d created", id))
+	logger.Info(fmt.Sprintf("contract with id %d created", id))
 	return nil
 }
 
@@ -36,7 +36,7 @@ func (s *ContractService) Read(ctx context.Context, id int64) (*model.Contract, 
 		return nil, err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("contract with id %d read", id))
+	logger.Info(fmt.Sprintf("contract with id %d read", id))
 	return read, nil
 }
 
@@ -45,7 +45,7 @@ func (s *ContractService) Update(ctx context.Context, contract *model.Contract) 
 		return err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("contract with id %d updated", contract.ID))
+	logger.Info(fmt.Sprintf("contract with id %d updated", contract.ID))
 	return nil
 }
 
@@ -54,7 +54,7 @@ func (s *ContractService) Delete(ctx context.Context, id int64) error {
 		return err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("contract with id %d deleted", id))
+	logger.Info(fmt.Sprintf("contract with id %d deleted", id))
 	return nil
 }
 
@@ -63,7 +63,7 @@ func (s *ContractService) Restore(ctx context.Context, id int64) error {
 		return err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("contract with id %d restored", id))
+	logger.Info(fmt.Sprintf("contract with id %d restored", id))
 	return nil
 }
 
@@ -73,6 +73,6 @@ func (s *ContractService) List(ctx context.Context, qp *dto.QueryParams) ([]*mod
 		return nil, err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("%d contract listed", len(list)))
+	logger.Info(fmt.Sprintf("%d contract listed", len(list)))
 	return list, nil
 }

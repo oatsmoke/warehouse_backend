@@ -2,9 +2,7 @@ package repository
 
 import (
 	"context"
-	"errors"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/oatsmoke/warehouse_backend/internal/dto"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/list_filter"
@@ -30,11 +28,11 @@ func (r *DepartmentRepository) Create(ctx context.Context, department *model.Dep
 
 	var id int64
 	if err := r.postgresDB.QueryRow(ctx, query, department.Title).Scan(&id); err != nil {
-		return 0, err
+		return 0, logger.Error(logger.MsgFailedToInsert, err)
 	}
 
 	if id == 0 {
-		return 0, logger.NoRowsAffected
+		return 0, logger.Error(logger.MsgFailedToInsert, logger.ErrNoRowsAffected)
 	}
 
 	return id, nil
@@ -51,8 +49,8 @@ func (r *DepartmentRepository) Read(ctx context.Context, id int64) (*model.Depar
 		&department.ID,
 		&department.Title,
 		&department.DeletedAt,
-	); err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return nil, err
+	); err != nil {
+		return nil, logger.Error(logger.MsgFailedToScan, err)
 	}
 
 	return department, nil
@@ -66,11 +64,11 @@ func (r *DepartmentRepository) Update(ctx context.Context, department *model.Dep
 
 	ct, err := r.postgresDB.Exec(ctx, query, department.ID, department.Title)
 	if err != nil {
-		return err
+		return logger.Error(logger.MsgFailedToUpdate, err)
 	}
 
 	if ct.RowsAffected() == 0 {
-		return logger.NoRowsAffected
+		return logger.Error(logger.MsgFailedToUpdate, logger.ErrNoRowsAffected)
 	}
 
 	return nil
@@ -84,11 +82,11 @@ func (r *DepartmentRepository) Delete(ctx context.Context, id int64) error {
 
 	ct, err := r.postgresDB.Exec(ctx, query, id)
 	if err != nil {
-		return err
+		return logger.Error(logger.MsgFailedToDelete, err)
 	}
 
 	if ct.RowsAffected() == 0 {
-		return logger.NoRowsAffected
+		return logger.Error(logger.MsgFailedToDelete, logger.ErrNoRowsAffected)
 	}
 
 	return nil
@@ -102,11 +100,11 @@ func (r *DepartmentRepository) Restore(ctx context.Context, id int64) error {
 
 	ct, err := r.postgresDB.Exec(ctx, query, id)
 	if err != nil {
-		return err
+		return logger.Error(logger.MsgFailedToRestore, err)
 	}
 
 	if ct.RowsAffected() == 0 {
-		return logger.NoRowsAffected
+		return logger.Error(logger.MsgFailedToRestore, logger.ErrNoRowsAffected)
 	}
 
 	return nil
@@ -123,7 +121,7 @@ func (r *DepartmentRepository) List(ctx context.Context, qp *dto.QueryParams) ([
 
 	rows, err := r.postgresDB.Query(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, logger.Error(logger.MsgFailedToSelect, err)
 	}
 	defer rows.Close()
 
@@ -135,16 +133,16 @@ func (r *DepartmentRepository) List(ctx context.Context, qp *dto.QueryParams) ([
 			&department.Title,
 			&department.DeletedAt,
 		); err != nil {
-			return nil, err
+			return nil, logger.Error(logger.MsgFailedToScan, err)
 		}
 		departments = append(departments, department)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, logger.Error(logger.MsgFailedToIterateOverRows, err)
 	}
 
-	return departments, err
+	return departments, nil
 }
 
 //func (r *DepartmentRepository) GetAllButOne(ctx context.Context, id, employeeId int64) ([]*model.Department, error) {

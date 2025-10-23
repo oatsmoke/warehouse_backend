@@ -17,6 +17,6 @@ func Connect() *Redis {
 
 func (r *Redis) Disconnect() {
 	if err := r.Conn.Close(); err != nil {
-		logger.WarnInConsole(err.Error())
+		logger.Warn(err.Error())
 	}
 }

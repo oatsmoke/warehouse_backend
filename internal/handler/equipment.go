@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -25,13 +26,13 @@ func NewEquipmentHandler(equipmentService service.Equipment) *EquipmentHandler {
 func (h *EquipmentHandler) Create(ctx *gin.Context) {
 	//userId, err := getUserId(ctx)
 	//if err != nil {
-	//	logger.ErrResponse(ctx, err, http.StatusUnauthorized)
+	//	logger.ResponseErr(ctx, err, http.StatusUnauthorized)
 	//	return
 	//}
 
 	var req *dto.Equipment
 	if err := ctx.BindJSON(&req); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
@@ -43,12 +44,16 @@ func (h *EquipmentHandler) Create(ctx *gin.Context) {
 	}
 
 	if err := h.equipmentService.Create(ctx, equipment); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		if errors.Is(err, logger.ErrAlreadyExists) {
+			logger.ResponseErr(ctx, logger.ErrAlreadyExists.Error(), err, http.StatusConflict)
+			return
+		}
+		logger.ResponseErr(ctx, logger.MsgFailedToInsert, err, http.StatusInternalServerError)
 		return
 	}
 
 	//if err := h.LocationService.AddToStorage(ctx, request.Location.Date, id, userId, request.Location.Company.ID); err != nil {
-	//	logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+	//	logger.ResponseErr(ctx, err, http.StatusInternalServerError)
 	//	return
 	//}
 	//
@@ -58,7 +63,7 @@ func (h *EquipmentHandler) Create(ctx *gin.Context) {
 	//		request.RequestLocation[0].ToEmployee != 0 ||
 	//		request.RequestLocation[0].ToContract != 0 {
 	//		if err := h.LocationService.TransferTo(ctx, userId, request.RequestLocation); err != nil {
-	//			logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+	//			logger.ResponseErr(ctx, err, http.StatusInternalServerError)
 	//			return
 	//		}
 	//	}
@@ -70,13 +75,13 @@ func (h *EquipmentHandler) Create(ctx *gin.Context) {
 func (h *EquipmentHandler) Read(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
 	res, err := h.equipmentService.Read(ctx, id)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		logger.ResponseErr(ctx, logger.MsgFailedToGet, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -86,13 +91,13 @@ func (h *EquipmentHandler) Read(ctx *gin.Context) {
 func (h *EquipmentHandler) Update(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
 	var req *dto.Equipment
 	if err := ctx.BindJSON(&req); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
@@ -105,7 +110,7 @@ func (h *EquipmentHandler) Update(ctx *gin.Context) {
 	}
 
 	if err := h.equipmentService.Update(ctx, equipment); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		logger.ResponseErr(ctx, logger.MsgFailedToUpdate, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -115,12 +120,12 @@ func (h *EquipmentHandler) Update(ctx *gin.Context) {
 func (h *EquipmentHandler) Delete(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
 	if err := h.equipmentService.Delete(ctx, id); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		logger.ResponseErr(ctx, logger.MsgFailedToDelete, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -130,12 +135,12 @@ func (h *EquipmentHandler) Delete(ctx *gin.Context) {
 func (h *EquipmentHandler) Restore(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
 	if err := h.equipmentService.Restore(ctx, id); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		logger.ResponseErr(ctx, logger.MsgFailedToRestore, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -147,7 +152,7 @@ func (h *EquipmentHandler) List(ctx *gin.Context) {
 
 	res, err := h.equipmentService.List(ctx, req)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		logger.ResponseErr(ctx, logger.MsgFailedToGet, err, http.StatusInternalServerError)
 		return
 	}
 

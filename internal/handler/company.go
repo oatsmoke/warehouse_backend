@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -25,7 +26,7 @@ func NewCompanyHandler(companyService service.Company) *CompanyHandler {
 func (h *CompanyHandler) Create(ctx *gin.Context) {
 	var req *dto.Company
 	if err := ctx.BindJSON(&req); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
@@ -34,7 +35,11 @@ func (h *CompanyHandler) Create(ctx *gin.Context) {
 	}
 
 	if err := h.companyService.Create(ctx, company); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		if errors.Is(err, logger.ErrAlreadyExists) {
+			logger.ResponseErr(ctx, logger.ErrAlreadyExists.Error(), err, http.StatusConflict)
+			return
+		}
+		logger.ResponseErr(ctx, logger.MsgFailedToInsert, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -44,13 +49,13 @@ func (h *CompanyHandler) Create(ctx *gin.Context) {
 func (h *CompanyHandler) Read(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
 	res, err := h.companyService.Read(ctx, id)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		logger.ResponseErr(ctx, logger.MsgFailedToGet, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -60,13 +65,13 @@ func (h *CompanyHandler) Read(ctx *gin.Context) {
 func (h *CompanyHandler) Update(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
 	var req *dto.Company
 	if err := ctx.BindJSON(&req); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
@@ -76,7 +81,7 @@ func (h *CompanyHandler) Update(ctx *gin.Context) {
 	}
 
 	if err := h.companyService.Update(ctx, company); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		logger.ResponseErr(ctx, logger.MsgFailedToUpdate, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -86,12 +91,12 @@ func (h *CompanyHandler) Update(ctx *gin.Context) {
 func (h *CompanyHandler) Delete(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
 	if err := h.companyService.Delete(ctx, id); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		logger.ResponseErr(ctx, logger.MsgFailedToDelete, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -101,12 +106,12 @@ func (h *CompanyHandler) Delete(ctx *gin.Context) {
 func (h *CompanyHandler) Restore(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
 	if err := h.companyService.Restore(ctx, id); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		logger.ResponseErr(ctx, logger.MsgFailedToRestore, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -118,7 +123,7 @@ func (h *CompanyHandler) List(ctx *gin.Context) {
 
 	res, err := h.companyService.List(ctx, req)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		logger.ResponseErr(ctx, logger.MsgFailedToGet, err, http.StatusInternalServerError)
 		return
 	}
 

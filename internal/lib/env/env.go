@@ -109,12 +109,12 @@ func get(key string) string {
 			message(SmtpPassword)
 			return ""
 		default:
-			logger.InfoInConsole(fmt.Sprintf("%s not found", key))
+			logger.Info(fmt.Sprintf("%s not found", key))
 			return ""
 		}
 	}
 }
 
 func message(key string) {
-	logger.InfoInConsole(fmt.Sprintf("%s not set, set default value", key))
+	logger.Info(fmt.Sprintf("%s not set, set default value", key))
 }

@@ -3,8 +3,9 @@ package repository
 import (
 	"context"
 	"database/sql"
-	"time"
+	"errors"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
@@ -46,11 +47,11 @@ func (r *UserRepository) Create(ctx context.Context, user *model.User) (int64, e
 		user.Role,
 		employeeID,
 	).Scan(&id); err != nil {
-		return 0, err
+		return 0, logger.Error(logger.MsgFailedToInsert, err)
 	}
 
 	if id == 0 {
-		return 0, logger.NoRowsAffected
+		return 0, logger.Error(logger.MsgFailedToInsert, logger.ErrNoRowsAffected)
 	}
 
 	return id, nil
@@ -87,7 +88,7 @@ func (r *UserRepository) Read(ctx context.Context, id int64) (*model.User, error
 		&employeeDepartmentID,
 		&employeeDepartmentTitle,
 	); err != nil {
-		return nil, err
+		return nil, logger.Error(logger.MsgFailedToScan, err)
 	}
 
 	user.Employee.ID = validInt64(employeeID)
@@ -115,11 +116,11 @@ func (r *UserRepository) Update(ctx context.Context, user *model.User) error {
 		user.Email,
 	)
 	if err != nil {
-		return err
+		return logger.Error(logger.MsgFailedToUpdate, err)
 	}
 
 	if ct.RowsAffected() == 0 {
-		return logger.NoRowsAffected
+		return logger.Error(logger.MsgFailedToUpdate, logger.ErrNoRowsAffected)
 	}
 
 	return nil
@@ -132,11 +133,11 @@ func (r *UserRepository) Delete(ctx context.Context, id int64) error {
 
 	ct, err := r.postgresDB.Exec(ctx, query, id)
 	if err != nil {
-		return err
+		return logger.Error(logger.MsgFailedToDelete, err)
 	}
 
 	if ct.RowsAffected() == 0 {
-		return logger.NoRowsAffected
+		return logger.Error(logger.MsgFailedToDelete, logger.ErrNoRowsAffected)
 	}
 
 	return nil
@@ -160,7 +161,7 @@ func (r *UserRepository) List(ctx context.Context) ([]*model.User, error) {
 
 	rows, err := r.postgresDB.Query(ctx, query)
 	if err != nil {
-		return nil, err
+		return nil, logger.Error(logger.MsgFailedToSelect, err)
 	}
 	defer rows.Close()
 
@@ -182,7 +183,7 @@ func (r *UserRepository) List(ctx context.Context) ([]*model.User, error) {
 			&employeeDepartmentID,
 			&employeeDepartmentTitle,
 		); err != nil {
-			return nil, err
+			return nil, logger.Error(logger.MsgFailedToScan, err)
 		}
 
 		user.Employee.ID = validInt64(employeeID)
@@ -196,7 +197,7 @@ func (r *UserRepository) List(ctx context.Context) ([]*model.User, error) {
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, logger.Error(logger.MsgFailedToIterateOverRows, err)
 	}
 
 	return users, nil
@@ -210,11 +211,11 @@ func (r *UserRepository) GetPasswordHash(ctx context.Context, id int64) (string,
 
 	var passwordHash string
 	if err := r.postgresDB.QueryRow(ctx, query, id).Scan(&passwordHash); err != nil {
-		return "", err
+		return "", logger.Error(logger.MsgFailedToScan, err)
 	}
 
 	if passwordHash == "" {
-		return "", logger.NoRowsAffected
+		return "", logger.Error(logger.MsgFailedToSelect, logger.ErrNoRowsAffected)
 	}
 
 	return passwordHash, nil
@@ -233,11 +234,11 @@ func (r *UserRepository) SetPasswordHash(ctx context.Context, id int64, password
 		passwordHash,
 	)
 	if err != nil {
-		return err
+		return logger.Error(logger.MsgFailedToUpdate, err)
 	}
 
 	if ct.RowsAffected() == 0 {
-		return logger.NoRowsAffected
+		return logger.Error(logger.MsgFailedToUpdate, logger.ErrNoRowsAffected)
 	}
 
 	return nil
@@ -256,11 +257,11 @@ func (r *UserRepository) SetRole(ctx context.Context, id int64, role role.Role) 
 		role,
 	)
 	if err != nil {
-		return err
+		return logger.Error(logger.MsgFailedToUpdate, err)
 	}
 
 	if ct.RowsAffected() == 0 {
-		return logger.NoRowsAffected
+		return logger.Error(logger.MsgFailedToUpdate, logger.ErrNoRowsAffected)
 	}
 
 	return nil
@@ -279,34 +280,33 @@ func (r *UserRepository) SetEnabled(ctx context.Context, id int64, enabled bool)
 		enabled,
 	)
 	if err != nil {
-		return err
+		return logger.Error(logger.MsgFailedToUpdate, err)
 	}
 
 	if ct.RowsAffected() == 0 {
-		return logger.NoRowsAffected
+		return logger.Error(logger.MsgFailedToUpdate, logger.ErrNoRowsAffected)
 	}
 
 	return nil
 }
 
-func (r *UserRepository) SetLastLoginAt(ctx context.Context, id int64, loginAt time.Time) error {
+func (r *UserRepository) SetLastLoginAt(ctx context.Context, id int64) error {
 	const query = `
 		UPDATE users
-		SET last_login_at = &2
+		SET last_login_at = now()
 		WHERE id = $1;`
 
 	ct, err := r.postgresDB.Exec(
 		ctx,
 		query,
 		id,
-		loginAt,
 	)
 	if err != nil {
-		return err
+		return logger.Error(logger.MsgFailedToUpdate, err)
 	}
 
 	if ct.RowsAffected() == 0 {
-		return logger.NoRowsAffected
+		return logger.Error(logger.MsgFailedToUpdate, logger.ErrNoRowsAffected)
 	}
 
 	return nil
@@ -333,11 +333,11 @@ func (r *UserRepository) SetEmployee(ctx context.Context, id, employeeID int64) 
 		e,
 	)
 	if err != nil {
-		return err
+		return logger.Error(logger.MsgFailedToUpdate, err)
 	}
 
 	if ct.RowsAffected() == 0 {
-		return logger.NoRowsAffected
+		return logger.Error(logger.MsgFailedToUpdate, logger.ErrNoRowsAffected)
 	}
 
 	return nil
@@ -358,8 +358,12 @@ func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*m
 		&user.Role,
 		&user.Enabled,
 		&user.LastLoginAt,
-	); err != nil {
-		return nil, err
+	); err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return nil, logger.Error(logger.MsgFailedToScan, err)
+	}
+
+	if user.ID == 0 {
+		return nil, logger.Error(logger.MsgFailedToSelect, logger.ErrNoRowsAffected)
 	}
 
 	return user, nil

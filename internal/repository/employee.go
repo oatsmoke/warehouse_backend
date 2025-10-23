@@ -37,11 +37,11 @@ func (r *EmployeeRepository) Create(ctx context.Context, employee *model.Employe
 		employee.MiddleName,
 		employee.Phone,
 	).Scan(&id); err != nil {
-		return 0, err
+		return 0, logger.Error(logger.MsgFailedToInsert, err)
 	}
 
 	if id == 0 {
-		return 0, logger.NoRowsAffected
+		return 0, logger.Error(logger.MsgFailedToInsert, logger.ErrNoRowsAffected)
 	}
 
 	return id, nil
@@ -71,7 +71,7 @@ func (r *EmployeeRepository) Read(ctx context.Context, id int64) (*model.Employe
 		&departmentID,
 		&departmentTitle,
 	); err != nil {
-		return nil, err
+		return nil, logger.Error(logger.MsgFailedToScan, err)
 	}
 
 	employee.Department.ID = validInt64(departmentID)
@@ -96,11 +96,11 @@ func (r *EmployeeRepository) Update(ctx context.Context, employee *model.Employe
 		employee.Phone,
 	)
 	if err != nil {
-		return err
+		return logger.Error(logger.MsgFailedToUpdate, err)
 	}
 
 	if ct.RowsAffected() == 0 {
-		return logger.NoRowsAffected
+		return logger.Error(logger.MsgFailedToUpdate, logger.ErrNoRowsAffected)
 	}
 
 	return nil
@@ -114,11 +114,11 @@ func (r *EmployeeRepository) Delete(ctx context.Context, id int64) error {
 
 	ct, err := r.postgresDB.Exec(ctx, query, id)
 	if err != nil {
-		return err
+		return logger.Error(logger.MsgFailedToDelete, err)
 	}
 
 	if ct.RowsAffected() == 0 {
-		return logger.NoRowsAffected
+		return logger.Error(logger.MsgFailedToDelete, logger.ErrNoRowsAffected)
 	}
 
 	return nil
@@ -132,11 +132,11 @@ func (r *EmployeeRepository) Restore(ctx context.Context, id int64) error {
 
 	ct, err := r.postgresDB.Exec(ctx, query, id)
 	if err != nil {
-		return err
+		return logger.Error(logger.MsgFailedToRestore, err)
 	}
 
 	if ct.RowsAffected() == 0 {
-		return logger.NoRowsAffected
+		return logger.Error(logger.MsgFailedToRestore, logger.ErrNoRowsAffected)
 	}
 
 	return nil
@@ -155,7 +155,7 @@ func (r *EmployeeRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*
 
 	rows, err := r.postgresDB.Query(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, logger.Error(logger.MsgFailedToSelect, err)
 	}
 	defer rows.Close()
 
@@ -177,7 +177,7 @@ func (r *EmployeeRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*
 			&departmentID,
 			&departmentTitle,
 		); err != nil {
-			return nil, err
+			return nil, logger.Error(logger.MsgFailedToSelect, err)
 		}
 
 		employee.Department.ID = validInt64(departmentID)
@@ -185,7 +185,11 @@ func (r *EmployeeRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*
 		employees = append(employees, employee)
 	}
 
-	return employees, err
+	if err := rows.Err(); err != nil {
+		return nil, logger.Error(logger.MsgFailedToIterateOverRows, err)
+	}
+
+	return employees, nil
 }
 
 func (r *EmployeeRepository) SetDepartment(ctx context.Context, id, departmentID int64) error {
@@ -204,11 +208,11 @@ func (r *EmployeeRepository) SetDepartment(ctx context.Context, id, departmentID
 
 	ct, err := r.postgresDB.Exec(ctx, query, id, d)
 	if err != nil {
-		return err
+		return logger.Error(logger.MsgFailedToUpdate, err)
 	}
 
 	if ct.RowsAffected() == 0 {
-		return logger.NoRowsAffected
+		return logger.Error(logger.MsgFailedToUpdate, logger.ErrNoRowsAffected)
 	}
 
 	return nil

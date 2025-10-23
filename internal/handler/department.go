@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -25,7 +26,11 @@ func NewDepartmentHandler(departmentService service.Department) *DepartmentHandl
 func (h *DepartmentHandler) Create(ctx *gin.Context) {
 	var req *dto.Department
 	if err := ctx.BindJSON(&req); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		if errors.Is(err, logger.ErrAlreadyExists) {
+			logger.ResponseErr(ctx, logger.ErrAlreadyExists.Error(), err, http.StatusConflict)
+			return
+		}
+		logger.ResponseErr(ctx, logger.MsgFailedToInsert, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -34,7 +39,7 @@ func (h *DepartmentHandler) Create(ctx *gin.Context) {
 	}
 
 	if err := h.departmentService.Create(ctx, department); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		logger.ResponseErr(ctx, logger.MsgFailedToInsert, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -44,13 +49,13 @@ func (h *DepartmentHandler) Create(ctx *gin.Context) {
 func (h *DepartmentHandler) Read(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
 	res, err := h.departmentService.Read(ctx, id)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		logger.ResponseErr(ctx, logger.MsgFailedToGet, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -60,12 +65,12 @@ func (h *DepartmentHandler) Read(ctx *gin.Context) {
 func (h *DepartmentHandler) Update(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 	var req *dto.Department
 	if err := ctx.BindJSON(&req); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
@@ -75,7 +80,7 @@ func (h *DepartmentHandler) Update(ctx *gin.Context) {
 	}
 
 	if err := h.departmentService.Update(ctx, department); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		logger.ResponseErr(ctx, logger.MsgFailedToUpdate, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -85,12 +90,12 @@ func (h *DepartmentHandler) Update(ctx *gin.Context) {
 func (h *DepartmentHandler) Delete(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
 	if err := h.departmentService.Delete(ctx, id); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		logger.ResponseErr(ctx, logger.MsgFailedToDelete, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -100,12 +105,12 @@ func (h *DepartmentHandler) Delete(ctx *gin.Context) {
 func (h *DepartmentHandler) Restore(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
 	if err := h.departmentService.Restore(ctx, id); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		logger.ResponseErr(ctx, logger.MsgFailedToRestore, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -117,7 +122,7 @@ func (h *DepartmentHandler) List(ctx *gin.Context) {
 
 	res, err := h.departmentService.List(ctx, req)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		logger.ResponseErr(ctx, logger.MsgFailedToGet, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -127,18 +132,18 @@ func (h *DepartmentHandler) List(ctx *gin.Context) {
 //func (h *DepartmentHandler) GetAllButOne(ctx *gin.Context) {
 //	employeeId, err := getUserId(ctx)
 //	if err != nil {
-//		logger.ErrResponse(ctx, err, http.StatusUnauthorized)
+//		logger.ResponseErr(ctx, err, http.StatusUnauthorized)
 //		return
 //	}
 //
 //	var department *model.Department
 //	if err := ctx.BindJSON(&department); err != nil {
-//		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+//		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 //		return
 //	}
 //	res, err := h.DepartmentService.GetAllButOne(ctx, department.ID, employeeId)
 //	if err != nil {
-//		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+//		logger.ResponseErr(ctx, err, http.StatusInternalServerError)
 //		return
 //	}
 //

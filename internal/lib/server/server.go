@@ -33,7 +33,7 @@ func (s *Server) Run() {
 		}
 	}()
 
-	logger.InfoInConsole(fmt.Sprintf("http server start on %s", s.httpServer.Addr))
+	logger.Info(fmt.Sprintf("http server start on %s", s.httpServer.Addr))
 }
 
 func (s *Server) Stop() {
@@ -41,5 +41,5 @@ func (s *Server) Stop() {
 		log.Println(err)
 	}
 
-	logger.InfoInConsole("http server stopped")
+	logger.Info("http server stopped")
 }

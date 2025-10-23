@@ -28,11 +28,11 @@ func (r *CompanyRepository) Create(ctx context.Context, company *model.Company) 
 
 	var id int64
 	if err := r.postgresDB.QueryRow(ctx, query, company.Title).Scan(&id); err != nil {
-		return 0, err
+		return 0, logger.Error(logger.MsgFailedToInsert, err)
 	}
 
 	if id == 0 {
-		return 0, logger.NoRowsAffected
+		return 0, logger.Error(logger.MsgFailedToMarshal, logger.ErrNoRowsAffected)
 	}
 
 	return id, nil
@@ -50,7 +50,7 @@ func (r *CompanyRepository) Read(ctx context.Context, id int64) (*model.Company,
 		&company.Title,
 		&company.DeletedAt,
 	); err != nil {
-		return nil, err
+		return nil, logger.Error(logger.MsgFailedToScan, err)
 	}
 
 	return company, nil
@@ -68,7 +68,7 @@ func (r *CompanyRepository) Update(ctx context.Context, company *model.Company) 
 	}
 
 	if ct.RowsAffected() == 0 {
-		return logger.NoRowsAffected
+		return logger.Error(logger.MsgFailedToUpdate, logger.ErrNoRowsAffected)
 	}
 
 	return nil
@@ -82,11 +82,11 @@ func (r *CompanyRepository) Delete(ctx context.Context, id int64) error {
 
 	ct, err := r.postgresDB.Exec(ctx, query, id)
 	if err != nil {
-		return err
+		return logger.Error(logger.MsgFailedToDelete, err)
 	}
 
 	if ct.RowsAffected() == 0 {
-		return logger.NoRowsAffected
+		return logger.Error(logger.MsgFailedToDelete, logger.ErrNoRowsAffected)
 	}
 
 	return nil
@@ -100,11 +100,11 @@ func (r *CompanyRepository) Restore(ctx context.Context, id int64) error {
 
 	ct, err := r.postgresDB.Exec(ctx, query, id)
 	if err != nil {
-		return err
+		return logger.Error(logger.MsgFailedToRestore, err)
 	}
 
 	if ct.RowsAffected() == 0 {
-		return logger.NoRowsAffected
+		return logger.Error(logger.MsgFailedToRestore, logger.ErrNoRowsAffected)
 	}
 
 	return nil
@@ -121,7 +121,7 @@ func (r *CompanyRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*m
 
 	rows, err := r.postgresDB.Query(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, logger.Error(logger.MsgFailedToSelect, err)
 	}
 	defer rows.Close()
 
@@ -133,13 +133,13 @@ func (r *CompanyRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*m
 			&company.Title,
 			&company.DeletedAt,
 		); err != nil {
-			return nil, err
+			return nil, logger.Error(logger.MsgFailedToScan, err)
 		}
 		companies = append(companies, company)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, logger.Error(logger.MsgFailedToIterateOverRows, err)
 	}
 
 	return companies, nil

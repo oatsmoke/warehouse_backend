@@ -37,7 +37,7 @@ func (t *Token) New(userId int64) (*jwt.RegisteredClaims, error) {
 func (t *Token) setAccess(userId string) error {
 	accessTTL, err := strconv.Atoi(env.GetAccessTtl())
 	if err != nil {
-		return err
+		return logger.Error(logger.MsgFailedToConvert, err)
 	}
 
 	claims := &jwt.RegisteredClaims{
@@ -49,7 +49,7 @@ func (t *Token) setAccess(userId string) error {
 
 	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(env.GetSigningKey()))
 	if err != nil {
-		return err
+		return logger.Error(logger.MsgFailedToSigned, err)
 	}
 
 	t.Access = token
@@ -59,7 +59,7 @@ func (t *Token) setAccess(userId string) error {
 func (t *Token) setRefresh(userId string) (*jwt.RegisteredClaims, error) {
 	refreshTTL, err := strconv.Atoi(env.GetRefreshTtl())
 	if err != nil {
-		return nil, err
+		return nil, logger.Error(logger.MsgFailedToConvert, err)
 	}
 
 	claims := &jwt.RegisteredClaims{
@@ -71,7 +71,7 @@ func (t *Token) setRefresh(userId string) (*jwt.RegisteredClaims, error) {
 
 	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(env.GetSigningKey()))
 	if err != nil {
-		return nil, err
+		return nil, logger.Error(logger.MsgFailedToSigned, err)
 	}
 
 	t.Refresh = token
@@ -81,16 +81,16 @@ func (t *Token) setRefresh(userId string) (*jwt.RegisteredClaims, error) {
 func CheckToken(token string) (*jwt.RegisteredClaims, error) {
 	t, err := jwt.ParseWithClaims(token, &jwt.RegisteredClaims{}, checkMethod)
 	if err != nil {
-		return nil, err
+		return nil, logger.Error(logger.MsgFailedToParse, err)
 	}
 
 	if !t.Valid {
-		return nil, logger.InvalidToken
+		return nil, logger.Error(logger.MsgFailedToValidate, logger.ErrInvalidToken)
 	}
 
 	claims, ok := t.Claims.(*jwt.RegisteredClaims)
 	if !ok {
-		return nil, logger.InvalidClaims
+		return nil, logger.Error(logger.MsgFailedToValidate, logger.ErrInvalidClaims)
 	}
 
 	return claims, nil
@@ -98,7 +98,7 @@ func CheckToken(token string) (*jwt.RegisteredClaims, error) {
 
 func checkMethod(t *jwt.Token) (interface{}, error) {
 	if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-		return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+		return nil, logger.Error(fmt.Sprintf("invalid JWT algorithm: %v", t.Method.Alg()), logger.ErrUnexpectedSigningMethod)
 	}
 
 	return []byte(env.GetSigningKey()), nil

@@ -51,7 +51,7 @@ func (s *UserService) Create(ctx context.Context, user *model.User) error {
 	password := generate.RandString(10)
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return err
+		return logger.Error(logger.MsgFailedToGenerateHash, err)
 	}
 
 	var userEmail string
@@ -97,7 +97,7 @@ func (s *UserService) Create(ctx context.Context, user *model.User) error {
 		return err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("user with id %d created", id))
+	logger.Info(fmt.Sprintf("user with id %d created", id))
 	return nil
 }
 
@@ -107,7 +107,7 @@ func (s *UserService) Read(ctx context.Context, id int64) (*model.User, error) {
 		return nil, err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("user with id %d read", id))
+	logger.Info(fmt.Sprintf("user with id %d read", id))
 	return read, nil
 }
 
@@ -117,7 +117,7 @@ func (s *UserService) Update(ctx context.Context, user *model.User) error {
 		return err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("user with id %d updated", user.ID))
+	logger.Info(fmt.Sprintf("user with id %d updated", user.ID))
 	return nil
 }
 
@@ -127,7 +127,7 @@ func (s *UserService) Delete(ctx context.Context, id int64) error {
 		return err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("user with id %d deleted", id))
+	logger.Info(fmt.Sprintf("user with id %d deleted", id))
 	return nil
 }
 
@@ -137,7 +137,7 @@ func (s *UserService) List(ctx context.Context) ([]*model.User, error) {
 		return nil, err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("%d user listed", len(list)))
+	logger.Info(fmt.Sprintf("%d user listed", len(list)))
 	return list, nil
 }
 
@@ -149,15 +149,14 @@ func (s *UserService) SetPassword(ctx context.Context, id int64, oldPassword, ne
 
 	if err := bcrypt.CompareHashAndPassword([]byte(oldPasswordHash), []byte(oldPassword)); err != nil {
 		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
-			return errors.New("wrong password")
-		} else {
-			return err
+			return logger.Error(logger.MsgFailedToValidate, logger.ErrWrongPassword)
 		}
+		return err
 	}
 
 	newPasswordHash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
 	if err != nil {
-		return err
+		return logger.Error(logger.MsgFailedToGenerateHash, err)
 	}
 
 	err = s.userRepository.SetPasswordHash(ctx, id, string(newPasswordHash))
@@ -165,7 +164,7 @@ func (s *UserService) SetPassword(ctx context.Context, id int64, oldPassword, ne
 		return err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("user with id %d changed password", id))
+	logger.Info(fmt.Sprintf("user with id %d changed password", id))
 	return nil
 }
 
@@ -173,7 +172,7 @@ func (s *UserService) ResetPassword(ctx context.Context, id int64) error {
 	newPassword := generate.RandString(10)
 	newPasswordHash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
 	if err != nil {
-		return err
+		return logger.Error(logger.MsgFailedToGenerateHash, err)
 	}
 
 	err = s.userRepository.SetPasswordHash(ctx, id, string(newPasswordHash))
@@ -197,7 +196,7 @@ func (s *UserService) ResetPassword(ctx context.Context, id int64) error {
 		return err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("user with id %d reset password", id))
+	logger.Info(fmt.Sprintf("user with id %d reset password", id))
 	return nil
 }
 
@@ -206,7 +205,7 @@ func (s *UserService) SetRole(ctx context.Context, id int64, role role.Role) err
 		return err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("user with id %d changed role to %s", id, role))
+	logger.Info(fmt.Sprintf("user with id %d changed role to %s", id, role))
 	return nil
 }
 
@@ -215,25 +214,15 @@ func (s *UserService) SetEnabled(ctx context.Context, id int64, enabled bool) er
 		return err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("user with id %d set enabled to %t", id, enabled))
+	logger.Info(fmt.Sprintf("user with id %d set enabled to %t", id, enabled))
 	return nil
 }
-
-//func (s *UserService) SetLastLoginAt(ctx context.Context, id int64) error {
-//	loginAt := time.Now()
-//	if err := s.userRepository.SetLastLoginAt(ctx, id, loginAt); err != nil {
-//		return err
-//	}
-//
-//	logger.InfoInConsole(fmt.Sprintf("user with id %d login at %s", id, loginAt))
-//	return nil
-//}
 
 func (s *UserService) SetEmployee(ctx context.Context, id, employeeID int64) error {
 	if err := s.userRepository.SetEmployee(ctx, id, employeeID); err != nil {
 		return err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("user with id %d set employee id %d", id, employeeID))
+	logger.Info(fmt.Sprintf("user with id %d set employee id %d", id, employeeID))
 	return nil
 }

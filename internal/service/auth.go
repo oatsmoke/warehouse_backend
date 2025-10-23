@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/oatsmoke/warehouse_backend/internal/dto"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/jwt_auth"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
@@ -29,19 +28,17 @@ func NewAuthService(authRepository repository.Auth, userRepository repository.Us
 func (s *AuthService) AuthUser(ctx context.Context, login *dto.UserLogin) (*jwt_auth.Token, error) {
 	user, err := s.userRepository.GetByUsername(ctx, login.Username)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, logger.WrongUsernameOrPassword
-		} else {
-			return nil, err
+		if errors.Is(err, logger.ErrNoRowsAffected) {
+			return nil, logger.ErrWrongUsernameOrPassword
 		}
+		return nil, err
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(login.Password)); err != nil {
 		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
-			return nil, logger.WrongUsernameOrPassword
-		} else {
-			return nil, err
+			return nil, logger.Error(logger.MsgFailedToValidate, logger.ErrWrongUsernameOrPassword)
 		}
+		return nil, err
 	}
 
 	token := &jwt_auth.Token{}
@@ -54,35 +51,39 @@ func (s *AuthService) AuthUser(ctx context.Context, login *dto.UserLogin) (*jwt_
 		return nil, err
 	}
 
-	logger.InfoInConsole(fmt.Sprintf("User %s logged in", user.Username))
+	if err := s.userRepository.SetLastLoginAt(ctx, user.ID); err != nil {
+		return nil, err
+	}
+
+	logger.Info(fmt.Sprintf("User %s logged in", user.Username))
 	return token, nil
 }
 
 func (s *AuthService) CheckToken(ctx context.Context, token *jwt_auth.Token) (*jwt_auth.Token, error) {
-	if claims, err := jwt_auth.CheckToken(token.Access); err != nil {
-		logger.WarnInConsole(err.Error())
+	if claimsAccess, err := jwt_auth.CheckToken(token.Access); err != nil {
+		logger.Warn(err.Error())
 
-		claims, err := jwt_auth.CheckToken(token.Refresh)
+		claimsRefresh, err := jwt_auth.CheckToken(token.Refresh)
 		if err != nil {
 			return nil, err
 		}
 
-		revoked, err := s.authRepository.Get(ctx, claims.ID)
+		revoked, err := s.authRepository.Get(ctx, claimsRefresh.ID)
 		if err != nil {
 			return nil, err
 		}
 
 		if revoked {
-			return nil, logger.TokenIsRevoked
+			return nil, logger.Error(logger.MsgAuthorizationDenied, logger.ErrTokenHasBeenRevoked)
 		}
 
-		if err := s.authRepository.Set(ctx, claims, true); err != nil {
+		if err := s.authRepository.Set(ctx, claimsRefresh, true); err != nil {
 			return nil, err
 		}
 
-		userId, err := strconv.ParseInt(claims.Subject, 10, 64)
+		userId, err := strconv.ParseInt(claimsRefresh.Subject, 10, 64)
 		if err != nil {
-			return nil, err
+			return nil, logger.Error(logger.MsgFailedToConvert, err)
 		}
 
 		newClaims, err := token.New(userId)
@@ -94,9 +95,9 @@ func (s *AuthService) CheckToken(ctx context.Context, token *jwt_auth.Token) (*j
 			return nil, err
 		}
 	} else {
-		userId, err := strconv.ParseInt(claims.Subject, 10, 64)
+		userId, err := strconv.ParseInt(claimsAccess.Subject, 10, 64)
 		if err != nil {
-			return nil, err
+			return nil, logger.Error(logger.MsgFailedToConvert, err)
 		}
 
 		token.UserID = userId

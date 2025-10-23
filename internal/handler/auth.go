@@ -26,20 +26,20 @@ func NewAuthHandler(authService service.Auth, userService service.User) *AuthHan
 func (h *AuthHandler) Login(ctx *gin.Context) {
 	var req *dto.UserLogin
 	if err := ctx.BindJSON(&req); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
 	token, err := h.authService.AuthUser(ctx, req)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusUnauthorized)
+		logger.ResponseErr(ctx, logger.MsgAuthenticationFailed, err, http.StatusUnauthorized)
 		return
 	}
 	setCookie(ctx, token.Access, token.Refresh)
 
 	user, err := h.userService.Read(ctx, token.UserID)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToGet, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -49,13 +49,13 @@ func (h *AuthHandler) Login(ctx *gin.Context) {
 func (h *AuthHandler) GetUser(ctx *gin.Context) {
 	id, err := getUserId(ctx)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusUnauthorized)
+		logger.ResponseErr(ctx, logger.MsgAuthenticationFailed, err, http.StatusUnauthorized)
 		return
 	}
 
 	user, err := h.userService.Read(ctx, id)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToGet, err, http.StatusBadRequest)
 		return
 	}
 
@@ -65,13 +65,13 @@ func (h *AuthHandler) GetUser(ctx *gin.Context) {
 func (h *AuthHandler) UserIdentity(ctx *gin.Context) {
 	access, err := ctx.Cookie("access")
 	if err != nil && !errors.Is(err, http.ErrNoCookie) {
-		logger.ErrResponse(ctx, err, http.StatusForbidden)
+		logger.ResponseErr(ctx, logger.MsgAuthorizationDenied, err, http.StatusForbidden)
 		return
 	}
 
 	refresh, err := ctx.Cookie("refresh")
 	if err != nil && !errors.Is(err, http.ErrNoCookie) {
-		logger.ErrResponse(ctx, err, http.StatusForbidden)
+		logger.ResponseErr(ctx, logger.MsgAuthorizationDenied, err, http.StatusForbidden)
 		return
 	}
 
@@ -80,7 +80,7 @@ func (h *AuthHandler) UserIdentity(ctx *gin.Context) {
 		Refresh: refresh,
 	})
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusForbidden)
+		logger.ResponseErr(ctx, logger.MsgAuthorizationDenied, err, http.StatusForbidden)
 		return
 	}
 
@@ -93,7 +93,7 @@ func (h *AuthHandler) UserIdentity(ctx *gin.Context) {
 
 func getUserId(ctx *gin.Context) (int64, error) {
 	if userId, ok := ctx.Get("userId"); !ok {
-		return 0, errors.New("user id in context not found")
+		return 0, logger.Error(logger.MsgFailedToGet, logger.ErrUserIdNotFound)
 	} else {
 		return userId.(int64), nil
 	}

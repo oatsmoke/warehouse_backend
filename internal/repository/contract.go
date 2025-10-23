@@ -28,11 +28,11 @@ func (r *ContractRepository) Create(ctx context.Context, contract *model.Contrac
 
 	var id int64
 	if err := r.postgresDB.QueryRow(ctx, query, contract.Number, contract.Address).Scan(&id); err != nil {
-		return 0, err
+		return 0, logger.Error(logger.MsgFailedToInsert, err)
 	}
 
 	if id == 0 {
-		return 0, logger.NoRowsAffected
+		return 0, logger.Error(logger.MsgFailedToDelete, logger.ErrNoRowsAffected)
 	}
 
 	return id, nil
@@ -51,7 +51,7 @@ func (r *ContractRepository) Read(ctx context.Context, id int64) (*model.Contrac
 		&contract.Address,
 		&contract.DeletedAt,
 	); err != nil {
-		return nil, err
+		return nil, logger.Error(logger.MsgFailedToScan, err)
 	}
 
 	return contract, nil
@@ -65,11 +65,11 @@ func (r *ContractRepository) Update(ctx context.Context, contract *model.Contrac
 
 	ct, err := r.postgresDB.Exec(ctx, query, contract.ID, contract.Number, contract.Address)
 	if err != nil {
-		return err
+		return logger.Error(logger.MsgFailedToUpdate, err)
 	}
 
 	if ct.RowsAffected() == 0 {
-		return logger.NoRowsAffected
+		return logger.Error(logger.MsgFailedToUpdate, logger.ErrNoRowsAffected)
 	}
 
 	return nil
@@ -83,11 +83,11 @@ func (r *ContractRepository) Delete(ctx context.Context, id int64) error {
 
 	ct, err := r.postgresDB.Exec(ctx, query, id)
 	if err != nil {
-		return err
+		return logger.Error(logger.MsgFailedToDelete, err)
 	}
 
 	if ct.RowsAffected() == 0 {
-		return logger.NoRowsAffected
+		return logger.Error(logger.MsgFailedToDelete, logger.ErrNoRowsAffected)
 	}
 
 	return nil
@@ -101,11 +101,11 @@ func (r *ContractRepository) Restore(ctx context.Context, id int64) error {
 
 	ct, err := r.postgresDB.Exec(ctx, query, id)
 	if err != nil {
-		return err
+		return logger.Error(logger.MsgFailedToRestore, err)
 	}
 
 	if ct.RowsAffected() == 0 {
-		return logger.NoRowsAffected
+		return logger.Error(logger.MsgFailedToRestore, logger.ErrNoRowsAffected)
 	}
 
 	return nil
@@ -122,7 +122,7 @@ func (r *ContractRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*
 
 	rows, err := r.postgresDB.Query(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, logger.Error(logger.MsgFailedToSelect, err)
 	}
 	defer rows.Close()
 
@@ -135,13 +135,13 @@ func (r *ContractRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*
 			&contract.Address,
 			&contract.DeletedAt,
 		); err != nil {
-			return nil, err
+			return nil, logger.Error(logger.MsgFailedToScan, err)
 		}
 		contracts = append(contracts, contract)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, logger.Error(logger.MsgFailedToIterateOverRows, err)
 	}
 
 	return contracts, nil

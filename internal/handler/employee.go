@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -26,7 +27,7 @@ func NewEmployeeHandler(serviceEmployee service.Employee) *EmployeeHandler {
 func (h *EmployeeHandler) Create(ctx *gin.Context) {
 	var req *dto.Employee
 	if err := ctx.BindJSON(&req); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
@@ -38,7 +39,11 @@ func (h *EmployeeHandler) Create(ctx *gin.Context) {
 	}
 
 	if err := h.serviceEmployee.Create(ctx, employee); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		if errors.Is(err, logger.ErrAlreadyExists) {
+			logger.ResponseErr(ctx, logger.ErrAlreadyExists.Error(), err, http.StatusConflict)
+			return
+		}
+		logger.ResponseErr(ctx, logger.MsgFailedToInsert, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -48,13 +53,13 @@ func (h *EmployeeHandler) Create(ctx *gin.Context) {
 func (h *EmployeeHandler) Read(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
 	res, err := h.serviceEmployee.Read(ctx, id)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		logger.ResponseErr(ctx, logger.MsgFailedToGet, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -64,13 +69,13 @@ func (h *EmployeeHandler) Read(ctx *gin.Context) {
 func (h *EmployeeHandler) Update(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
 	var req *dto.Employee
 	if err := ctx.BindJSON(&req); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
@@ -83,7 +88,7 @@ func (h *EmployeeHandler) Update(ctx *gin.Context) {
 	}
 
 	if err := h.serviceEmployee.Update(ctx, employee); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		logger.ResponseErr(ctx, logger.MsgFailedToUpdate, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -93,12 +98,12 @@ func (h *EmployeeHandler) Update(ctx *gin.Context) {
 func (h *EmployeeHandler) Delete(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
 	if err := h.serviceEmployee.Delete(ctx, id); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		logger.ResponseErr(ctx, logger.MsgFailedToDelete, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -108,12 +113,12 @@ func (h *EmployeeHandler) Delete(ctx *gin.Context) {
 func (h *EmployeeHandler) Restore(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
 	if err := h.serviceEmployee.Restore(ctx, id); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		logger.ResponseErr(ctx, logger.MsgFailedToRestore, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -125,7 +130,7 @@ func (h *EmployeeHandler) List(ctx *gin.Context) {
 
 	res, err := h.serviceEmployee.List(ctx, req)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		logger.ResponseErr(ctx, logger.MsgFailedToGet, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -135,18 +140,18 @@ func (h *EmployeeHandler) List(ctx *gin.Context) {
 func (h *EmployeeHandler) SetDepartment(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
 	var req *dto.EmployeeDepartmentUpdate
 	if err := ctx.BindJSON(&req); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
 	if err := h.serviceEmployee.SetDepartment(ctx, id, req.DepartmentID); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+		logger.ResponseErr(ctx, logger.MsgFailedToUpdate, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -157,13 +162,13 @@ func (h *EmployeeHandler) SetDepartment(ctx *gin.Context) {
 //func (h *EmployeeHandler) GetAllShort(ctx *gin.Context) {
 //	var deleted bool
 //	if err := ctx.BindJSON(&deleted); err != nil {
-//		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+//		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 //		return
 //	}
 //
 //	employees, err := h.serviceEmployee.GetAllShort(ctx, deleted)
 //	if err != nil {
-//		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+//		logger.ResponseErr(ctx, err, http.StatusInternalServerError)
 //		return
 //	}
 //
@@ -175,19 +180,19 @@ func (h *EmployeeHandler) SetDepartment(ctx *gin.Context) {
 //func (h *EmployeeHandler) GetAllButAuth(ctx *gin.Context) {
 //	var deleted bool
 //	if err := ctx.BindJSON(&deleted); err != nil {
-//		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+//		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 //		return
 //	}
 //
 //	id, err := getUserId(ctx)
 //	if err != nil {
-//		logger.ErrResponse(ctx, err, http.StatusUnauthorized)
+//		logger.ResponseErr(ctx, err, http.StatusUnauthorized)
 //		return
 //	}
 //
 //	employees, err := h.serviceEmployee.GetAllButOne(ctx, id, deleted)
 //	if err != nil {
-//		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+//		logger.ResponseErr(ctx, err, http.StatusInternalServerError)
 //		return
 //	}
 //
@@ -199,13 +204,13 @@ func (h *EmployeeHandler) SetDepartment(ctx *gin.Context) {
 //func (h *EmployeeHandler) GetAllButOne(ctx *gin.Context) {
 //	var employees *model.Employee
 //	if err := ctx.BindJSON(&employees); err != nil {
-//		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+//		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 //		return
 //	}
 //
 //	res, err := h.serviceEmployee.GetAllButOne(ctx, employees.ID, employees.Deleted)
 //	if err != nil {
-//		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+//		logger.ResponseErr(ctx, err, http.StatusInternalServerError)
 //		return
 //	}
 //
@@ -219,7 +224,7 @@ func (h *EmployeeHandler) SetDepartment(ctx *gin.Context) {
 //func (h *EmployeeHandler) GetFree(ctx *gin.Context) {
 //	employees, err := h.serviceEmployee.GetFree(ctx)
 //	if err != nil {
-//		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+//		logger.ResponseErr(ctx, err, http.StatusInternalServerError)
 //		return
 //	}
 //
@@ -231,13 +236,13 @@ func (h *EmployeeHandler) SetDepartment(ctx *gin.Context) {
 //func (h *EmployeeHandler) GetByDepartment(ctx *gin.Context) {
 //	var request *model.RequestEmployee
 //	if err := ctx.BindJSON(&request); err != nil {
-//		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+//		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 //		return
 //	}
 //
 //	employees, err := h.serviceEmployee.GetByDepartment(ctx, request.Ids, request.DepartmentId)
 //	if err != nil {
-//		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+//		logger.ResponseErr(ctx, err, http.StatusInternalServerError)
 //		return
 //	}
 //
@@ -249,12 +254,12 @@ func (h *EmployeeHandler) SetDepartment(ctx *gin.Context) {
 //func (h *EmployeeHandler) AddToDepartment(ctx *gin.Context) {
 //	var employee *model.Employee
 //	if err := ctx.BindJSON(&employee); err != nil {
-//		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+//		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 //		return
 //	}
 //
 //	if err := h.serviceEmployee.AddToDepartment(ctx, employee.ID, employee.Department.ID); err != nil {
-//		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+//		logger.ResponseErr(ctx, err, http.StatusInternalServerError)
 //		return
 //	}
 //
@@ -266,12 +271,12 @@ func (h *EmployeeHandler) SetDepartment(ctx *gin.Context) {
 //func (h *EmployeeHandler) RemoveFromDepartment(ctx *gin.Context) {
 //	var request []int64
 //	if err := ctx.BindJSON(&request); err != nil {
-//		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+//		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 //		return
 //	}
 //
 //	if err := h.serviceEmployee.RemoveFromDepartment(ctx, request[0], request[1]); err != nil {
-//		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+//		logger.ResponseErr(ctx, err, http.StatusInternalServerError)
 //		return
 //	}
 //
@@ -283,12 +288,12 @@ func (h *EmployeeHandler) SetDepartment(ctx *gin.Context) {
 //func (h *EmployeeHandler) Activate(ctx *gin.Context) {
 //	var employee *model.Employee
 //	if err := ctx.BindJSON(&employee); err != nil {
-//		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+//		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 //		return
 //	}
 //
 //	if err := h.serviceEmployee.Activate(ctx, employee.ID); err != nil {
-//		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+//		logger.ResponseErr(ctx, err, http.StatusInternalServerError)
 //		return
 //	}
 //
@@ -300,12 +305,12 @@ func (h *EmployeeHandler) SetDepartment(ctx *gin.Context) {
 //func (h *EmployeeHandler) Deactivate(ctx *gin.Context) {
 //	var employee *model.Employee
 //	if err := ctx.BindJSON(&employee); err != nil {
-//		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+//		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 //		return
 //	}
 //
 //	if err := h.serviceEmployee.Deactivate(ctx, employee.ID); err != nil {
-//		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+//		logger.ResponseErr(ctx, err, http.StatusInternalServerError)
 //		return
 //	}
 //
@@ -317,12 +322,12 @@ func (h *EmployeeHandler) SetDepartment(ctx *gin.Context) {
 //func (h *EmployeeHandler) ResetPassword(ctx *gin.Context) {
 //	var employee *model.Employee
 //	if err := ctx.BindJSON(&employee); err != nil {
-//		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+//		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 //		return
 //	}
 //
 //	if err := h.serviceEmployee.ResetPassword(ctx, employee.ID); err != nil {
-//		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+//		logger.ResponseErr(ctx, err, http.StatusInternalServerError)
 //		return
 //	}
 //
@@ -334,12 +339,12 @@ func (h *EmployeeHandler) SetDepartment(ctx *gin.Context) {
 //func (h *EmployeeHandler) ChangeRole(ctx *gin.Context) {
 //	var employee *model.Employee
 //	if err := ctx.BindJSON(&employee); err != nil {
-//		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+//		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 //		return
 //	}
 //
 //	if err := h.serviceEmployee.ChangeRole(ctx, employee.ID, employee.Role); err != nil {
-//		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+//		logger.ResponseErr(ctx, err, http.StatusInternalServerError)
 //		return
 //	}
 //
