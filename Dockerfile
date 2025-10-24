@@ -2,6 +2,9 @@ FROM golang:1.25-alpine AS builder
 
 WORKDIR /user/src/app
 
+RUN apk add --no-cache curl
+RUN curl -sSf https://atlasgo.sh | sh
+
 COPY go.mod go.sum ./
 RUN go mod download
 
@@ -12,10 +15,9 @@ FROM alpine AS runner
 
 WORKDIR /user/src/app
 
-RUN apk add --no-cache curl postgresql-client
+RUN apk add --no-cache postgresql-client
 
-RUN curl -sSf https://atlasgo.sh | sh
-
+COPY --from=builder /root/.atlas/bin/atlas /usr/local/bin/atlas
 COPY --from=builder /user/src/app/api .
 
 COPY migrations ./migrations
