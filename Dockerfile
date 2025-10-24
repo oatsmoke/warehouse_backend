@@ -13,7 +13,6 @@ FROM alpine AS runner
 WORKDIR /user/src/app
 
 RUN apk add --no-cache curl postgresql-client
-
 RUN curl -sSf https://atlasgo.sh | sh
 
 COPY --from=builder /user/src/app/api .
