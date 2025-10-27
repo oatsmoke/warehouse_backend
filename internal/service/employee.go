@@ -67,14 +67,17 @@ func (s *EmployeeService) Restore(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (s *EmployeeService) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Employee, error) {
-	list, err := s.employeeRepository.List(ctx, qp)
+func (s *EmployeeService) List(ctx context.Context, qp *dto.QueryParams) (*dto.ListResponse[[]*model.Employee], error) {
+	list, total, err := s.employeeRepository.List(ctx, qp)
 	if err != nil {
 		return nil, err
 	}
 
 	logger.Info(fmt.Sprintf("%d employee listed", len(list)))
-	return list, nil
+	return &dto.ListResponse[[]*model.Employee]{
+		List:  list,
+		Total: total,
+	}, nil
 }
 
 func (s *EmployeeService) SetDepartment(ctx context.Context, id, departmentID int64) error {

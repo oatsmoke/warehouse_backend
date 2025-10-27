@@ -67,12 +67,15 @@ func (s *CategoryService) Restore(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (s *CategoryService) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Category, error) {
-	list, err := s.categoryRepository.List(ctx, qp)
+func (s *CategoryService) List(ctx context.Context, qp *dto.QueryParams) (*dto.ListResponse[[]*model.Category], error) {
+	list, total, err := s.categoryRepository.List(ctx, qp)
 	if err != nil {
 		return nil, err
 	}
 
 	logger.Info(fmt.Sprintf("%d category listed", len(list)))
-	return list, nil
+	return &dto.ListResponse[[]*model.Category]{
+		List:  list,
+		Total: total,
+	}, nil
 }

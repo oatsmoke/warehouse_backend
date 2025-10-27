@@ -110,37 +110,39 @@ func (r *CategoryRepository) Restore(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (r *CategoryRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Category, error) {
+func (r *CategoryRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Category, int, error) {
 	fields := []string{"title"}
 	str, args := list_filter.BuildQuery(qp, fields, "c")
 
 	query := `
-		SELECT id, title, deleted_at
+		SELECT id, title, deleted_at, COUNT(*) OVER() AS total
 		FROM categories c
 		` + str
 
 	rows, err := r.postgresDB.Query(ctx, query, args...)
 	if err != nil {
-		return nil, logger.Error(logger.MsgFailedToSelect, err)
+		return nil, 0, logger.Error(logger.MsgFailedToSelect, err)
 	}
 	defer rows.Close()
 
 	var categories []*model.Category
+	var total int
 	for rows.Next() {
 		category := new(model.Category)
 		if err := rows.Scan(
 			&category.ID,
 			&category.Title,
 			&category.DeletedAt,
+			&total,
 		); err != nil {
-			return nil, logger.Error(logger.MsgFailedToScan, err)
+			return nil, 0, logger.Error(logger.MsgFailedToScan, err)
 		}
 		categories = append(categories, category)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, logger.Error(logger.MsgFailedToIterateOverRows, err)
+		return nil, 0, logger.Error(logger.MsgFailedToIterateOverRows, err)
 	}
 
-	return categories, nil
+	return categories, total, nil
 }

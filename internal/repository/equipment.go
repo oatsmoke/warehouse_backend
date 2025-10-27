@@ -118,14 +118,14 @@ func (r *EquipmentRepository) Restore(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (r *EquipmentRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Equipment, error) {
+func (r *EquipmentRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Equipment, int, error) {
 	fields := []string{"e.serial_number", "p.title", "c.title"}
 	str, args := list_filter.BuildQuery(qp, fields, "e")
 
 	query := `
 		SELECT e.id, e.serial_number, e.deleted_at,
 		       p.id, p.title,
-		       c.id, c.title
+		       c.id, c.title, COUNT(*) OVER() AS total
 		FROM equipments e
 		LEFT JOIN profiles p ON p.id = e.profile
 		LEFT JOIN categories c ON c.id = p.category
@@ -133,11 +133,12 @@ func (r *EquipmentRepository) List(ctx context.Context, qp *dto.QueryParams) ([]
 
 	rows, err := r.postgresDB.Query(ctx, query, args...)
 	if err != nil {
-		return nil, logger.Error(logger.MsgFailedToSelect, err)
+		return nil, 0, logger.Error(logger.MsgFailedToSelect, err)
 	}
 	defer rows.Close()
 
 	var equipments []*model.Equipment
+	var total int
 	for rows.Next() {
 		equipment := model.NewEquipment()
 		if err := rows.Scan(
@@ -148,15 +149,16 @@ func (r *EquipmentRepository) List(ctx context.Context, qp *dto.QueryParams) ([]
 			&equipment.Profile.Title,
 			&equipment.Profile.Category.ID,
 			&equipment.Profile.Category.Title,
+			&total,
 		); err != nil {
-			return nil, logger.Error(logger.MsgFailedToScan, err)
+			return nil, 0, logger.Error(logger.MsgFailedToScan, err)
 		}
 		equipments = append(equipments, equipment)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, logger.Error(logger.MsgFailedToIterateOverRows, err)
+		return nil, 0, logger.Error(logger.MsgFailedToIterateOverRows, err)
 	}
 
-	return equipments, nil
+	return equipments, total, nil
 }

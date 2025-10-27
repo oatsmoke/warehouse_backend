@@ -67,12 +67,15 @@ func (s *ProfileService) Restore(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (s *ProfileService) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Profile, error) {
-	list, err := s.profileRepository.List(ctx, qp)
+func (s *ProfileService) List(ctx context.Context, qp *dto.QueryParams) (*dto.ListResponse[[]*model.Profile], error) {
+	list, total, err := s.profileRepository.List(ctx, qp)
 	if err != nil {
 		return nil, err
 	}
 
 	logger.Info(fmt.Sprintf("%d profile listed", len(list)))
-	return list, nil
+	return &dto.ListResponse[[]*model.Profile]{
+		List:  list,
+		Total: total,
+	}, nil
 }

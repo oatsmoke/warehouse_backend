@@ -111,22 +111,23 @@ func (r *ContractRepository) Restore(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (r *ContractRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Contract, error) {
+func (r *ContractRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Contract, int, error) {
 	fields := []string{"number", "address"}
 	str, args := list_filter.BuildQuery(qp, fields, "c")
 
 	query := `
-		SELECT id, number, address, deleted_at
+		SELECT id, number, address, deleted_at, COUNT(*) OVER() AS total
 		FROM contracts c
 		` + str
 
 	rows, err := r.postgresDB.Query(ctx, query, args...)
 	if err != nil {
-		return nil, logger.Error(logger.MsgFailedToSelect, err)
+		return nil, 0, logger.Error(logger.MsgFailedToSelect, err)
 	}
 	defer rows.Close()
 
 	var contracts []*model.Contract
+	var total int
 	for rows.Next() {
 		contract := new(model.Contract)
 		if err := rows.Scan(
@@ -134,15 +135,16 @@ func (r *ContractRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*
 			&contract.Number,
 			&contract.Address,
 			&contract.DeletedAt,
+			&total,
 		); err != nil {
-			return nil, logger.Error(logger.MsgFailedToScan, err)
+			return nil, 0, logger.Error(logger.MsgFailedToScan, err)
 		}
 		contracts = append(contracts, contract)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, logger.Error(logger.MsgFailedToIterateOverRows, err)
+		return nil, 0, logger.Error(logger.MsgFailedToIterateOverRows, err)
 	}
 
-	return contracts, nil
+	return contracts, total, nil
 }

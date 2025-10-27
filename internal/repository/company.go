@@ -110,37 +110,39 @@ func (r *CompanyRepository) Restore(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (r *CompanyRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Company, error) {
+func (r *CompanyRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Company, int, error) {
 	fields := []string{"title"}
 	str, args := list_filter.BuildQuery(qp, fields, "c")
 
 	query := `
-		SELECT id, title, deleted_at
+		SELECT id, title, deleted_at, COUNT(*) OVER() AS total
 		FROM companies c
 		` + str
 
 	rows, err := r.postgresDB.Query(ctx, query, args...)
 	if err != nil {
-		return nil, logger.Error(logger.MsgFailedToSelect, err)
+		return nil, 0, logger.Error(logger.MsgFailedToSelect, err)
 	}
 	defer rows.Close()
 
 	var companies []*model.Company
+	var total int
 	for rows.Next() {
 		company := new(model.Company)
 		if err := rows.Scan(
 			&company.ID,
 			&company.Title,
 			&company.DeletedAt,
+			&total,
 		); err != nil {
-			return nil, logger.Error(logger.MsgFailedToScan, err)
+			return nil, 0, logger.Error(logger.MsgFailedToScan, err)
 		}
 		companies = append(companies, company)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, logger.Error(logger.MsgFailedToIterateOverRows, err)
+		return nil, 0, logger.Error(logger.MsgFailedToIterateOverRows, err)
 	}
 
-	return companies, nil
+	return companies, total, nil
 }

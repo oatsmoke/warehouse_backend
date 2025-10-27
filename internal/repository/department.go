@@ -110,39 +110,41 @@ func (r *DepartmentRepository) Restore(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (r *DepartmentRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Department, error) {
+func (r *DepartmentRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Department, int, error) {
 	fields := []string{"title"}
 	str, args := list_filter.BuildQuery(qp, fields, "d")
 
 	query := `
-		SELECT id, title, deleted_at
+		SELECT id, title, deleted_at, COUNT(*) OVER() AS total
 		FROM departments d
 		` + str
 
 	rows, err := r.postgresDB.Query(ctx, query, args...)
 	if err != nil {
-		return nil, logger.Error(logger.MsgFailedToSelect, err)
+		return nil, 0, logger.Error(logger.MsgFailedToSelect, err)
 	}
 	defer rows.Close()
 
 	var departments []*model.Department
+	var total int
 	for rows.Next() {
 		department := new(model.Department)
 		if err := rows.Scan(
 			&department.ID,
 			&department.Title,
 			&department.DeletedAt,
+			&total,
 		); err != nil {
-			return nil, logger.Error(logger.MsgFailedToScan, err)
+			return nil, 0, logger.Error(logger.MsgFailedToScan, err)
 		}
 		departments = append(departments, department)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, logger.Error(logger.MsgFailedToIterateOverRows, err)
+		return nil, 0, logger.Error(logger.MsgFailedToIterateOverRows, err)
 	}
 
-	return departments, nil
+	return departments, total, nil
 }
 
 //func (r *DepartmentRepository) GetAllButOne(ctx context.Context, id, employeeId int64) ([]*model.Department, error) {

@@ -67,12 +67,15 @@ func (s *EquipmentService) Restore(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (s *EquipmentService) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Equipment, error) {
-	list, err := s.equipmentRepository.List(ctx, qp)
+func (s *EquipmentService) List(ctx context.Context, qp *dto.QueryParams) (*dto.ListResponse[[]*model.Equipment], error) {
+	list, total, err := s.equipmentRepository.List(ctx, qp)
 	if err != nil {
 		return nil, err
 	}
 
 	logger.Info(fmt.Sprintf("%d equipment listed", len(list)))
-	return list, nil
+	return &dto.ListResponse[[]*model.Equipment]{
+		List:  list,
+		Total: total,
+	}, nil
 }

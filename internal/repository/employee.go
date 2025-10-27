@@ -142,24 +142,25 @@ func (r *EmployeeRepository) Restore(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (r *EmployeeRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Employee, error) {
+func (r *EmployeeRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Employee, int, error) {
 	fields := []string{"e.last_name", "e.first_name", "e.middle_name", "e.phone", "e.email", "d.title"}
 	str, args := list_filter.BuildQuery(qp, fields, "e")
 
 	query := `
 		SELECT e.id, e.last_name, e.first_name, e.middle_name, e.phone, e.deleted_at,
-		       d.id, d.title
+		       d.id, d.title, COUNT(*) OVER() AS total
 		FROM employees e
 		LEFT JOIN public.departments d ON d.id = e.department
 		` + str
 
 	rows, err := r.postgresDB.Query(ctx, query, args...)
 	if err != nil {
-		return nil, logger.Error(logger.MsgFailedToSelect, err)
+		return nil, 0, logger.Error(logger.MsgFailedToSelect, err)
 	}
 	defer rows.Close()
 
 	var employees []*model.Employee
+	var total int
 	for rows.Next() {
 		employee := model.NewEmployee()
 		var (
@@ -176,8 +177,9 @@ func (r *EmployeeRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*
 			&employee.DeletedAt,
 			&departmentID,
 			&departmentTitle,
+			&total,
 		); err != nil {
-			return nil, logger.Error(logger.MsgFailedToSelect, err)
+			return nil, 0, logger.Error(logger.MsgFailedToSelect, err)
 		}
 
 		employee.Department.ID = validInt64(departmentID)
@@ -186,10 +188,10 @@ func (r *EmployeeRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, logger.Error(logger.MsgFailedToIterateOverRows, err)
+		return nil, 0, logger.Error(logger.MsgFailedToIterateOverRows, err)
 	}
 
-	return employees, nil
+	return employees, total, nil
 }
 
 func (r *EmployeeRepository) SetDepartment(ctx context.Context, id, departmentID int64) error {

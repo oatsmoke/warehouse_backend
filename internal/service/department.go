@@ -67,14 +67,17 @@ func (s *DepartmentService) Restore(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (s *DepartmentService) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Department, error) {
-	list, err := s.departmentRepository.List(ctx, qp)
+func (s *DepartmentService) List(ctx context.Context, qp *dto.QueryParams) (*dto.ListResponse[[]*model.Department], error) {
+	list, total, err := s.departmentRepository.List(ctx, qp)
 	if err != nil {
 		return nil, err
 	}
 
 	logger.Info(fmt.Sprintf("%d department listed", len(list)))
-	return list, nil
+	return &dto.ListResponse[[]*model.Department]{
+		List:  list,
+		Total: total,
+	}, nil
 }
 
 //func (s *DepartmentService) GetAllButOne(ctx context.Context, id, employeeId int64) ([]*model.Department, error) {

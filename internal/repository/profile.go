@@ -124,24 +124,25 @@ func (r *ProfileRepository) Restore(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (r *ProfileRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Profile, error) {
+func (r *ProfileRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Profile, int, error) {
 	fields := []string{"p.title", "c.title"}
 	str, args := list_filter.BuildQuery(qp, fields, "p")
 
 	query := `
 		SELECT p.id, p.title, p.deleted_at,
-		       c.id, c.title
+		       c.id, c.title, COUNT(*) OVER() AS total
 		FROM profiles p
 		LEFT JOIN categories c ON c.id = p.category
 		` + str
 
 	rows, err := r.postgresDB.Query(ctx, query, args...)
 	if err != nil {
-		return nil, logger.Error(logger.MsgFailedToSelect, err)
+		return nil, 0, logger.Error(logger.MsgFailedToSelect, err)
 	}
 	defer rows.Close()
 
 	var profiles []*model.Profile
+	var total int
 	for rows.Next() {
 		profile := model.NewProfile()
 		if err := rows.Scan(
@@ -150,15 +151,16 @@ func (r *ProfileRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*m
 			&profile.DeletedAt,
 			&profile.Category.ID,
 			&profile.Category.Title,
+			&total,
 		); err != nil {
-			return nil, logger.Error(logger.MsgFailedToScan, err)
+			return nil, 0, logger.Error(logger.MsgFailedToScan, err)
 		}
 		profiles = append(profiles, profile)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, logger.Error(logger.MsgFailedToIterateOverRows, err)
+		return nil, 0, logger.Error(logger.MsgFailedToIterateOverRows, err)
 	}
 
-	return profiles, nil
+	return profiles, total, nil
 }

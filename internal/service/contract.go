@@ -67,12 +67,15 @@ func (s *ContractService) Restore(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (s *ContractService) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Contract, error) {
-	list, err := s.contractRepository.List(ctx, qp)
+func (s *ContractService) List(ctx context.Context, qp *dto.QueryParams) (*dto.ListResponse[[]*model.Contract], error) {
+	list, total, err := s.contractRepository.List(ctx, qp)
 	if err != nil {
 		return nil, err
 	}
 
 	logger.Info(fmt.Sprintf("%d contract listed", len(list)))
-	return list, nil
+	return &dto.ListResponse[[]*model.Contract]{
+		List:  list,
+		Total: total,
+	}, nil
 }

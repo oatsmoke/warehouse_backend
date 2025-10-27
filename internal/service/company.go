@@ -67,12 +67,15 @@ func (s *CompanyService) Restore(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (s *CompanyService) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Company, error) {
-	list, err := s.companyRepository.List(ctx, qp)
+func (s *CompanyService) List(ctx context.Context, qp *dto.QueryParams) (*dto.ListResponse[[]*model.Company], error) {
+	list, total, err := s.companyRepository.List(ctx, qp)
 	if err != nil {
 		return nil, err
 	}
 
 	logger.Info(fmt.Sprintf("%d company listed", len(list)))
-	return list, nil
+	return &dto.ListResponse[[]*model.Company]{
+		List:  list,
+		Total: total,
+	}, nil
 }
