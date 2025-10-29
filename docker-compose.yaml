@@ -25,8 +25,20 @@
 
 
 services:
+
+  test:
+    image: postgres:latest
+    container_name: test
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: test
+    ports:
+      - "55432:5432"
+
   db:
     image: postgres:latest
+    container_name: db
     environment:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: password
@@ -36,6 +48,7 @@ services:
 
   app:
     image: ghcr.io/oatsmoke/warehouse_backend/app:latest
+    container_name: app
     environment:
       POSTGRES_DSN: postgres://root:password@db:5432/mydb?sslmode=disable
     depends_on:

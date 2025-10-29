@@ -31,12 +31,9 @@ func ParseQueryParams(c *gin.Context) *dto.QueryParams {
 
 	qp.SortBy = c.Query("sort_by")
 	qp.Order = strings.ToUpper(c.DefaultQuery("order", defaultOrder))
-	if qp.Order != "ASC" && qp.Order != "DESC" {
-		qp.Order = defaultOrder
-	}
 
-	qp.Offset = c.DefaultQuery("offset", defaultOffset)
-	qp.Limit = c.DefaultQuery("limit", defaultLimit)
+	qp.Offset = c.Query("offset")
+	qp.Limit = c.Query("limit")
 
 	return qp
 }
@@ -88,9 +85,22 @@ func BuildQuery(qp *dto.QueryParams, fields []string, table string) (string, []i
 	if !exist {
 		qp.SortBy = defaultSortBy
 	}
+	if qp.Order != "ASC" && qp.Order != "DESC" {
+		qp.Order = defaultOrder
+	}
 	order := fmt.Sprintf(" ORDER BY %s %s", qp.SortBy, qp.Order)
 
 	limit := fmt.Sprintf(" LIMIT $%d OFFSET $%d", i, i+1)
+	if n, err := strconv.ParseInt(qp.Limit, 10, 64); err != nil || n < 1 {
+		qp.Limit = defaultLimit
+	} else {
+		qp.Limit = strconv.FormatInt(n, 10)
+	}
+	if n, err := strconv.ParseInt(qp.Offset, 10, 64); err != nil || n < 1 {
+		qp.Offset = defaultOffset
+	} else {
+		qp.Offset = strconv.FormatInt(n, 10)
+	}
 	args = append(args, qp.Limit, qp.Offset)
 
 	return fmt.Sprintf("%s%s%s%s%s;", withDeleted, search, ids, order, limit), args
