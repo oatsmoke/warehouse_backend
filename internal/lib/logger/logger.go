@@ -208,20 +208,20 @@ func inConsole(outType, msg string) {
 
 	switch outType {
 	case "info":
-		fmt.Print(blue)
+		//fmt.Print(blue)
 		slog.Info(msg)
 	case "warn":
-		fmt.Print(yellow)
+		//fmt.Print(yellow)
 		slog.Warn(msg)
 	case "error":
-		fmt.Print(red)
+		//fmt.Print(red)
 		slog.Error(msg)
 	case "debug":
-		fmt.Print(magenta)
+		//fmt.Print(magenta)
 		slog.Debug(msg)
 	}
 
-	fmt.Print(reset)
+	//fmt.Print(reset)
 }
 
 func pgErrParse(err error) (*pgconn.PgError, error) {
