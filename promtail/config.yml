@@ -7,28 +7,25 @@ positions:
 
 clients:
   - url: http://loki:3100/loki/api/v1/push
-
 scrape_configs:
-  - job_name: app
+  - job_name: docker
     static_configs:
       - targets:
           - localhost
         labels:
           job: app-logs
-          __path__: /var/lib/docker/containers/715144dacf9e560c2ecc842f977f383027f481a423de33d1e3ea35b6722d0003/*.log
+          __path__: /var/lib/docker/containers/*/*.log
     pipeline_stages:
-      - json:
-          expressions:
-            log:
-            stream:
-            time:
+      - docker: {}
       - json:
           source: log
           expressions:
             time:
             level:
             msg:
+            app_name:
       - labels:
-          level:
+          app: app_name
+          level: level
       - output:
           source: msg

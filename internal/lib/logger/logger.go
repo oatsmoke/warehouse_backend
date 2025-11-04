@@ -206,19 +206,21 @@ func inConsole(outType, msg string) {
 	mu.Lock()
 	defer mu.Unlock()
 
+	label := slog.String("app_name", "app")
+
 	switch outType {
 	case "info":
 		//fmt.Print(blue)
-		slog.Info(msg)
+		slog.Info(msg, label)
 	case "warn":
 		//fmt.Print(yellow)
-		slog.Warn(msg)
+		slog.Warn(msg, label)
 	case "error":
 		//fmt.Print(red)
-		slog.Error(msg)
+		slog.Error(msg, label)
 	case "debug":
 		//fmt.Print(magenta)
-		slog.Debug(msg)
+		slog.Debug(msg, label)
 	}
 
 	//fmt.Print(reset)
