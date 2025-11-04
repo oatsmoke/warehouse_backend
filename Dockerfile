@@ -18,10 +18,10 @@ RUN curl -sSf https://atlasgo.sh | sh
 COPY --from=builder /user/src/app/api .
 
 COPY migrations ./migrations
-COPY atlas.hcl .
+COPY schema/atlas.hcl .
 COPY schema/root_user.sql .
 
-COPY scripts/entrypoint.sh .
+COPY entrypoint.sh .
 RUN chmod +x entrypoint.sh
 
 EXPOSE 8080

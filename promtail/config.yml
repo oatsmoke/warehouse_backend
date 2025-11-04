@@ -9,39 +9,26 @@ clients:
   - url: http://loki:3100/loki/api/v1/push
 
 scrape_configs:
-  - job_name: docker-files
+  - job_name: app
     static_configs:
       - targets:
           - localhost
         labels:
-          job: docker-logs
-          __path__: /var/lib/docker/containers/a723e16262325ec95580f93a134d35f235e9f1f1e394c30baea995b4a07bacb3/*.log
+          job: app-logs
+          __path__: /var/lib/docker/containers/715144dacf9e560c2ecc842f977f383027f481a423de33d1e3ea35b6722d0003/*.log
     pipeline_stages:
-      - replace:
-          expression: "\\\\u001b"
-          replace: "\u001b"
-      # 1️⃣ Убираем управляющие (цветовые) коды
-      - regex:
-          expression: '^(?:\x1b\[[0-9;]*m)*(.+)$'
-          source: log
-          replace: '$1'
-
-      # 2️⃣ Парсим JSON внутри поля log
       - json:
+          expressions:
+            log:
+            stream:
+            time:
+      - json:
+          source: log
           expressions:
             time:
             level:
             msg:
-
-      # 3️⃣ Устанавливаем timestamp из JSON
-      - timestamp:
-          source: time
-          format: RFC3339Nano
-
-      # 4️⃣ Добавляем level как label
       - labels:
           level:
-
-      # 5️⃣ Удаляем технические поля
       - output:
           source: msg
