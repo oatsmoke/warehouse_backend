@@ -203,27 +203,16 @@ func ResponseErr(ctx *gin.Context, msg string, err error, status int) {
 }
 
 func inConsole(outType, msg string) {
-	mu.Lock()
-	defer mu.Unlock()
-
-	label := slog.String("app_name", "app")
-
 	switch outType {
 	case "info":
-		//fmt.Print(blue)
-		slog.Info(msg, label)
+		slog.Info(msg)
 	case "warn":
-		//fmt.Print(yellow)
-		slog.Warn(msg, label)
+		slog.Warn(msg)
 	case "error":
-		//fmt.Print(red)
-		slog.Error(msg, label)
+		slog.Error(msg)
 	case "debug":
-		//fmt.Print(magenta)
-		slog.Debug(msg, label)
+		slog.Debug(msg)
 	}
-
-	//fmt.Print(reset)
 }
 
 func pgErrParse(err error) (*pgconn.PgError, error) {

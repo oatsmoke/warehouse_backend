@@ -1,64 +1,14 @@
-#services:
-#
-#  postgres_test:
-#    image: postgres:latest
-#    container_name: postgres_test
-#    ports:
-#      - "55432:5432"
-#    environment:
-#      POSTGRES_USER: test
-#      POSTGRES_PASSWORD: password
-#    healthcheck:
-#      test: [ "CMD-SHELL", "pg_isready -U test -d test -h localhost" ]
-#
-#  migrate:
-#    image: arigaio/atlas:latest
-#    container_name: migrate
-#    depends_on:
-#      postgres_test:
-#        condition: service_healthy
-#    command: >
-#      migrate apply
-#      --url postgres://test:password@postgres_test:5432/test?sslmode=disable
-#    volumes:
-#      - ./migrations:/migrations
-
-
 services:
-
-  test:
-    image: postgres:latest
-    container_name: test
-    environment:
-      POSTGRES_USER: test
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: test
-    ports:
-      - "55432:5432"
-
-  db:
-    image: postgres:latest
-    container_name: db
-    environment:
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: mydb
-    ports:
-      - "5432:5432"
-
-  app:
-    image: ghcr.io/oatsmoke/warehouse_backend/app:latest
-    container_name: app
-    environment:
-      POSTGRES_DSN: postgres://root:password@db:5432/mydb?sslmode=disable
-    depends_on:
-      - db
-    ports:
-      - "8080:8080"
 
   loki:
     image: grafana/loki:latest
     container_name: loki
+    labels:
+      app: "loki"
+    logging:
+      driver: json-file
+      options:
+        labels: "app"
     ports:
       - "3100:3100"
     command: -config.file=/etc/loki/local-config.yaml
@@ -66,6 +16,12 @@ services:
   promtail:
     image: grafana/promtail:latest
     container_name: promtail
+    labels:
+      app: "promtail"
+    logging:
+      driver: json-file
+      options:
+        labels: "app"
     volumes:
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - ./promtail/config.yml:/etc/promtail/config.yml
@@ -76,7 +32,64 @@ services:
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
+    labels:
+      app: "grafana"
+    logging:
+      driver: json-file
+      options:
+        labels: "app"
     ports:
       - "3000:3000"
     depends_on:
       - loki
+
+  #  db_test:
+  #    image: postgres:latest
+  #    container_name: db_test
+  #    labels:
+  #      app: "db_test"
+  #    logging:
+  #      driver: json-file
+  #      options:
+  #        labels: "app"
+  #    ports:
+  #      - "55432:5432"
+  #    environment:
+  #      POSTGRES_USER: test
+  #      POSTGRES_PASSWORD: password
+  #      POSTGRES_DB: test
+
+  db:
+    image: postgres:latest
+    container_name: db
+    labels:
+      app: "db"
+    logging:
+      driver: json-file
+      options:
+        labels: "app"
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mydb
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U test -d test -h localhost" ]
+
+  wh_backend:
+    image: ghcr.io/oatsmoke/warehouse_backend/app:latest
+    container_name: wh_backend
+    labels:
+      app: "wh_backend"
+    logging:
+      driver: json-file
+      options:
+        labels: "app"
+    ports:
+      - "8080:8080"
+    environment:
+      POSTGRES_DSN: postgres://root:password@db:5432/mydb?sslmode=disable
+    depends_on:
+      db:
+        condition: service_healthy
