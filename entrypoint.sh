@@ -2,7 +2,7 @@
 set -e
 
 echo "waiting for database..."
-until pg_isready -h db -p 5432 -q -t 1; do
+until pg_isready -h wh -p 5432 -q -t 1; do
   sleep 1
 done
 

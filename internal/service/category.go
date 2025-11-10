@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/oatsmoke/warehouse_backend/internal/dto"
+	"github.com/oatsmoke/warehouse_backend/internal/lib/kafka"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
 	"github.com/oatsmoke/warehouse_backend/internal/repository"
@@ -26,7 +27,8 @@ func (s *CategoryService) Create(ctx context.Context, category *model.Category) 
 		return err
 	}
 
-	logger.Info(fmt.Sprintf("category with id %d created", id))
+	//logger.Info(fmt.Sprintf("category with id %d created", id))
+	kafka.SendMessage(fmt.Sprintf("category with id %d created", id))
 	return nil
 }
 
