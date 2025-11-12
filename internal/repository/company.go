@@ -5,7 +5,6 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/oatsmoke/warehouse_backend/internal/dto"
-	"github.com/oatsmoke/warehouse_backend/internal/lib/list_filter"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
 )
@@ -111,15 +110,29 @@ func (r *CompanyRepository) Restore(ctx context.Context, id int64) error {
 }
 
 func (r *CompanyRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Company, int, error) {
-	fields := []string{"title"}
-	str, args := list_filter.BuildQuery(qp, fields, "c")
+	const query = `
+		SELECT id, title, deleted_at, count(*) OVER () AS total
+		FROM companies
+		WHERE ($1 = true OR deleted_at IS NULL)
+		  AND ($2 = '' OR title ILIKE '%' || $2 || '%')
+		  AND (array_length($3::bigint[], 1) IS NULL OR id = ANY ($3))
+		ORDER BY CASE WHEN $4 = 'id' AND $5 = 'asc' THEN id::text END,
+		         CASE WHEN $4 = 'id' AND $5 = 'desc' THEN id::text END DESC,
+		         CASE WHEN $4 = 'title' AND $5 = 'asc' THEN title END,
+		         CASE WHEN $4 = 'title' AND $5 = 'desc' THEN title END DESC
+		LIMIT $6 OFFSET $7;`
 
-	query := `
-		SELECT id, title, deleted_at, COUNT(*) OVER() AS total
-		FROM companies c
-		` + str
-
-	rows, err := r.postgresDB.Query(ctx, query, args...)
+	rows, err := r.postgresDB.Query(
+		ctx,
+		query,
+		qp.WithDeleted,
+		qp.Search,
+		qp.Ids,
+		qp.SortBy,
+		qp.Order,
+		qp.Limit,
+		qp.Offset,
+	)
 	if err != nil {
 		return nil, 0, logger.Error(logger.MsgFailedToSelect, err)
 	}

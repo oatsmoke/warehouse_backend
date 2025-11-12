@@ -5,7 +5,6 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/oatsmoke/warehouse_backend/internal/dto"
-	"github.com/oatsmoke/warehouse_backend/internal/lib/list_filter"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
 )
@@ -119,19 +118,37 @@ func (r *EquipmentRepository) Restore(ctx context.Context, id int64) error {
 }
 
 func (r *EquipmentRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Equipment, int, error) {
-	fields := []string{"e.serial_number", "p.title", "c.title"}
-	str, args := list_filter.BuildQuery(qp, fields, "e")
-
-	query := `
+	const query = `
 		SELECT e.id, e.serial_number, e.deleted_at,
 		       p.id, p.title,
 		       c.id, c.title, COUNT(*) OVER() AS total
 		FROM equipments e
 		LEFT JOIN profiles p ON p.id = e.profile
 		LEFT JOIN categories c ON c.id = p.category
-		` + str
+		WHERE ($1 = true OR e.deleted_at IS NULL)
+		AND ($2 = '' OR (e.serial_number || ' ' || p.title || ' ' || c.title) ILIKE '%' || $2 || '%')
+		AND (array_length($3::bigint[], 1) IS NULL OR e.id = ANY ($3))
+		ORDER BY CASE WHEN $4 = 'id' AND $5 = 'asc' THEN e.id::text END,
+				 CASE WHEN $4 = 'id' AND $5 = 'desc' THEN e.id::text END DESC,
+				 CASE WHEN $4 = 'serial_number' AND $5 = 'asc' THEN e.serial_number END,
+				 CASE WHEN $4 = 'serial_number' AND $5 = 'desc' THEN e.serial_number END DESC,
+				 CASE WHEN $4 = 'p_title' AND $5 = 'asc' THEN p.title END,
+				 CASE WHEN $4 = 'p_title' AND $5 = 'desc' THEN p.title END DESC,
+				 CASE WHEN $4 = 'c_title' AND $5 = 'asc' THEN c.title END,
+				 CASE WHEN $4 = 'c_title' AND $5 = 'desc' THEN c.title END DESC
+		LIMIT $6 OFFSET $7;`
 
-	rows, err := r.postgresDB.Query(ctx, query, args...)
+	rows, err := r.postgresDB.Query(
+		ctx,
+		query,
+		qp.WithDeleted,
+		qp.Search,
+		qp.Ids,
+		qp.SortBy,
+		qp.Order,
+		qp.Limit,
+		qp.Offset,
+	)
 	if err != nil {
 		return nil, 0, logger.Error(logger.MsgFailedToSelect, err)
 	}

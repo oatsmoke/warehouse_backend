@@ -6,6 +6,6 @@ type QueryParams struct {
 	Ids         []int64
 	SortBy      string
 	Order       string
-	Offset      string
 	Limit       string
+	Offset      string
 }

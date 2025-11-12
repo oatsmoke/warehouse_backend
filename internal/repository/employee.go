@@ -7,7 +7,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/oatsmoke/warehouse_backend/internal/dto"
-	"github.com/oatsmoke/warehouse_backend/internal/lib/list_filter"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
 )
@@ -143,17 +142,39 @@ func (r *EmployeeRepository) Restore(ctx context.Context, id int64) error {
 }
 
 func (r *EmployeeRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Employee, int, error) {
-	fields := []string{"e.last_name", "e.first_name", "e.middle_name", "e.phone", "e.email", "d.title"}
-	str, args := list_filter.BuildQuery(qp, fields, "e")
-
-	query := `
+	const query = `
 		SELECT e.id, e.last_name, e.first_name, e.middle_name, e.phone, e.deleted_at,
 		       d.id, d.title, COUNT(*) OVER() AS total
 		FROM employees e
 		LEFT JOIN public.departments d ON d.id = e.department
-		` + str
+		WHERE ($1 = true OR e.deleted_at IS NULL)
+		  AND ($2 = '' OR (e.last_name || ' ' || e.first_name || ' ' || e.middle_name || ' ' || e.phone || ' ' || d.title) ILIKE '%' || $2 || '%')
+		  AND (array_length($3::bigint[], 1) IS NULL OR e.id = ANY ($3))
+		ORDER BY CASE WHEN $4 = 'id' AND $5 = 'asc' THEN e.id::text END,
+		         CASE WHEN $4 = 'id' AND $5 = 'desc' THEN e.id::text END DESC,
+		         CASE WHEN $4 = 'last_name' AND $5 = 'asc' THEN e.last_name END,
+		         CASE WHEN $4 = 'last_name' AND $5 = 'desc' THEN e.last_name END DESC,
+				 CASE WHEN $4 = 'first_name' AND $5 = 'asc' THEN e.first_name END,
+		         CASE WHEN $4 = 'first_name' AND $5 = 'desc' THEN e.first_name END DESC,
+		         CASE WHEN $4 = 'middle_name' AND $5 = 'asc' THEN e.middle_name END,
+		         CASE WHEN $4 = 'middle_name' AND $5 = 'desc' THEN e.middle_name END DESC,
+		         CASE WHEN $4 = 'phone' AND $5 = 'asc' THEN e.phone END,
+		         CASE WHEN $4 = 'phone' AND $5 = 'desc' THEN e.phone END DESC,
+		         CASE WHEN $4 = 'd_title' AND $5 = 'asc' THEN d.title END,
+		         CASE WHEN $4 = 'd_title' AND $5 = 'desc' THEN d.title END DESC
+		LIMIT $6 OFFSET $7;`
 
-	rows, err := r.postgresDB.Query(ctx, query, args...)
+	rows, err := r.postgresDB.Query(
+		ctx,
+		query,
+		qp.WithDeleted,
+		qp.Search,
+		qp.Ids,
+		qp.SortBy,
+		qp.Order,
+		qp.Limit,
+		qp.Offset,
+	)
 	if err != nil {
 		return nil, 0, logger.Error(logger.MsgFailedToSelect, err)
 	}

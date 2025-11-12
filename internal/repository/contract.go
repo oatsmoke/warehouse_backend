@@ -5,7 +5,6 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/oatsmoke/warehouse_backend/internal/dto"
-	"github.com/oatsmoke/warehouse_backend/internal/lib/list_filter"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
 )
@@ -112,15 +111,31 @@ func (r *ContractRepository) Restore(ctx context.Context, id int64) error {
 }
 
 func (r *ContractRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Contract, int, error) {
-	fields := []string{"number", "address"}
-	str, args := list_filter.BuildQuery(qp, fields, "c")
+	const query = `
+		SELECT id, number, address, deleted_at, count(*) OVER () AS total
+		FROM contracts
+		WHERE ($1 = true OR deleted_at IS NULL)
+		  AND ($2 = '' OR (number || ' ' || address) ILIKE '%' || $2 || '%')
+		  AND (array_length($3::bigint[], 1) IS NULL OR id = ANY ($3))
+		ORDER BY CASE WHEN $4 = 'id' AND $5 = 'asc' THEN id::text END,
+		         CASE WHEN $4 = 'id' AND $5 = 'desc' THEN id::text END DESC,
+		         CASE WHEN $4 = 'number' AND $5 = 'asc' THEN number END,
+		         CASE WHEN $4 = 'number' AND $5 = 'desc' THEN number END DESC,
+				 CASE WHEN $4 = 'address' AND $5 = 'asc' THEN address END,
+		         CASE WHEN $4 = 'address' AND $5 = 'desc' THEN address END DESC
+		LIMIT $6 OFFSET $7;`
 
-	query := `
-		SELECT id, number, address, deleted_at, COUNT(*) OVER() AS total
-		FROM contracts c
-		` + str
-
-	rows, err := r.postgresDB.Query(ctx, query, args...)
+	rows, err := r.postgresDB.Query(
+		ctx,
+		query,
+		qp.WithDeleted,
+		qp.Search,
+		qp.Ids,
+		qp.SortBy,
+		qp.Order,
+		qp.Limit,
+		qp.Offset,
+	)
 	if err != nil {
 		return nil, 0, logger.Error(logger.MsgFailedToSelect, err)
 	}
