@@ -1,7 +1,8 @@
 NAME ?= migration
-SCHEMA := file://schema/schema.sql
-DEV_URL := docker://postgres/17/dev
-MIGRATIONS_DIR := file://migrations
+ENV ?= local
 
 migrate_diff:
-	atlas migrate diff "$(NAME)" --to "$(SCHEMA)" --dev-url "$(DEV_URL)" --dir "$(MIGRATIONS_DIR)"
+	atlas migrate diff $(NAME) --env $(ENV)
+
+migrate_apply:
+	atlas migrate apply --env $(ENV)

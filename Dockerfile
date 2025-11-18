@@ -18,7 +18,7 @@ RUN curl -sSf https://atlasgo.sh | sh
 COPY --from=builder /user/src/app/api .
 
 COPY migrations ./migrations
-COPY schema/atlas.hcl .
+COPY atlas.hcl .
 COPY schema/root_user.sql .
 
 COPY entrypoint.sh .
