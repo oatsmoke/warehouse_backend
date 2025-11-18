@@ -3,73 +3,63 @@ package repository
 import (
 	"context"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	queries "github.com/oatsmoke/warehouse_backend/internal/db"
 	"github.com/oatsmoke/warehouse_backend/internal/dto"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
 )
 
 type EquipmentRepository struct {
-	postgresDB *pgxpool.Pool
+	queries queries.Querier
 }
 
-func NewEquipmentRepository(postgresDB *pgxpool.Pool) *EquipmentRepository {
+func NewEquipmentRepository(queries queries.Querier) *EquipmentRepository {
 	return &EquipmentRepository{
-		postgresDB: postgresDB,
+		queries: queries,
 	}
 }
 
 func (r *EquipmentRepository) Create(ctx context.Context, equipment *model.Equipment) (int64, error) {
-	const query = `
-		INSERT INTO equipments (serial_number, profile) 
-		VALUES ($1, $2)
-		RETURNING id;`
-
-	var id int64
-	if err := r.postgresDB.QueryRow(ctx, query, equipment.SerialNumber, equipment.Profile.ID).Scan(&id); err != nil {
+	req, err := r.queries.CreateEquipment(ctx, &queries.CreateEquipmentParams{
+		SerialNumber: equipment.SerialNumber,
+		ProfileID:    equipment.Profile.ID,
+	})
+	if err != nil {
 		return 0, logger.Error(logger.MsgFailedToInsert, err)
 	}
 
-	if id == 0 {
-		return 0, logger.Error(logger.MsgFailedToInsert, logger.ErrNoRowsAffected)
-	}
-
-	return id, nil
+	return req.ID, nil
 }
 
 func (r *EquipmentRepository) Read(ctx context.Context, id int64) (*model.Equipment, error) {
-	const query = `
-		SELECT e.id, e.serial_number, p.deleted_at,
-		       p.id, p.title,
-			   c.id, c.title
-		FROM equipments e
-		LEFT JOIN profiles p ON p.id = e.profile
-		LEFT JOIN categories c ON c.id = p.category
-		WHERE e.id = $1;`
-
-	equipment := model.NewEquipment()
-	if err := r.postgresDB.QueryRow(ctx, query, id).Scan(
-		&equipment.ID,
-		&equipment.SerialNumber,
-		&equipment.DeletedAt,
-		&equipment.Profile.ID,
-		&equipment.Profile.Title,
-		&equipment.Profile.Category.ID,
-		&equipment.Profile.Category.Title,
-	); err != nil {
+	req, err := r.queries.ReadEquipment(ctx, id)
+	if err != nil {
 		return nil, logger.Error(logger.MsgFailedToScan, err)
+	}
+
+	equipment := &model.Equipment{
+		ID:           req.ID,
+		SerialNumber: req.SerialNumber,
+		Profile: &model.Profile{
+			ID:    req.ProfileID,
+			Title: req.ProfileTitle,
+			Category: &model.Category{
+				ID:    req.CategoryID,
+				Title: req.CategoryTitle,
+			},
+		},
+		DeletedAt: validTime(req.DeletedAt),
 	}
 
 	return equipment, nil
 }
 
 func (r *EquipmentRepository) Update(ctx context.Context, equipment *model.Equipment) error {
-	const query = `
-		UPDATE equipments 
-		SET serial_number = $2, profile = $3
-		WHERE id = $1 AND (serial_number != $2 OR profile != $3);`
-
-	ct, err := r.postgresDB.Exec(ctx, query, equipment.ID, equipment.SerialNumber, equipment.Profile.ID)
+	ct, err := r.queries.UpdateEquipment(ctx, &queries.UpdateEquipmentParams{
+		ID:           equipment.ID,
+		SerialNumber: equipment.SerialNumber,
+		ProfileID:    equipment.Profile.ID,
+	})
 	if err != nil {
 		return logger.Error(logger.MsgFailedToUpdate, err)
 	}
@@ -82,12 +72,7 @@ func (r *EquipmentRepository) Update(ctx context.Context, equipment *model.Equip
 }
 
 func (r *EquipmentRepository) Delete(ctx context.Context, id int64) error {
-	const query = `
-		UPDATE equipments 
-		SET deleted_at = now()
-       	WHERE id = $1 AND deleted_at IS NULL;`
-
-	ct, err := r.postgresDB.Exec(ctx, query, id)
+	ct, err := r.queries.DeleteEquipment(ctx, id)
 	if err != nil {
 		return logger.Error(logger.MsgFailedToDelete, err)
 	}
@@ -100,12 +85,7 @@ func (r *EquipmentRepository) Delete(ctx context.Context, id int64) error {
 }
 
 func (r *EquipmentRepository) Restore(ctx context.Context, id int64) error {
-	const query = `
-		UPDATE equipments 
-		SET deleted_at = NULL 
-       	WHERE id = $1 AND deleted_at IS NOT NULL;`
-
-	ct, err := r.postgresDB.Exec(ctx, query, id)
+	ct, err := r.queries.RestoreEquipment(ctx, id)
 	if err != nil {
 		return logger.Error(logger.MsgFailedToRestore, err)
 	}
@@ -117,65 +97,41 @@ func (r *EquipmentRepository) Restore(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (r *EquipmentRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Equipment, int, error) {
-	const query = `
-		SELECT e.id, e.serial_number, e.deleted_at,
-		       p.id, p.title,
-		       c.id, c.title, COUNT(*) OVER() AS total
-		FROM equipments e
-		LEFT JOIN profiles p ON p.id = e.profile
-		LEFT JOIN categories c ON c.id = p.category
-		WHERE ($1 = true OR e.deleted_at IS NULL)
-		AND ($2 = '' OR (e.serial_number || ' ' || p.title || ' ' || c.title) ILIKE '%' || $2 || '%')
-		AND (array_length($3::bigint[], 1) IS NULL OR e.id = ANY ($3))
-		ORDER BY CASE WHEN $4 = 'id' AND $5 = 'asc' THEN e.id::text END,
-				 CASE WHEN $4 = 'id' AND $5 = 'desc' THEN e.id::text END DESC,
-				 CASE WHEN $4 = 'serial_number' AND $5 = 'asc' THEN e.serial_number END,
-				 CASE WHEN $4 = 'serial_number' AND $5 = 'desc' THEN e.serial_number END DESC,
-				 CASE WHEN $4 = 'p_title' AND $5 = 'asc' THEN p.title END,
-				 CASE WHEN $4 = 'p_title' AND $5 = 'desc' THEN p.title END DESC,
-				 CASE WHEN $4 = 'c_title' AND $5 = 'asc' THEN c.title END,
-				 CASE WHEN $4 = 'c_title' AND $5 = 'desc' THEN c.title END DESC
-		LIMIT $6 OFFSET $7;`
-
-	rows, err := r.postgresDB.Query(
-		ctx,
-		query,
-		qp.WithDeleted,
-		qp.Search,
-		qp.Ids,
-		qp.SortBy,
-		qp.Order,
-		qp.Limit,
-		qp.Offset,
-	)
+func (r *EquipmentRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Equipment, int64, error) {
+	req, err := r.queries.ListEquipment(ctx, &queries.ListEquipmentParams{
+		WithDeleted:      qp.WithDeleted,
+		Search:           qp.Search,
+		Ids:              qp.Ids,
+		SortColumn:       qp.SortColumn,
+		SortOrder:        qp.SortOrder,
+		PaginationLimit:  qp.PaginationLimit,
+		PaginationOffset: qp.PaginationOffset,
+	})
 	if err != nil {
 		return nil, 0, logger.Error(logger.MsgFailedToSelect, err)
 	}
-	defer rows.Close()
 
-	var equipments []*model.Equipment
-	var total int
-	for rows.Next() {
-		equipment := model.NewEquipment()
-		if err := rows.Scan(
-			&equipment.ID,
-			&equipment.SerialNumber,
-			&equipment.DeletedAt,
-			&equipment.Profile.ID,
-			&equipment.Profile.Title,
-			&equipment.Profile.Category.ID,
-			&equipment.Profile.Category.Title,
-			&total,
-		); err != nil {
-			return nil, 0, logger.Error(logger.MsgFailedToScan, err)
+	if len(req) < 1 {
+		return nil, 0, nil
+	}
+
+	list := make([]*model.Equipment, len(req))
+	for i, item := range req {
+		equipment := &model.Equipment{
+			ID:           item.ID,
+			SerialNumber: item.SerialNumber,
+			Profile: &model.Profile{
+				ID:    item.ProfileID,
+				Title: item.ProfileTitle,
+				Category: &model.Category{
+					ID:    item.CategoryID,
+					Title: item.CategoryTitle,
+				},
+			},
+			DeletedAt: validTime(item.DeletedAt),
 		}
-		equipments = append(equipments, equipment)
+		list[i] = equipment
 	}
 
-	if err := rows.Err(); err != nil {
-		return nil, 0, logger.Error(logger.MsgFailedToIterateOverRows, err)
-	}
-
-	return equipments, total, nil
+	return list, req[0].Total, nil
 }

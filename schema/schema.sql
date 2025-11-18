@@ -7,21 +7,21 @@ create table categories
 
 create table profiles
 (
-    id         bigserial primary key,
-    title      varchar(100)                                         not null unique,
-    category   bigint references categories (id) on delete restrict not null,
-    deleted_at timestamp with time zone
+    id          bigserial primary key,
+    title       varchar(100)                                         not null unique,
+    category_id bigint references categories (id) on delete restrict not null,
+    deleted_at  timestamp with time zone
 );
-create index idx_profiles_category on profiles (category);
+create index idx_profiles_category on profiles (category_id);
 
 create table equipments
 (
     id            bigserial primary key,
     serial_number varchar(100)                                       not null unique,
-    profile       bigint references profiles (id) on delete restrict not null,
+    profile_id    bigint references profiles (id) on delete restrict not null,
     deleted_at    timestamp with time zone
 );
-create index idx_equipments_profile on equipments (profile);
+create index idx_equipments_profile on equipments (profile_id);
 
 create table departments
 (
@@ -32,15 +32,15 @@ create table departments
 
 create table employees
 (
-    id          bigserial primary key,
-    last_name   varchar(100) not null,
-    first_name  varchar(100) not null,
-    middle_name varchar(100) not null,
-    phone       varchar(100) not null unique,
-    department  bigint references departments (id) on delete restrict,
-    deleted_at  timestamp with time zone
+    id            bigserial primary key,
+    last_name     varchar(100) not null,
+    first_name    varchar(100) not null,
+    middle_name   varchar(100) not null,
+    phone         varchar(100) not null unique,
+    department_id bigint references departments (id) on delete restrict,
+    deleted_at    timestamp with time zone
 );
-create index idx_employees_department on employees (department);
+create index idx_employees_department on employees (department_id);
 
 create table users
 (
@@ -51,9 +51,9 @@ create table users
     role          varchar(100) not null,
     enabled       boolean      not null default true,
     last_login_at timestamp with time zone,
-    employee      bigint references employees (id) on delete restrict
+    employee_id   bigint references employees (id) on delete restrict
 );
-create index idx_users_employee on users (employee);
+create index idx_users_employee on users (employee_id);
 
 create table contracts
 (
@@ -72,38 +72,38 @@ create table companies
 
 create table locations
 (
-    id              bigserial primary key,
-    equipment       bigint references equipments (id) on delete restrict not null,
-    employee        bigint references employees (id) on delete restrict  not null,
-    company         bigint references companies (id) on delete restrict  not null,
-    move_at         timestamp with time zone                             not null default now(),
-    move_code       varchar(100)                                         not null,
-    move_type       varchar(100),
-    price           varchar(100),
-    from_department bigint references departments (id) on delete restrict,
-    from_employee   bigint references employees (id) on delete restrict,
-    from_contract   bigint references contracts (id) on delete restrict,
-    to_department   bigint references departments (id) on delete restrict,
-    to_employee     bigint references employees (id) on delete restrict,
-    to_contract     bigint references contracts (id) on delete restrict,
-    comment         varchar(100)
+    id                 bigserial primary key,
+    equipment_id       bigint references equipments (id) on delete restrict not null,
+    employee_id        bigint references employees (id) on delete restrict  not null,
+    company_id         bigint references companies (id) on delete restrict  not null,
+    move_at            timestamp with time zone                             not null default now(),
+    move_code          varchar(100)                                         not null,
+    move_type          varchar(100),
+    price              varchar(100),
+    from_department_id bigint references departments (id) on delete restrict,
+    from_employee_id   bigint references employees (id) on delete restrict,
+    from_contract_id   bigint references contracts (id) on delete restrict,
+    to_department_id   bigint references departments (id) on delete restrict,
+    to_employee_id     bigint references employees (id) on delete restrict,
+    to_contract_id     bigint references contracts (id) on delete restrict,
+    comment            varchar(100)
 );
-create index idx_locations_equipment on locations (equipment);
-create index idx_locations_employee on locations (employee);
-create index idx_locations_company on locations (company);
+create index idx_locations_equipment on locations (equipment_id);
+create index idx_locations_employee on locations (employee_id);
+create index idx_locations_company on locations (company_id);
 create index idx_locations_move_at on locations (move_at);
-create index idx_locations_from_department on locations (from_department);
-create index idx_locations_from_employee on locations (from_employee);
-create index idx_locations_from_contract on locations (from_contract);
-create index idx_locations_to_department on locations (to_department);
-create index idx_locations_to_employee on locations (to_employee);
-create index idx_locations_to_contract on locations (to_contract);
+create index idx_locations_from_department on locations (from_department_id);
+create index idx_locations_from_employee on locations (from_employee_id);
+create index idx_locations_from_contract on locations (from_contract_id);
+create index idx_locations_to_department on locations (to_department_id);
+create index idx_locations_to_employee on locations (to_employee_id);
+create index idx_locations_to_contract on locations (to_contract_id);
 
 create table replaces
 (
-    id       bigserial primary key,
-    move_in  bigint references locations on delete cascade not null,
-    move_out bigint references locations on delete cascade not null
+    id          bigserial primary key,
+    move_in_id  bigint references locations on delete cascade not null,
+    move_out_id bigint references locations on delete cascade not null
 );
-create index idx_replaces_move_in on replaces (move_in);
-create index idx_replaces_move_out on replaces (move_out);
+create index idx_replaces_move_in on replaces (move_in_id);
+create index idx_replaces_move_out on replaces (move_out_id);

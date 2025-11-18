@@ -2,11 +2,12 @@ package repository
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
+	queries "github.com/oatsmoke/warehouse_backend/internal/db"
 	"github.com/oatsmoke/warehouse_backend/internal/dto"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/role"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
@@ -27,18 +28,18 @@ type Repository struct {
 	Replace    *ReplaceRepository
 }
 
-func New(postgresDB *pgxpool.Pool, redisDB *redis.Client) *Repository {
+func New(postgresDB *pgxpool.Pool, redisDB *redis.Client, queries queries.Querier) *Repository {
 	return &Repository{
 		Auth:       NewAuthRepository(redisDB),
-		User:       NewUserRepository(postgresDB),
-		Employee:   NewEmployeeRepository(postgresDB),
-		Department: NewDepartmentRepository(postgresDB),
-		Category:   NewCategoryRepository(postgresDB),
-		Profile:    NewProfileRepository(postgresDB),
-		Equipment:  NewEquipmentRepository(postgresDB),
+		User:       NewUserRepository(queries),
+		Employee:   NewEmployeeRepository(queries),
+		Department: NewDepartmentRepository(queries),
+		Category:   NewCategoryRepository(queries),
+		Profile:    NewProfileRepository(queries),
+		Equipment:  NewEquipmentRepository(queries),
 		Location:   NewLocationRepository(postgresDB),
-		Contract:   NewContractRepository(postgresDB),
-		Company:    NewCompanyRepository(postgresDB),
+		Contract:   NewContractRepository(queries),
+		Company:    NewCompanyRepository(queries),
 		Replace:    NewReplaceRepository(postgresDB),
 	}
 }
@@ -69,7 +70,7 @@ type Employee interface {
 	Update(ctx context.Context, employee *model.Employee) error
 	Delete(ctx context.Context, id int64) error
 	Restore(ctx context.Context, id int64) error
-	List(ctx context.Context, qp *dto.QueryParams) ([]*model.Employee, int, error)
+	List(ctx context.Context, qp *dto.QueryParams) ([]*model.Employee, int64, error)
 	SetDepartment(ctx context.Context, id, departmentID int64) error
 	//GetAllShort(ctx context.Context, deleted bool) ([]*model.Employee, error)
 	//GetAllButOne(ctx context.Context, id int64, deleted bool) ([]*model.Employee, error)
@@ -89,7 +90,7 @@ type Department interface {
 	Update(ctx context.Context, department *model.Department) error
 	Delete(ctx context.Context, id int64) error
 	Restore(ctx context.Context, id int64) error
-	List(ctx context.Context, qp *dto.QueryParams) ([]*model.Department, int, error)
+	List(ctx context.Context, qp *dto.QueryParams) ([]*model.Department, int64, error)
 	//GetAllButOne(ctx context.Context, id, employeeId int64) ([]*model.Department, error)
 	//GetAllButOneForAdmin(ctx context.Context, id int64) ([]*model.Department, error)
 	//FindByTitle(ctx context.Context, title string) (int64, error)
@@ -101,7 +102,7 @@ type Category interface {
 	Update(ctx context.Context, category *model.Category) error
 	Delete(ctx context.Context, id int64) error
 	Restore(ctx context.Context, id int64) error
-	List(ctx context.Context, qp *dto.QueryParams) ([]*model.Category, int, error)
+	List(ctx context.Context, qp *dto.QueryParams) ([]*model.Category, int64, error)
 }
 
 type Profile interface {
@@ -110,7 +111,7 @@ type Profile interface {
 	Update(ctx context.Context, profile *model.Profile) error
 	Delete(ctx context.Context, id int64) error
 	Restore(ctx context.Context, id int64) error
-	List(ctx context.Context, qp *dto.QueryParams) ([]*model.Profile, int, error)
+	List(ctx context.Context, qp *dto.QueryParams) ([]*model.Profile, int64, error)
 }
 
 type Equipment interface {
@@ -119,7 +120,7 @@ type Equipment interface {
 	Update(ctx context.Context, equipment *model.Equipment) error
 	Delete(ctx context.Context, id int64) error
 	Restore(ctx context.Context, id int64) error
-	List(ctx context.Context, qp *dto.QueryParams) ([]*model.Equipment, int, error)
+	List(ctx context.Context, qp *dto.QueryParams) ([]*model.Equipment, int64, error)
 }
 
 type Location interface {
@@ -150,7 +151,7 @@ type Contract interface {
 	Update(ctx context.Context, contract *model.Contract) error
 	Delete(ctx context.Context, id int64) error
 	Restore(ctx context.Context, id int64) error
-	List(ctx context.Context, qp *dto.QueryParams) ([]*model.Contract, int, error)
+	List(ctx context.Context, qp *dto.QueryParams) ([]*model.Contract, int64, error)
 }
 
 type Company interface {
@@ -159,7 +160,7 @@ type Company interface {
 	Update(ctx context.Context, company *model.Company) error
 	Delete(ctx context.Context, id int64) error
 	Restore(ctx context.Context, id int64) error
-	List(ctx context.Context, qp *dto.QueryParams) ([]*model.Company, int, error)
+	List(ctx context.Context, qp *dto.QueryParams) ([]*model.Company, int64, error)
 }
 
 type Replace interface {
@@ -167,16 +168,23 @@ type Replace interface {
 	FindByLocationId(ctx context.Context, locationId int64) (*model.Replace, error)
 }
 
-func validInt64(num sql.NullInt64) int64 {
-	if num.Valid {
-		return num.Int64
+func validInt64(data pgtype.Int8) int64 {
+	if data.Valid {
+		return data.Int64
 	}
 	return 0
 }
 
-func validString(num sql.NullString) string {
-	if num.Valid {
-		return num.String
+func validString(data pgtype.Text) string {
+	if data.Valid {
+		return data.String
 	}
 	return ""
+}
+
+func validTime(data pgtype.Timestamptz) *time.Time {
+	if data.Valid {
+		return &data.Time
+	}
+	return nil
 }

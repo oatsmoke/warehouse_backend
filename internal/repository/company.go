@@ -3,67 +3,53 @@ package repository
 import (
 	"context"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	queries "github.com/oatsmoke/warehouse_backend/internal/db"
 	"github.com/oatsmoke/warehouse_backend/internal/dto"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
 )
 
 type CompanyRepository struct {
-	postgresDB *pgxpool.Pool
+	queries queries.Querier
 }
 
-func NewCompanyRepository(postgresDB *pgxpool.Pool) *CompanyRepository {
+func NewCompanyRepository(queries queries.Querier) *CompanyRepository {
 	return &CompanyRepository{
-		postgresDB: postgresDB,
+		queries: queries,
 	}
 }
 
 func (r *CompanyRepository) Create(ctx context.Context, company *model.Company) (int64, error) {
-	const query = `
-		INSERT INTO companies (title) 
-		VALUES ($1)
-		RETURNING id;`
-
-	var id int64
-	if err := r.postgresDB.QueryRow(ctx, query, company.Title).Scan(&id); err != nil {
+	req, err := r.queries.CreateCompany(ctx, company.Title)
+	if err != nil {
 		return 0, logger.Error(logger.MsgFailedToInsert, err)
 	}
 
-	if id == 0 {
-		return 0, logger.Error(logger.MsgFailedToMarshal, logger.ErrNoRowsAffected)
-	}
-
-	return id, nil
+	return req.ID, nil
 }
 
 func (r *CompanyRepository) Read(ctx context.Context, id int64) (*model.Company, error) {
-	const query = `
-		SELECT id, title, deleted_at
-		FROM companies 
-		WHERE id = $1;`
-
-	company := new(model.Company)
-	if err := r.postgresDB.QueryRow(ctx, query, id).Scan(
-		&company.ID,
-		&company.Title,
-		&company.DeletedAt,
-	); err != nil {
+	req, err := r.queries.ReadCompany(ctx, id)
+	if err != nil {
 		return nil, logger.Error(logger.MsgFailedToScan, err)
+	}
+
+	company := &model.Company{
+		ID:        req.ID,
+		Title:     req.Title,
+		DeletedAt: validTime(req.DeletedAt),
 	}
 
 	return company, nil
 }
 
 func (r *CompanyRepository) Update(ctx context.Context, company *model.Company) error {
-	const query = `
-		UPDATE companies 
-		SET title = $2
-		WHERE id = $1 AND title != $2;`
-
-	ct, err := r.postgresDB.Exec(ctx, query, company.ID, company.Title)
+	ct, err := r.queries.UpdateCompany(ctx, &queries.UpdateCompanyParams{
+		ID:    company.ID,
+		Title: company.Title,
+	})
 	if err != nil {
-		return err
+		return logger.Error(logger.MsgFailedToUpdate, err)
 	}
 
 	if ct.RowsAffected() == 0 {
@@ -74,12 +60,7 @@ func (r *CompanyRepository) Update(ctx context.Context, company *model.Company) 
 }
 
 func (r *CompanyRepository) Delete(ctx context.Context, id int64) error {
-	const query = `
-		UPDATE companies 
-		SET deleted_at = now()
-       	WHERE id = $1 AND deleted_at IS NULL;`
-
-	ct, err := r.postgresDB.Exec(ctx, query, id)
+	ct, err := r.queries.DeleteCompany(ctx, id)
 	if err != nil {
 		return logger.Error(logger.MsgFailedToDelete, err)
 	}
@@ -92,12 +73,7 @@ func (r *CompanyRepository) Delete(ctx context.Context, id int64) error {
 }
 
 func (r *CompanyRepository) Restore(ctx context.Context, id int64) error {
-	const query = `
-		UPDATE companies 
-		SET deleted_at = NULL
-       	WHERE id = $1 AND deleted_at IS NOT NULL;`
-
-	ct, err := r.postgresDB.Exec(ctx, query, id)
+	ct, err := r.queries.RestoreCompany(ctx, id)
 	if err != nil {
 		return logger.Error(logger.MsgFailedToRestore, err)
 	}
@@ -109,53 +85,33 @@ func (r *CompanyRepository) Restore(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (r *CompanyRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Company, int, error) {
-	const query = `
-		SELECT id, title, deleted_at, count(*) OVER () AS total
-		FROM companies
-		WHERE ($1 = true OR deleted_at IS NULL)
-		  AND ($2 = '' OR title ILIKE '%' || $2 || '%')
-		  AND (array_length($3::bigint[], 1) IS NULL OR id = ANY ($3))
-		ORDER BY CASE WHEN $4 = 'id' AND $5 = 'asc' THEN id::text END,
-		         CASE WHEN $4 = 'id' AND $5 = 'desc' THEN id::text END DESC,
-		         CASE WHEN $4 = 'title' AND $5 = 'asc' THEN title END,
-		         CASE WHEN $4 = 'title' AND $5 = 'desc' THEN title END DESC
-		LIMIT $6 OFFSET $7;`
-
-	rows, err := r.postgresDB.Query(
-		ctx,
-		query,
-		qp.WithDeleted,
-		qp.Search,
-		qp.Ids,
-		qp.SortBy,
-		qp.Order,
-		qp.Limit,
-		qp.Offset,
-	)
+func (r *CompanyRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Company, int64, error) {
+	req, err := r.queries.ListCompany(ctx, &queries.ListCompanyParams{
+		WithDeleted:      qp.WithDeleted,
+		Search:           qp.Search,
+		Ids:              qp.Ids,
+		SortColumn:       qp.SortColumn,
+		SortOrder:        qp.SortOrder,
+		PaginationLimit:  qp.PaginationLimit,
+		PaginationOffset: qp.PaginationOffset,
+	})
 	if err != nil {
 		return nil, 0, logger.Error(logger.MsgFailedToSelect, err)
 	}
-	defer rows.Close()
 
-	var companies []*model.Company
-	var total int
-	for rows.Next() {
-		company := new(model.Company)
-		if err := rows.Scan(
-			&company.ID,
-			&company.Title,
-			&company.DeletedAt,
-			&total,
-		); err != nil {
-			return nil, 0, logger.Error(logger.MsgFailedToScan, err)
+	if len(req) < 1 {
+		return nil, 0, nil
+	}
+
+	list := make([]*model.Company, len(req))
+	for i, item := range req {
+		company := &model.Company{
+			ID:        item.ID,
+			Title:     item.Title,
+			DeletedAt: validTime(item.DeletedAt),
 		}
-		companies = append(companies, company)
+		list[i] = company
 	}
 
-	if err := rows.Err(); err != nil {
-		return nil, 0, logger.Error(logger.MsgFailedToIterateOverRows, err)
-	}
-
-	return companies, total, nil
+	return list, req[0].Total, nil
 }

@@ -12,12 +12,6 @@ type Employee struct {
 	DeletedAt  *time.Time  `json:"deleted_at,omitempty"`
 }
 
-func NewEmployee() *Employee {
-	return &Employee{
-		Department: &Department{},
-	}
-}
-
 //type RequestEmployee struct {
 //	Ids          []int64 `json:"ids"`
 //	DepartmentId int64   `json:"department_id"`

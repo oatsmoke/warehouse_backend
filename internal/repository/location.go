@@ -2,10 +2,10 @@ package repository
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
 )
@@ -147,12 +147,12 @@ func (r *LocationRepository) GetById(ctx context.Context, equipmentId int64) (*m
 		AND equipments.id = $1;`
 
 	var (
-		transferType      sql.NullString
-		price             sql.NullString
-		toDepartmentTitle sql.NullString
-		toEmployeeName    sql.NullString
-		toContractNumber  sql.NullString
-		toContractAddress sql.NullString
+		transferType      pgtype.Text
+		price             pgtype.Text
+		toDepartmentTitle pgtype.Text
+		toEmployeeName    pgtype.Text
+		toContractNumber  pgtype.Text
+		toContractAddress pgtype.Text
 	)
 
 	if err := r.DB.QueryRow(ctx, query, equipmentId).Scan(
@@ -213,12 +213,12 @@ func (r *LocationRepository) GetHistory(ctx context.Context, equipmentId int64) 
 	for rows.Next() {
 		location := newLocation()
 		var (
-			transferType      sql.NullString
-			price             sql.NullString
-			toDepartmentTitle sql.NullString
-			toEmployeeName    sql.NullString
-			toContractNumber  sql.NullString
-			toContractAddress sql.NullString
+			transferType      pgtype.Text
+			price             pgtype.Text
+			toDepartmentTitle pgtype.Text
+			toEmployeeName    pgtype.Text
+			toContractNumber  pgtype.Text
+			toContractAddress pgtype.Text
 		)
 
 		if err := rows.Scan(
@@ -359,8 +359,8 @@ func (r *LocationRepository) GetByLocationDepartment(ctx context.Context, toDepa
 	for rows.Next() {
 		equipmentByLoc := newLocation()
 		var (
-			toDepartmentId, toEmployeeId      sql.NullInt64
-			toDepartmentTitle, toEmployeeName sql.NullString
+			toDepartmentId, toEmployeeId      pgtype.Int8
+			toDepartmentTitle, toEmployeeName pgtype.Text
 		)
 
 		if err := rows.Scan(
@@ -423,7 +423,7 @@ func (r *LocationRepository) GetByLocationEmployee(ctx context.Context, toEmploy
 
 	for rows.Next() {
 		equipmentByLoc := newLocation()
-		var toDepartmentTitle, toEmployeeName sql.NullString
+		var toDepartmentTitle, toEmployeeName pgtype.Text
 
 		if err := rows.Scan(
 			&equipmentByLoc.Equipment.ID,
@@ -535,7 +535,7 @@ func (r *LocationRepository) GetByLocationDepartmentEmployee(ctx context.Context
 
 	for rows.Next() {
 		equipmentByLoc := newLocation()
-		var toDepartmentTitle, toEmployeeName sql.NullString
+		var toDepartmentTitle, toEmployeeName pgtype.Text
 
 		if err := rows.Scan(
 			&equipmentByLoc.Equipment.ID,
@@ -685,8 +685,8 @@ func (r *LocationRepository) ToDepartmentTransferByCategory(ctx context.Context,
 	for rows.Next() {
 		location := newLocation()
 		var (
-			fromDepartmentId    sql.NullInt64
-			fromDepartmentTitle sql.NullString
+			fromDepartmentId    pgtype.Int8
+			fromDepartmentTitle pgtype.Text
 		)
 
 		if err := rows.Scan(
@@ -735,8 +735,8 @@ func (r *LocationRepository) FromDepartmentTransferByCategory(ctx context.Contex
 	for rows.Next() {
 		location := newLocation()
 		var (
-			toDepartmentId    sql.NullInt64
-			toDepartmentTitle sql.NullString
+			toDepartmentId    pgtype.Int8
+			toDepartmentTitle pgtype.Text
 		)
 
 		if err := rows.Scan(

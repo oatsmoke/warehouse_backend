@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	queries "github.com/oatsmoke/warehouse_backend/internal/db"
 	"github.com/oatsmoke/warehouse_backend/internal/dto"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/generate"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/postgresql"
@@ -63,9 +64,10 @@ func addTestDeletedDepartment(t *testing.T, testDB *pgxpool.Pool) *model.Departm
 func TestNewDepartmentRepository(t *testing.T) {
 	testDB := postgresql.ConnectTest()
 	defer testDB.Close()
+	q := queries.New(testDB)
 
 	type args struct {
-		postgresDB *pgxpool.Pool
+		queries queries.Querier
 	}
 	tests := []struct {
 		name string
@@ -75,14 +77,14 @@ func TestNewDepartmentRepository(t *testing.T) {
 		{
 			name: "create department repository",
 			args: args{
-				postgresDB: testDB,
+				queries: q,
 			},
-			want: NewDepartmentRepository(testDB),
+			want: NewDepartmentRepository(q),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewDepartmentRepository(tt.args.postgresDB); !reflect.DeepEqual(got, tt.want) {
+			if got := NewDepartmentRepository(tt.args.queries); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewDepartmentRepository() = %v, want %v", got, tt.want)
 			}
 		})
@@ -95,9 +97,10 @@ func TestDepartmentRepository_Create(t *testing.T) {
 		truncateDepartments(t, testDB)
 		testDB.Close()
 	})
+	q := queries.New(testDB)
 
 	type fields struct {
-		postgresDB *pgxpool.Pool
+		queries queries.Querier
 	}
 	type args struct {
 		ctx        context.Context
@@ -113,7 +116,7 @@ func TestDepartmentRepository_Create(t *testing.T) {
 		{
 			name: "create department",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -127,7 +130,7 @@ func TestDepartmentRepository_Create(t *testing.T) {
 		{
 			name: "create duplicate department",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -141,7 +144,7 @@ func TestDepartmentRepository_Create(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &DepartmentRepository{
-				postgresDB: tt.fields.postgresDB,
+				queries: tt.fields.queries,
 			}
 			got, err := r.Create(tt.args.ctx, tt.args.department)
 			if (err != nil) != tt.wantErr {
@@ -161,10 +164,11 @@ func TestDepartmentRepository_Read(t *testing.T) {
 		truncateDepartments(t, testDB)
 		testDB.Close()
 	})
+	q := queries.New(testDB)
 	d := addTestDepartment(t, testDB)
 
 	type fields struct {
-		postgresDB *pgxpool.Pool
+		queries queries.Querier
 	}
 	type args struct {
 		ctx context.Context
@@ -180,7 +184,7 @@ func TestDepartmentRepository_Read(t *testing.T) {
 		{
 			name: "read department",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -192,7 +196,7 @@ func TestDepartmentRepository_Read(t *testing.T) {
 		{
 			name: "read non-existing department",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -204,7 +208,7 @@ func TestDepartmentRepository_Read(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &DepartmentRepository{
-				postgresDB: tt.fields.postgresDB,
+				queries: tt.fields.queries,
 			}
 			got, err := r.Read(tt.args.ctx, tt.args.id)
 			if (err != nil) != tt.wantErr {
@@ -224,10 +228,11 @@ func TestDepartmentRepository_Update(t *testing.T) {
 		truncateDepartments(t, testDB)
 		testDB.Close()
 	})
+	q := queries.New(testDB)
 	d := addTestDepartment(t, testDB)
 
 	type fields struct {
-		postgresDB *pgxpool.Pool
+		queries queries.Querier
 	}
 	type args struct {
 		ctx        context.Context
@@ -242,7 +247,7 @@ func TestDepartmentRepository_Update(t *testing.T) {
 		{
 			name: "update department",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -256,7 +261,7 @@ func TestDepartmentRepository_Update(t *testing.T) {
 		{
 			name: "update non-existing department",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -271,7 +276,7 @@ func TestDepartmentRepository_Update(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &DepartmentRepository{
-				postgresDB: tt.fields.postgresDB,
+				queries: tt.fields.queries,
 			}
 			if err := r.Update(tt.args.ctx, tt.args.department); (err != nil) != tt.wantErr {
 				t.Errorf("Update() error = %v, wantErr %v", err, tt.wantErr)
@@ -286,10 +291,11 @@ func TestDepartmentRepository_Delete(t *testing.T) {
 		truncateDepartments(t, testDB)
 		testDB.Close()
 	})
+	q := queries.New(testDB)
 	d := addTestDepartment(t, testDB)
 
 	type fields struct {
-		postgresDB *pgxpool.Pool
+		queries queries.Querier
 	}
 	type args struct {
 		ctx context.Context
@@ -304,7 +310,7 @@ func TestDepartmentRepository_Delete(t *testing.T) {
 		{
 			name: "delete department",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -315,7 +321,7 @@ func TestDepartmentRepository_Delete(t *testing.T) {
 		{
 			name: "delete non-existing department",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -327,7 +333,7 @@ func TestDepartmentRepository_Delete(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &DepartmentRepository{
-				postgresDB: tt.fields.postgresDB,
+				queries: tt.fields.queries,
 			}
 			if err := r.Delete(tt.args.ctx, tt.args.id); (err != nil) != tt.wantErr {
 				t.Errorf("Delete() error = %v, wantErr %v", err, tt.wantErr)
@@ -342,11 +348,12 @@ func TestDepartmentRepository_Restore(t *testing.T) {
 		truncateDepartments(t, testDB)
 		testDB.Close()
 	})
+	q := queries.New(testDB)
 	d := addTestDepartment(t, testDB)
 	dd := addTestDeletedDepartment(t, testDB)
 
 	type fields struct {
-		postgresDB *pgxpool.Pool
+		queries queries.Querier
 	}
 	type args struct {
 		ctx context.Context
@@ -361,7 +368,7 @@ func TestDepartmentRepository_Restore(t *testing.T) {
 		{
 			name: "restore department",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -372,7 +379,7 @@ func TestDepartmentRepository_Restore(t *testing.T) {
 		{
 			name: "restore non-existing department",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -383,7 +390,7 @@ func TestDepartmentRepository_Restore(t *testing.T) {
 		{
 			name: "restore not deleted department",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -395,7 +402,7 @@ func TestDepartmentRepository_Restore(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &DepartmentRepository{
-				postgresDB: tt.fields.postgresDB,
+				queries: tt.fields.queries,
 			}
 			if err := r.Restore(tt.args.ctx, tt.args.id); (err != nil) != tt.wantErr {
 				t.Errorf("Restore() error = %v, wantErr %v", err, tt.wantErr)
@@ -410,11 +417,12 @@ func TestDepartmentRepository_List(t *testing.T) {
 		truncateDepartments(t, testDB)
 		testDB.Close()
 	})
+	q := queries.New(testDB)
 	d := addTestDepartment(t, testDB)
 	dd := addTestDeletedDepartment(t, testDB)
 
 	type fields struct {
-		postgresDB *pgxpool.Pool
+		queries queries.Querier
 	}
 	type args struct {
 		ctx context.Context
@@ -425,17 +433,22 @@ func TestDepartmentRepository_List(t *testing.T) {
 		fields  fields
 		args    args
 		want    []*model.Department
-		want1   int
+		want1   int64
 		wantErr bool
 	}{
 		{
 			name: "list departments without deleted",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
-				qp:  &dto.QueryParams{},
+				qp: &dto.QueryParams{
+					SortColumn:       "id",
+					SortOrder:        "asc",
+					PaginationLimit:  50,
+					PaginationOffset: 0,
+				},
 			},
 			want:    []*model.Department{d},
 			want1:   1,
@@ -444,12 +457,16 @@ func TestDepartmentRepository_List(t *testing.T) {
 		{
 			name: "list departments with deleted",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
 				qp: &dto.QueryParams{
-					WithDeleted: true,
+					WithDeleted:      true,
+					SortColumn:       "id",
+					SortOrder:        "asc",
+					PaginationLimit:  50,
+					PaginationOffset: 0,
 				},
 			},
 			want:    []*model.Department{d, dd},
@@ -460,7 +477,7 @@ func TestDepartmentRepository_List(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &DepartmentRepository{
-				postgresDB: tt.fields.postgresDB,
+				queries: tt.fields.queries,
 			}
 			got, got1, err := r.List(tt.args.ctx, tt.args.qp)
 			if (err != nil) != tt.wantErr {

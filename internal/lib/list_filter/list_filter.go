@@ -9,11 +9,11 @@ import (
 )
 
 const (
-	defaultWithDeleted = "false"
-	defaultSortBy      = "id"
-	defaultOrder       = "asc"
-	defaultOffset      = "0"
-	defaultLimit       = "50"
+	defaultWithDeleted       = "false"
+	defaultSortBy            = "id"
+	defaultOrder             = "asc"
+	defaultOffset      int32 = 0
+	defaultLimit       int32 = 50
 )
 
 func ParseQueryParams(c *gin.Context) *dto.QueryParams {
@@ -32,20 +32,18 @@ func ParseQueryParams(c *gin.Context) *dto.QueryParams {
 		}
 	}
 
-	qp.SortBy = c.DefaultQuery("sort_by", defaultSortBy)
-	qp.Order = strings.ToLower(c.DefaultQuery("order", defaultOrder))
-	if qp.Order != "asc" && qp.Order != "desc" {
-		qp.Order = defaultOrder
+	qp.SortColumn = c.DefaultQuery("sort_by", defaultSortBy)
+	qp.SortOrder = strings.ToLower(c.DefaultQuery("order", defaultOrder))
+	if qp.SortOrder != "asc" && qp.SortOrder != "desc" {
+		qp.SortOrder = defaultOrder
 	}
 
-	qp.Limit = c.DefaultQuery("limit", defaultLimit)
-	if n, err := strconv.ParseInt(qp.Limit, 10, 64); err != nil || n < 0 {
-		qp.Limit = defaultLimit
+	if n, err := strconv.ParseInt(c.Query("limit"), 10, 32); err != nil || n < 0 {
+		qp.PaginationLimit = defaultLimit
 	}
 
-	qp.Offset = c.DefaultQuery("offset", defaultOffset)
-	if n, err := strconv.ParseInt(qp.Offset, 10, 64); err != nil || n < 0 {
-		qp.Offset = defaultOffset
+	if n, err := strconv.ParseInt(c.Query("offset"), 10, 32); err != nil || n < 0 {
+		qp.PaginationOffset = defaultOffset
 	}
 
 	return qp

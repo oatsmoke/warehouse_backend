@@ -3,66 +3,56 @@ package repository
 import (
 	"context"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	queries "github.com/oatsmoke/warehouse_backend/internal/db"
 	"github.com/oatsmoke/warehouse_backend/internal/dto"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
 )
 
 type ContractRepository struct {
-	postgresDB *pgxpool.Pool
+	queries queries.Querier
 }
 
-func NewContractRepository(postgresDB *pgxpool.Pool) *ContractRepository {
+func NewContractRepository(queries queries.Querier) *ContractRepository {
 	return &ContractRepository{
-		postgresDB: postgresDB,
+		queries: queries,
 	}
 }
 
 func (r *ContractRepository) Create(ctx context.Context, contract *model.Contract) (int64, error) {
-	const query = `
-		INSERT INTO contracts (number, address) 
-		VALUES ($1, $2)
-		RETURNING id;`
-
-	var id int64
-	if err := r.postgresDB.QueryRow(ctx, query, contract.Number, contract.Address).Scan(&id); err != nil {
+	req, err := r.queries.CreateContract(ctx, &queries.CreateContractParams{
+		Number:  contract.Number,
+		Address: contract.Address,
+	})
+	if err != nil {
 		return 0, logger.Error(logger.MsgFailedToInsert, err)
 	}
 
-	if id == 0 {
-		return 0, logger.Error(logger.MsgFailedToDelete, logger.ErrNoRowsAffected)
-	}
-
-	return id, nil
+	return req.ID, nil
 }
 
 func (r *ContractRepository) Read(ctx context.Context, id int64) (*model.Contract, error) {
-	const query = `
-		SELECT id, number, address, deleted_at
-		FROM contracts 
-		WHERE id = $1;`
-
-	contract := new(model.Contract)
-	if err := r.postgresDB.QueryRow(ctx, query, id).Scan(
-		&contract.ID,
-		&contract.Number,
-		&contract.Address,
-		&contract.DeletedAt,
-	); err != nil {
+	req, err := r.queries.ReadContract(ctx, id)
+	if err != nil {
 		return nil, logger.Error(logger.MsgFailedToScan, err)
+	}
+
+	contract := &model.Contract{
+		ID:        req.ID,
+		Number:    req.Number,
+		Address:   req.Address,
+		DeletedAt: validTime(req.DeletedAt),
 	}
 
 	return contract, nil
 }
 
 func (r *ContractRepository) Update(ctx context.Context, contract *model.Contract) error {
-	const query = `
-		UPDATE contracts 
-		SET number = $2, address = $3
-		WHERE id = $1 AND (number != $2 OR address != $3);`
-
-	ct, err := r.postgresDB.Exec(ctx, query, contract.ID, contract.Number, contract.Address)
+	ct, err := r.queries.UpdateContract(ctx, &queries.UpdateContractParams{
+		ID:      contract.ID,
+		Number:  contract.Number,
+		Address: contract.Address,
+	})
 	if err != nil {
 		return logger.Error(logger.MsgFailedToUpdate, err)
 	}
@@ -75,12 +65,7 @@ func (r *ContractRepository) Update(ctx context.Context, contract *model.Contrac
 }
 
 func (r *ContractRepository) Delete(ctx context.Context, id int64) error {
-	const query = `
-		UPDATE contracts 
-		SET deleted_at = now() 
-       	WHERE id = $1 AND deleted_at IS NULL;`
-
-	ct, err := r.postgresDB.Exec(ctx, query, id)
+	ct, err := r.queries.DeleteContract(ctx, id)
 	if err != nil {
 		return logger.Error(logger.MsgFailedToDelete, err)
 	}
@@ -93,12 +78,7 @@ func (r *ContractRepository) Delete(ctx context.Context, id int64) error {
 }
 
 func (r *ContractRepository) Restore(ctx context.Context, id int64) error {
-	const query = `
-		UPDATE contracts 
-		SET deleted_at = NULL
-       	WHERE id = $1 AND deleted_at IS NOT NULL;`
-
-	ct, err := r.postgresDB.Exec(ctx, query, id)
+	ct, err := r.queries.RestoreContract(ctx, id)
 	if err != nil {
 		return logger.Error(logger.MsgFailedToRestore, err)
 	}
@@ -110,56 +90,34 @@ func (r *ContractRepository) Restore(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (r *ContractRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Contract, int, error) {
-	const query = `
-		SELECT id, number, address, deleted_at, count(*) OVER () AS total
-		FROM contracts
-		WHERE ($1 = true OR deleted_at IS NULL)
-		  AND ($2 = '' OR (number || ' ' || address) ILIKE '%' || $2 || '%')
-		  AND (array_length($3::bigint[], 1) IS NULL OR id = ANY ($3))
-		ORDER BY CASE WHEN $4 = 'id' AND $5 = 'asc' THEN id::text END,
-		         CASE WHEN $4 = 'id' AND $5 = 'desc' THEN id::text END DESC,
-		         CASE WHEN $4 = 'number' AND $5 = 'asc' THEN number END,
-		         CASE WHEN $4 = 'number' AND $5 = 'desc' THEN number END DESC,
-				 CASE WHEN $4 = 'address' AND $5 = 'asc' THEN address END,
-		         CASE WHEN $4 = 'address' AND $5 = 'desc' THEN address END DESC
-		LIMIT $6 OFFSET $7;`
-
-	rows, err := r.postgresDB.Query(
-		ctx,
-		query,
-		qp.WithDeleted,
-		qp.Search,
-		qp.Ids,
-		qp.SortBy,
-		qp.Order,
-		qp.Limit,
-		qp.Offset,
-	)
+func (r *ContractRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Contract, int64, error) {
+	req, err := r.queries.ListContract(ctx, &queries.ListContractParams{
+		WithDeleted:      qp.WithDeleted,
+		Search:           qp.Search,
+		Ids:              qp.Ids,
+		SortColumn:       qp.SortColumn,
+		SortOrder:        qp.SortOrder,
+		PaginationLimit:  qp.PaginationLimit,
+		PaginationOffset: qp.PaginationOffset,
+	})
 	if err != nil {
 		return nil, 0, logger.Error(logger.MsgFailedToSelect, err)
 	}
-	defer rows.Close()
 
-	var contracts []*model.Contract
-	var total int
-	for rows.Next() {
-		contract := new(model.Contract)
-		if err := rows.Scan(
-			&contract.ID,
-			&contract.Number,
-			&contract.Address,
-			&contract.DeletedAt,
-			&total,
-		); err != nil {
-			return nil, 0, logger.Error(logger.MsgFailedToScan, err)
+	if len(req) < 1 {
+		return nil, 0, nil
+	}
+
+	list := make([]*model.Contract, len(req))
+	for i, item := range req {
+		contract := &model.Contract{
+			ID:        item.ID,
+			Number:    item.Number,
+			Address:   item.Address,
+			DeletedAt: validTime(item.DeletedAt),
 		}
-		contracts = append(contracts, contract)
+		list[i] = contract
 	}
 
-	if err := rows.Err(); err != nil {
-		return nil, 0, logger.Error(logger.MsgFailedToIterateOverRows, err)
-	}
-
-	return contracts, total, nil
+	return list, req[0].Total, nil
 }

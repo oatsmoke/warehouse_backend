@@ -3,65 +3,51 @@ package repository
 import (
 	"context"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	queries "github.com/oatsmoke/warehouse_backend/internal/db"
 	"github.com/oatsmoke/warehouse_backend/internal/dto"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
 )
 
 type DepartmentRepository struct {
-	postgresDB *pgxpool.Pool
+	queries queries.Querier
 }
 
-func NewDepartmentRepository(postgresDB *pgxpool.Pool) *DepartmentRepository {
+func NewDepartmentRepository(queries queries.Querier) *DepartmentRepository {
 	return &DepartmentRepository{
-		postgresDB: postgresDB,
+		queries: queries,
 	}
 }
 
 func (r *DepartmentRepository) Create(ctx context.Context, department *model.Department) (int64, error) {
-	const query = `
-		INSERT INTO departments (title) 
-		VALUES ($1)
-		RETURNING id;`
-
-	var id int64
-	if err := r.postgresDB.QueryRow(ctx, query, department.Title).Scan(&id); err != nil {
+	req, err := r.queries.CreateDepartment(ctx, department.Title)
+	if err != nil {
 		return 0, logger.Error(logger.MsgFailedToInsert, err)
 	}
 
-	if id == 0 {
-		return 0, logger.Error(logger.MsgFailedToInsert, logger.ErrNoRowsAffected)
-	}
-
-	return id, nil
+	return req.ID, nil
 }
 
 func (r *DepartmentRepository) Read(ctx context.Context, id int64) (*model.Department, error) {
-	const query = `
-		SELECT id, title, deleted_at
-		FROM departments 
-		WHERE id = $1;`
-
-	department := new(model.Department)
-	if err := r.postgresDB.QueryRow(ctx, query, id).Scan(
-		&department.ID,
-		&department.Title,
-		&department.DeletedAt,
-	); err != nil {
+	req, err := r.queries.ReadDepartment(ctx, id)
+	if err != nil {
 		return nil, logger.Error(logger.MsgFailedToScan, err)
+	}
+
+	department := &model.Department{
+		ID:        req.ID,
+		Title:     req.Title,
+		DeletedAt: validTime(req.DeletedAt),
 	}
 
 	return department, nil
 }
 
 func (r *DepartmentRepository) Update(ctx context.Context, department *model.Department) error {
-	const query = `
-		UPDATE departments 
-		SET title = $2
-		WHERE id = $1 AND title != $2;`
-
-	ct, err := r.postgresDB.Exec(ctx, query, department.ID, department.Title)
+	ct, err := r.queries.UpdateDepartment(ctx, &queries.UpdateDepartmentParams{
+		ID:    department.ID,
+		Title: department.Title,
+	})
 	if err != nil {
 		return logger.Error(logger.MsgFailedToUpdate, err)
 	}
@@ -74,12 +60,7 @@ func (r *DepartmentRepository) Update(ctx context.Context, department *model.Dep
 }
 
 func (r *DepartmentRepository) Delete(ctx context.Context, id int64) error {
-	const query = `
-		UPDATE departments 
-		SET deleted_at = now()
-       	WHERE id = $1 AND deleted_at IS NULL;`
-
-	ct, err := r.postgresDB.Exec(ctx, query, id)
+	ct, err := r.queries.DeleteDepartment(ctx, id)
 	if err != nil {
 		return logger.Error(logger.MsgFailedToDelete, err)
 	}
@@ -92,12 +73,7 @@ func (r *DepartmentRepository) Delete(ctx context.Context, id int64) error {
 }
 
 func (r *DepartmentRepository) Restore(ctx context.Context, id int64) error {
-	const query = `
-		UPDATE departments 
-		SET deleted_at = NULL
-       	WHERE id = $1 AND deleted_at IS NOT NULL;`
-
-	ct, err := r.postgresDB.Exec(ctx, query, id)
+	ct, err := r.queries.RestoreDepartment(ctx, id)
 	if err != nil {
 		return logger.Error(logger.MsgFailedToRestore, err)
 	}
@@ -109,55 +85,35 @@ func (r *DepartmentRepository) Restore(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (r *DepartmentRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Department, int, error) {
-	query := `
-		SELECT id, title, deleted_at, count(*) OVER () AS total
-		FROM departments
-		WHERE ($1 = true OR deleted_at IS NULL)
-		  AND ($2 = '' OR title ILIKE '%' || $2 || '%')
-		  AND (array_length($3::bigint[], 1) IS NULL OR id = ANY ($3))
-		ORDER BY CASE WHEN $4 = 'id' AND $5 = 'asc' THEN id::text END,
-		         CASE WHEN $4 = 'id' AND $5 = 'desc' THEN id::text END DESC,
-		         CASE WHEN $4 = 'title' AND $5 = 'asc' THEN title END,
-		         CASE WHEN $4 = 'title' AND $5 = 'desc' THEN title END DESC
-		LIMIT $6 OFFSET $7;`
-
-	rows, err := r.postgresDB.Query(
-		ctx,
-		query,
-		qp.WithDeleted,
-		qp.Search,
-		qp.Ids,
-		qp.SortBy,
-		qp.Order,
-		qp.Limit,
-		qp.Offset,
-	)
+func (r *DepartmentRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Department, int64, error) {
+	req, err := r.queries.ListDepartment(ctx, &queries.ListDepartmentParams{
+		WithDeleted:      qp.WithDeleted,
+		Search:           qp.Search,
+		Ids:              qp.Ids,
+		SortColumn:       qp.SortColumn,
+		SortOrder:        qp.SortOrder,
+		PaginationLimit:  qp.PaginationLimit,
+		PaginationOffset: qp.PaginationOffset,
+	})
 	if err != nil {
 		return nil, 0, logger.Error(logger.MsgFailedToSelect, err)
 	}
-	defer rows.Close()
 
-	var departments []*model.Department
-	var total int
-	for rows.Next() {
-		department := new(model.Department)
-		if err := rows.Scan(
-			&department.ID,
-			&department.Title,
-			&department.DeletedAt,
-			&total,
-		); err != nil {
-			return nil, 0, logger.Error(logger.MsgFailedToScan, err)
+	if len(req) < 1 {
+		return nil, 0, nil
+	}
+
+	list := make([]*model.Department, len(req))
+	for i, item := range req {
+		department := &model.Department{
+			ID:        item.ID,
+			Title:     item.Title,
+			DeletedAt: validTime(item.DeletedAt),
 		}
-		departments = append(departments, department)
+		list[i] = department
 	}
 
-	if err := rows.Err(); err != nil {
-		return nil, 0, logger.Error(logger.MsgFailedToIterateOverRows, err)
-	}
-
-	return departments, total, nil
+	return list, req[0].Total, nil
 }
 
 //func (r *DepartmentRepository) GetAllButOne(ctx context.Context, id, employeeId int64) ([]*model.Department, error) {

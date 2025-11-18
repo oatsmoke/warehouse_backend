@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	queries "github.com/oatsmoke/warehouse_backend/internal/db"
 	"github.com/oatsmoke/warehouse_backend/internal/dto"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/generate"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/postgresql"
@@ -68,9 +69,10 @@ func addTestDeletedEmployee(t *testing.T, testDB *pgxpool.Pool) *model.Employee 
 func TestNewEmployeeRepository(t *testing.T) {
 	testDB := postgresql.ConnectTest()
 	defer testDB.Close()
+	q := queries.New(testDB)
 
 	type args struct {
-		postgresDB *pgxpool.Pool
+		queries queries.Querier
 	}
 	tests := []struct {
 		name string
@@ -80,14 +82,14 @@ func TestNewEmployeeRepository(t *testing.T) {
 		{
 			name: "create employee repository",
 			args: args{
-				postgresDB: testDB,
+				queries: q,
 			},
-			want: NewEmployeeRepository(testDB),
+			want: NewEmployeeRepository(q),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewEmployeeRepository(tt.args.postgresDB); !reflect.DeepEqual(got, tt.want) {
+			if got := NewEmployeeRepository(tt.args.queries); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewEmployeeRepository() = %v, want %v", got, tt.want)
 			}
 		})
@@ -100,9 +102,10 @@ func TestEmployeeRepository_Create(t *testing.T) {
 		truncateEmployees(t, testDB)
 		testDB.Close()
 	})
+	q := queries.New(testDB)
 
 	type fields struct {
-		postgresDB *pgxpool.Pool
+		queries queries.Querier
 	}
 	type args struct {
 		ctx      context.Context
@@ -118,7 +121,7 @@ func TestEmployeeRepository_Create(t *testing.T) {
 		{
 			name: "create employee",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -135,7 +138,7 @@ func TestEmployeeRepository_Create(t *testing.T) {
 		{
 			name: "create duplicate employee",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -152,7 +155,7 @@ func TestEmployeeRepository_Create(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &EmployeeRepository{
-				postgresDB: tt.fields.postgresDB,
+				queries: tt.fields.queries,
 			}
 			got, err := r.Create(tt.args.ctx, tt.args.employee)
 			if (err != nil) != tt.wantErr {
@@ -172,10 +175,11 @@ func TestEmployeeRepository_Read(t *testing.T) {
 		truncateEmployees(t, testDB)
 		testDB.Close()
 	})
+	q := queries.New(testDB)
 	e := addTestEmployee(t, testDB)
 
 	type fields struct {
-		postgresDB *pgxpool.Pool
+		queries queries.Querier
 	}
 	type args struct {
 		ctx context.Context
@@ -191,7 +195,7 @@ func TestEmployeeRepository_Read(t *testing.T) {
 		{
 			name: "read employee",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -203,7 +207,7 @@ func TestEmployeeRepository_Read(t *testing.T) {
 		{
 			name: "read non-existing employee",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -215,7 +219,7 @@ func TestEmployeeRepository_Read(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &EmployeeRepository{
-				postgresDB: tt.fields.postgresDB,
+				queries: tt.fields.queries,
 			}
 			got, err := r.Read(tt.args.ctx, tt.args.id)
 			if (err != nil) != tt.wantErr {
@@ -235,10 +239,11 @@ func TestEmployeeRepository_Update(t *testing.T) {
 		truncateEmployees(t, testDB)
 		testDB.Close()
 	})
+	q := queries.New(testDB)
 	e := addTestEmployee(t, testDB)
 
 	type fields struct {
-		postgresDB *pgxpool.Pool
+		queries queries.Querier
 	}
 	type args struct {
 		ctx      context.Context
@@ -253,7 +258,7 @@ func TestEmployeeRepository_Update(t *testing.T) {
 		{
 			name: "update employee",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -270,7 +275,7 @@ func TestEmployeeRepository_Update(t *testing.T) {
 		{
 			name: "update non-existing employee",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -288,7 +293,7 @@ func TestEmployeeRepository_Update(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &EmployeeRepository{
-				postgresDB: tt.fields.postgresDB,
+				queries: tt.fields.queries,
 			}
 			if err := r.Update(tt.args.ctx, tt.args.employee); (err != nil) != tt.wantErr {
 				t.Errorf("Update() error = %v, wantErr %v", err, tt.wantErr)
@@ -303,10 +308,11 @@ func TestEmployeeRepository_Delete(t *testing.T) {
 		truncateEmployees(t, testDB)
 		testDB.Close()
 	})
+	q := queries.New(testDB)
 	e := addTestEmployee(t, testDB)
 
 	type fields struct {
-		postgresDB *pgxpool.Pool
+		queries queries.Querier
 	}
 	type args struct {
 		ctx context.Context
@@ -321,7 +327,7 @@ func TestEmployeeRepository_Delete(t *testing.T) {
 		{
 			name: "delete employee",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -332,7 +338,7 @@ func TestEmployeeRepository_Delete(t *testing.T) {
 		{
 			name: "delete non-existing employee",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -344,7 +350,7 @@ func TestEmployeeRepository_Delete(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &EmployeeRepository{
-				postgresDB: tt.fields.postgresDB,
+				queries: tt.fields.queries,
 			}
 			if err := r.Delete(tt.args.ctx, tt.args.id); (err != nil) != tt.wantErr {
 				t.Errorf("Delete() error = %v, wantErr %v", err, tt.wantErr)
@@ -359,11 +365,12 @@ func TestEmployeeRepository_Restore(t *testing.T) {
 		truncateEmployees(t, testDB)
 		testDB.Close()
 	})
+	q := queries.New(testDB)
 	e := addTestEmployee(t, testDB)
 	de := addTestDeletedEmployee(t, testDB)
 
 	type fields struct {
-		postgresDB *pgxpool.Pool
+		queries queries.Querier
 	}
 	type args struct {
 		ctx context.Context
@@ -378,7 +385,7 @@ func TestEmployeeRepository_Restore(t *testing.T) {
 		{
 			name: "restore employee",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -389,7 +396,7 @@ func TestEmployeeRepository_Restore(t *testing.T) {
 		{
 			name: "restore non-existing employee",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -400,7 +407,7 @@ func TestEmployeeRepository_Restore(t *testing.T) {
 		{
 			name: "restore not deleted employee",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -412,7 +419,7 @@ func TestEmployeeRepository_Restore(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &EmployeeRepository{
-				postgresDB: tt.fields.postgresDB,
+				queries: tt.fields.queries,
 			}
 			if err := r.Restore(tt.args.ctx, tt.args.id); (err != nil) != tt.wantErr {
 				t.Errorf("Restore() error = %v, wantErr %v", err, tt.wantErr)
@@ -427,11 +434,12 @@ func TestEmployeeRepository_List(t *testing.T) {
 		truncateEmployees(t, testDB)
 		testDB.Close()
 	})
+	q := queries.New(testDB)
 	e := addTestEmployee(t, testDB)
 	de := addTestDeletedEmployee(t, testDB)
 
 	type fields struct {
-		postgresDB *pgxpool.Pool
+		queries queries.Querier
 	}
 	type args struct {
 		ctx context.Context
@@ -442,17 +450,22 @@ func TestEmployeeRepository_List(t *testing.T) {
 		fields  fields
 		args    args
 		want    []*model.Employee
-		want1   int
+		want1   int64
 		wantErr bool
 	}{
 		{
 			name: "list employees without deleted",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
-				qp:  &dto.QueryParams{},
+				qp: &dto.QueryParams{
+					SortColumn:       "id",
+					SortOrder:        "asc",
+					PaginationLimit:  50,
+					PaginationOffset: 0,
+				},
 			},
 			want:    []*model.Employee{e},
 			want1:   1,
@@ -461,12 +474,16 @@ func TestEmployeeRepository_List(t *testing.T) {
 		{
 			name: "list employees with deleted",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
 				qp: &dto.QueryParams{
-					WithDeleted: true,
+					WithDeleted:      true,
+					SortColumn:       "id",
+					SortOrder:        "asc",
+					PaginationLimit:  50,
+					PaginationOffset: 0,
 				},
 			},
 			want:    []*model.Employee{e, de},
@@ -477,7 +494,7 @@ func TestEmployeeRepository_List(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &EmployeeRepository{
-				postgresDB: tt.fields.postgresDB,
+				queries: tt.fields.queries,
 			}
 			got, got1, err := r.List(tt.args.ctx, tt.args.qp)
 			if (err != nil) != tt.wantErr {
@@ -500,11 +517,12 @@ func TestEmployeeRepository_SetDepartment(t *testing.T) {
 		truncateEmployees(t, testDB)
 		testDB.Close()
 	})
+	q := queries.New(testDB)
 	d := addTestDepartment(t, testDB)
 	e := addTestEmployee(t, testDB)
 
 	type fields struct {
-		postgresDB *pgxpool.Pool
+		queries queries.Querier
 	}
 	type args struct {
 		ctx          context.Context
@@ -520,7 +538,7 @@ func TestEmployeeRepository_SetDepartment(t *testing.T) {
 		{
 			name: "set department",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx:          t.Context(),
@@ -532,7 +550,7 @@ func TestEmployeeRepository_SetDepartment(t *testing.T) {
 		{
 			name: "set non-existing department",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx:          t.Context(),
@@ -545,7 +563,7 @@ func TestEmployeeRepository_SetDepartment(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &EmployeeRepository{
-				postgresDB: tt.fields.postgresDB,
+				queries: tt.fields.queries,
 			}
 			if err := r.SetDepartment(tt.args.ctx, tt.args.id, tt.args.departmentID); (err != nil) != tt.wantErr {
 				t.Errorf("SetDepartment() error = %v, wantErr %v", err, tt.wantErr)

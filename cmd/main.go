@@ -5,7 +5,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/gin-gonic/gin"
+	queries "github.com/oatsmoke/warehouse_backend/internal/db"
 	"github.com/oatsmoke/warehouse_backend/internal/handler"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/env"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
@@ -15,10 +15,6 @@ import (
 	"github.com/oatsmoke/warehouse_backend/internal/repository"
 	"github.com/oatsmoke/warehouse_backend/internal/service"
 )
-
-func init() {
-	gin.SetMode(gin.TestMode)
-}
 
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -33,7 +29,8 @@ func main() {
 	redisDB := redis.Connect()
 	defer redisDB.Disconnect()
 
-	newR := repository.New(postgresDB, redisDB.Conn)
+	newQ := queries.New(postgresDB)
+	newR := repository.New(postgresDB, redisDB.Conn, newQ)
 	newS := service.New(newR)
 	newH := handler.New(newS)
 

@@ -2,98 +2,68 @@ package repository
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/jackc/pgx/v5/pgxpool"
+	queries "github.com/oatsmoke/warehouse_backend/internal/db"
 	"github.com/oatsmoke/warehouse_backend/internal/dto"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
 )
 
 type EmployeeRepository struct {
-	postgresDB *pgxpool.Pool
+	queries queries.Querier
 }
 
-func NewEmployeeRepository(postgresDB *pgxpool.Pool) *EmployeeRepository {
+func NewEmployeeRepository(queries queries.Querier) *EmployeeRepository {
 	return &EmployeeRepository{
-		postgresDB: postgresDB,
+		queries: queries,
 	}
 }
 
 func (r *EmployeeRepository) Create(ctx context.Context, employee *model.Employee) (int64, error) {
-	const query = `
-		INSERT INTO employees (last_name, first_name, middle_name, phone)
-		VALUES ($1, $2, $3, $4)
-		RETURNING id;`
-
-	var id int64
-	if err := r.postgresDB.QueryRow(
-		ctx,
-		query,
-		employee.LastName,
-		employee.FirstName,
-		employee.MiddleName,
-		employee.Phone,
-	).Scan(&id); err != nil {
+	req, err := r.queries.CreateEmployee(ctx, &queries.CreateEmployeeParams{
+		LastName:   employee.LastName,
+		FirstName:  employee.FirstName,
+		MiddleName: employee.MiddleName,
+		Phone:      employee.Phone,
+	})
+	if err != nil {
 		return 0, logger.Error(logger.MsgFailedToInsert, err)
 	}
 
-	if id == 0 {
-		return 0, logger.Error(logger.MsgFailedToInsert, logger.ErrNoRowsAffected)
-	}
-
-	return id, nil
+	return req.ID, nil
 }
 
 func (r *EmployeeRepository) Read(ctx context.Context, id int64) (*model.Employee, error) {
-	const query = `
-		SELECT e.id, e.last_name, e.first_name, e.middle_name, e.phone, e.deleted_at,
-		       d.id, d.title
-		FROM employees e
-		LEFT JOIN departments d ON d.id = e.department
-		WHERE e.id = $1;`
-
-	employee := model.NewEmployee()
-	var (
-		departmentID    sql.NullInt64
-		departmentTitle sql.NullString
-	)
-
-	if err := r.postgresDB.QueryRow(ctx, query, id).Scan(
-		&employee.ID,
-		&employee.LastName,
-		&employee.FirstName,
-		&employee.MiddleName,
-		&employee.Phone,
-		&employee.DeletedAt,
-		&departmentID,
-		&departmentTitle,
-	); err != nil {
+	req, err := r.queries.ReadEmployee(ctx, id)
+	if err != nil {
 		return nil, logger.Error(logger.MsgFailedToScan, err)
 	}
 
-	employee.Department.ID = validInt64(departmentID)
-	employee.Department.Title = validString(departmentTitle)
+	employee := &model.Employee{
+		ID:         req.ID,
+		LastName:   req.LastName,
+		FirstName:  req.FirstName,
+		MiddleName: req.MiddleName,
+		Phone:      req.Phone,
+		Department: &model.Department{
+			ID:    validInt64(req.DepartmentID),
+			Title: validString(req.DepartmentTitle),
+		},
+		DeletedAt: validTime(req.DeletedAt),
+	}
 
 	return employee, nil
 }
 
 func (r *EmployeeRepository) Update(ctx context.Context, employee *model.Employee) error {
-	const query = `
-		UPDATE employees
-		SET last_name = $2, first_name = $3, middle_name = $4, phone = $5
-		WHERE id = $1 AND (last_name != $2 OR first_name != $3 OR middle_name != $4 OR phone != $5);`
-
-	ct, err := r.postgresDB.Exec(
-		ctx,
-		query,
-		employee.ID,
-		employee.LastName,
-		employee.FirstName,
-		employee.MiddleName,
-		employee.Phone,
-	)
+	ct, err := r.queries.UpdateEmployee(ctx, &queries.UpdateEmployeeParams{
+		ID:         employee.ID,
+		LastName:   employee.LastName,
+		FirstName:  employee.FirstName,
+		MiddleName: employee.MiddleName,
+		Phone:      employee.Phone,
+	})
 	if err != nil {
 		return logger.Error(logger.MsgFailedToUpdate, err)
 	}
@@ -106,12 +76,7 @@ func (r *EmployeeRepository) Update(ctx context.Context, employee *model.Employe
 }
 
 func (r *EmployeeRepository) Delete(ctx context.Context, id int64) error {
-	const query = `
-		UPDATE employees 
-		SET deleted_at = now()
-		WHERE id = $1 AND deleted_at IS NULL;`
-
-	ct, err := r.postgresDB.Exec(ctx, query, id)
+	ct, err := r.queries.DeleteEmployee(ctx, id)
 	if err != nil {
 		return logger.Error(logger.MsgFailedToDelete, err)
 	}
@@ -124,12 +89,7 @@ func (r *EmployeeRepository) Delete(ctx context.Context, id int64) error {
 }
 
 func (r *EmployeeRepository) Restore(ctx context.Context, id int64) error {
-	const query = `
-		UPDATE employees 
-		SET deleted_at = NULL
-		WHERE id = $1 AND deleted_at IS NOT NULL;`
-
-	ct, err := r.postgresDB.Exec(ctx, query, id)
+	ct, err := r.queries.RestoreEmployee(ctx, id)
 	if err != nil {
 		return logger.Error(logger.MsgFailedToRestore, err)
 	}
@@ -141,95 +101,57 @@ func (r *EmployeeRepository) Restore(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (r *EmployeeRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Employee, int, error) {
-	const query = `
-		SELECT e.id, e.last_name, e.first_name, e.middle_name, e.phone, e.deleted_at,
-		       d.id, d.title, COUNT(*) OVER() AS total
-		FROM employees e
-		LEFT JOIN public.departments d ON d.id = e.department
-		WHERE ($1 = true OR e.deleted_at IS NULL)
-		  AND ($2 = '' OR (e.last_name || ' ' || e.first_name || ' ' || e.middle_name || ' ' || e.phone || ' ' || d.title) ILIKE '%' || $2 || '%')
-		  AND (array_length($3::bigint[], 1) IS NULL OR e.id = ANY ($3))
-		ORDER BY CASE WHEN $4 = 'id' AND $5 = 'asc' THEN e.id::text END,
-		         CASE WHEN $4 = 'id' AND $5 = 'desc' THEN e.id::text END DESC,
-		         CASE WHEN $4 = 'last_name' AND $5 = 'asc' THEN e.last_name END,
-		         CASE WHEN $4 = 'last_name' AND $5 = 'desc' THEN e.last_name END DESC,
-				 CASE WHEN $4 = 'first_name' AND $5 = 'asc' THEN e.first_name END,
-		         CASE WHEN $4 = 'first_name' AND $5 = 'desc' THEN e.first_name END DESC,
-		         CASE WHEN $4 = 'middle_name' AND $5 = 'asc' THEN e.middle_name END,
-		         CASE WHEN $4 = 'middle_name' AND $5 = 'desc' THEN e.middle_name END DESC,
-		         CASE WHEN $4 = 'phone' AND $5 = 'asc' THEN e.phone END,
-		         CASE WHEN $4 = 'phone' AND $5 = 'desc' THEN e.phone END DESC,
-		         CASE WHEN $4 = 'd_title' AND $5 = 'asc' THEN d.title END,
-		         CASE WHEN $4 = 'd_title' AND $5 = 'desc' THEN d.title END DESC
-		LIMIT $6 OFFSET $7;`
-
-	rows, err := r.postgresDB.Query(
-		ctx,
-		query,
-		qp.WithDeleted,
-		qp.Search,
-		qp.Ids,
-		qp.SortBy,
-		qp.Order,
-		qp.Limit,
-		qp.Offset,
-	)
+func (r *EmployeeRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*model.Employee, int64, error) {
+	req, err := r.queries.ListEmployee(ctx, &queries.ListEmployeeParams{
+		WithDeleted:      qp.WithDeleted,
+		Search:           qp.Search,
+		Ids:              qp.Ids,
+		SortColumn:       qp.SortColumn,
+		SortOrder:        qp.SortOrder,
+		PaginationLimit:  qp.PaginationLimit,
+		PaginationOffset: qp.PaginationOffset,
+	})
 	if err != nil {
 		return nil, 0, logger.Error(logger.MsgFailedToSelect, err)
 	}
-	defer rows.Close()
 
-	var employees []*model.Employee
-	var total int
-	for rows.Next() {
-		employee := model.NewEmployee()
-		var (
-			departmentID    sql.NullInt64
-			departmentTitle sql.NullString
-		)
+	if len(req) < 1 {
+		return nil, 0, nil
+	}
 
-		if err := rows.Scan(
-			&employee.ID,
-			&employee.LastName,
-			&employee.FirstName,
-			&employee.MiddleName,
-			&employee.Phone,
-			&employee.DeletedAt,
-			&departmentID,
-			&departmentTitle,
-			&total,
-		); err != nil {
-			return nil, 0, logger.Error(logger.MsgFailedToSelect, err)
+	list := make([]*model.Employee, len(req))
+	for i, item := range req {
+		employee := &model.Employee{
+			ID:         item.ID,
+			LastName:   item.LastName,
+			FirstName:  item.FirstName,
+			MiddleName: item.MiddleName,
+			Phone:      item.Phone,
+			Department: &model.Department{
+				ID:    validInt64(item.DepartmentID),
+				Title: validString(item.DepartmentTitle),
+			},
+			DeletedAt: validTime(item.DeletedAt),
 		}
-
-		employee.Department.ID = validInt64(departmentID)
-		employee.Department.Title = validString(departmentTitle)
-		employees = append(employees, employee)
+		list[i] = employee
 	}
 
-	if err := rows.Err(); err != nil {
-		return nil, 0, logger.Error(logger.MsgFailedToIterateOverRows, err)
-	}
-
-	return employees, total, nil
+	return list, req[0].Total, nil
 }
 
 func (r *EmployeeRepository) SetDepartment(ctx context.Context, id, departmentID int64) error {
-	d := new(pgtype.Int8)
+	var d pgtype.Int8
 	if departmentID != 0 {
-		d = &pgtype.Int8{
+		d = pgtype.Int8{
 			Int64: departmentID,
 			Valid: true,
 		}
 	}
 
-	const query = `
-		UPDATE employees
-		SET department = $2
-		WHERE id = $1;`
-
-	ct, err := r.postgresDB.Exec(ctx, query, id, d)
+	ct, err := r.queries.SetDepartmentEmployee(ctx, &queries.SetDepartmentEmployeeParams{
+		ID:           id,
+		DepartmentID: d,
+	})
 	if err != nil {
 		return logger.Error(logger.MsgFailedToUpdate, err)
 	}

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	queries "github.com/oatsmoke/warehouse_backend/internal/db"
 	"github.com/oatsmoke/warehouse_backend/internal/dto"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/generate"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/postgresql"
@@ -64,9 +65,10 @@ func addTestDeletedCategory(t *testing.T, testDB *pgxpool.Pool) *model.Category 
 func TestNewCategoryRepository(t *testing.T) {
 	testDB := postgresql.ConnectTest()
 	defer testDB.Close()
+	q := queries.New(testDB)
 
 	type args struct {
-		postgresDB *pgxpool.Pool
+		queries queries.Querier
 	}
 	tests := []struct {
 		name string
@@ -76,14 +78,14 @@ func TestNewCategoryRepository(t *testing.T) {
 		{
 			name: "create category repository",
 			args: args{
-				postgresDB: testDB,
+				queries: q,
 			},
-			want: NewCategoryRepository(testDB),
+			want: NewCategoryRepository(q),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewCategoryRepository(tt.args.postgresDB); !reflect.DeepEqual(got, tt.want) {
+			if got := NewCategoryRepository(tt.args.queries); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewCategoryRepository() = %v, want %v", got, tt.want)
 			}
 		})
@@ -96,9 +98,10 @@ func TestCategoryRepository_Create(t *testing.T) {
 		truncateCategories(t, testDB)
 		testDB.Close()
 	})
+	q := queries.New(testDB)
 
 	type fields struct {
-		postgresDB *pgxpool.Pool
+		queries queries.Querier
 	}
 	type args struct {
 		ctx      context.Context
@@ -114,7 +117,7 @@ func TestCategoryRepository_Create(t *testing.T) {
 		{
 			name: "create category",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -128,7 +131,7 @@ func TestCategoryRepository_Create(t *testing.T) {
 		{
 			name: "create duplicate category",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -142,7 +145,7 @@ func TestCategoryRepository_Create(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &CategoryRepository{
-				postgresDB: tt.fields.postgresDB,
+				queries: tt.fields.queries,
 			}
 			got, err := r.Create(tt.args.ctx, tt.args.category)
 			if (err != nil) != tt.wantErr {
@@ -162,10 +165,11 @@ func TestCategoryRepository_Read(t *testing.T) {
 		truncateCategories(t, testDB)
 		testDB.Close()
 	})
+	q := queries.New(testDB)
 	c := addTestCategory(t, testDB)
 
 	type fields struct {
-		postgresDB *pgxpool.Pool
+		queries queries.Querier
 	}
 	type args struct {
 		ctx context.Context
@@ -181,7 +185,7 @@ func TestCategoryRepository_Read(t *testing.T) {
 		{
 			name: "read category",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -193,7 +197,7 @@ func TestCategoryRepository_Read(t *testing.T) {
 		{
 			name: "read non-existing category",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -205,7 +209,7 @@ func TestCategoryRepository_Read(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &CategoryRepository{
-				postgresDB: tt.fields.postgresDB,
+				queries: tt.fields.queries,
 			}
 			got, err := r.Read(tt.args.ctx, tt.args.id)
 			if (err != nil) != tt.wantErr {
@@ -225,10 +229,11 @@ func TestCategoryRepository_Update(t *testing.T) {
 		truncateCategories(t, testDB)
 		testDB.Close()
 	})
+	q := queries.New(testDB)
 	c := addTestCategory(t, testDB)
 
 	type fields struct {
-		postgresDB *pgxpool.Pool
+		queries queries.Querier
 	}
 	type args struct {
 		ctx      context.Context
@@ -243,7 +248,7 @@ func TestCategoryRepository_Update(t *testing.T) {
 		{
 			name: "update category",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -257,7 +262,7 @@ func TestCategoryRepository_Update(t *testing.T) {
 		{
 			name: "update non-existing category",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -272,7 +277,7 @@ func TestCategoryRepository_Update(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &CategoryRepository{
-				postgresDB: tt.fields.postgresDB,
+				queries: tt.fields.queries,
 			}
 			if err := r.Update(tt.args.ctx, tt.args.category); (err != nil) != tt.wantErr {
 				t.Errorf("Update() error = %v, wantErr %v", err, tt.wantErr)
@@ -287,10 +292,11 @@ func TestCategoryRepository_Delete(t *testing.T) {
 		truncateCategories(t, testDB)
 		testDB.Close()
 	})
+	q := queries.New(testDB)
 	c := addTestCategory(t, testDB)
 
 	type fields struct {
-		postgresDB *pgxpool.Pool
+		queries queries.Querier
 	}
 	type args struct {
 		ctx context.Context
@@ -305,7 +311,7 @@ func TestCategoryRepository_Delete(t *testing.T) {
 		{
 			name: "delete category",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -316,7 +322,7 @@ func TestCategoryRepository_Delete(t *testing.T) {
 		{
 			name: "delete non-existing category",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -328,7 +334,7 @@ func TestCategoryRepository_Delete(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &CategoryRepository{
-				postgresDB: tt.fields.postgresDB,
+				queries: tt.fields.queries,
 			}
 			if err := r.Delete(tt.args.ctx, tt.args.id); (err != nil) != tt.wantErr {
 				t.Errorf("Delete() error = %v, wantErr %v", err, tt.wantErr)
@@ -343,11 +349,12 @@ func TestCategoryRepository_Restore(t *testing.T) {
 		truncateCategories(t, testDB)
 		testDB.Close()
 	})
+	q := queries.New(testDB)
 	c := addTestCategory(t, testDB)
 	dc := addTestDeletedCategory(t, testDB)
 
 	type fields struct {
-		postgresDB *pgxpool.Pool
+		queries queries.Querier
 	}
 	type args struct {
 		ctx context.Context
@@ -362,7 +369,7 @@ func TestCategoryRepository_Restore(t *testing.T) {
 		{
 			name: "restore category",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -373,7 +380,7 @@ func TestCategoryRepository_Restore(t *testing.T) {
 		{
 			name: "restore non-existing category",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -384,7 +391,7 @@ func TestCategoryRepository_Restore(t *testing.T) {
 		{
 			name: "restore not deleted category",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -396,7 +403,7 @@ func TestCategoryRepository_Restore(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &CategoryRepository{
-				postgresDB: tt.fields.postgresDB,
+				queries: tt.fields.queries,
 			}
 			if err := r.Restore(tt.args.ctx, tt.args.id); (err != nil) != tt.wantErr {
 				t.Errorf("Restore() error = %v, wantErr %v", err, tt.wantErr)
@@ -411,11 +418,12 @@ func TestCategoryRepository_List(t *testing.T) {
 		truncateCategories(t, testDB)
 		testDB.Close()
 	})
+	q := queries.New(testDB)
 	c := addTestCategory(t, testDB)
 	dc := addTestDeletedCategory(t, testDB)
 
 	type fields struct {
-		postgresDB *pgxpool.Pool
+		queries queries.Querier
 	}
 	type args struct {
 		ctx context.Context
@@ -426,17 +434,22 @@ func TestCategoryRepository_List(t *testing.T) {
 		fields  fields
 		args    args
 		want    []*model.Category
-		want1   int
+		want1   int64
 		wantErr bool
 	}{
 		{
 			name: "list categories without deleted",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
-				qp:  &dto.QueryParams{},
+				qp: &dto.QueryParams{
+					SortColumn:       "id",
+					SortOrder:        "asc",
+					PaginationLimit:  50,
+					PaginationOffset: 0,
+				},
 			},
 			want:    []*model.Category{c},
 			want1:   1,
@@ -445,12 +458,16 @@ func TestCategoryRepository_List(t *testing.T) {
 		{
 			name: "list categories with deleted",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
 				qp: &dto.QueryParams{
-					WithDeleted: true,
+					WithDeleted:      true,
+					SortColumn:       "id",
+					SortOrder:        "asc",
+					PaginationLimit:  50,
+					PaginationOffset: 0,
 				},
 			},
 			want:    []*model.Category{c, dc},
@@ -461,7 +478,7 @@ func TestCategoryRepository_List(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &CategoryRepository{
-				postgresDB: tt.fields.postgresDB,
+				queries: tt.fields.queries,
 			}
 			got, got1, err := r.List(tt.args.ctx, tt.args.qp)
 			if (err != nil) != tt.wantErr {

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	queries "github.com/oatsmoke/warehouse_backend/internal/db"
 	"github.com/oatsmoke/warehouse_backend/internal/dto"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/generate"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/postgresql"
@@ -33,7 +34,7 @@ func addTestProfile(t *testing.T, testDB *pgxpool.Pool) *model.Profile {
 	p := new(model.Profile)
 
 	const query = `
-		INSERT INTO profiles (title, category)
+		INSERT INTO profiles (title, category_id)
 		VALUES ($1, $2)
 		RETURNING id, title;`
 
@@ -53,7 +54,7 @@ func addTestDeletedProfile(t *testing.T, testDB *pgxpool.Pool) *model.Profile {
 	p := new(model.Profile)
 
 	const query = `
-		INSERT INTO profiles (title, category, deleted_at)
+		INSERT INTO profiles (title, category_id, deleted_at)
 		VALUES ($1, $2, now())
 		RETURNING id, title, deleted_at;`
 
@@ -70,9 +71,10 @@ func addTestDeletedProfile(t *testing.T, testDB *pgxpool.Pool) *model.Profile {
 func TestNewProfileRepository(t *testing.T) {
 	testDB := postgresql.ConnectTest()
 	defer testDB.Close()
+	q := queries.New(testDB)
 
 	type args struct {
-		postgresDB *pgxpool.Pool
+		queries queries.Querier
 	}
 	tests := []struct {
 		name string
@@ -82,14 +84,14 @@ func TestNewProfileRepository(t *testing.T) {
 		{
 			name: "create profile repository",
 			args: args{
-				postgresDB: testDB,
+				queries: q,
 			},
-			want: NewProfileRepository(testDB),
+			want: NewProfileRepository(q),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewProfileRepository(tt.args.postgresDB); !reflect.DeepEqual(got, tt.want) {
+			if got := NewProfileRepository(tt.args.queries); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewProfileRepository() = %v, want %v", got, tt.want)
 			}
 		})
@@ -102,10 +104,11 @@ func TestProfileRepository_Create(t *testing.T) {
 		truncateProfiles(t, testDB)
 		testDB.Close()
 	})
+	q := queries.New(testDB)
 	c := addTestCategory(t, testDB)
 
 	type fields struct {
-		postgresDB *pgxpool.Pool
+		queries queries.Querier
 	}
 	type args struct {
 		ctx     context.Context
@@ -121,7 +124,7 @@ func TestProfileRepository_Create(t *testing.T) {
 		{
 			name: "create profile",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -138,7 +141,7 @@ func TestProfileRepository_Create(t *testing.T) {
 		{
 			name: "create duplicate profile",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -155,7 +158,7 @@ func TestProfileRepository_Create(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &ProfileRepository{
-				postgresDB: tt.fields.postgresDB,
+				queries: tt.fields.queries,
 			}
 			got, err := r.Create(tt.args.ctx, tt.args.profile)
 			if (err != nil) != tt.wantErr {
@@ -175,10 +178,11 @@ func TestProfileRepository_Read(t *testing.T) {
 		truncateProfiles(t, testDB)
 		testDB.Close()
 	})
+	q := queries.New(testDB)
 	p := addTestProfile(t, testDB)
 
 	type fields struct {
-		postgresDB *pgxpool.Pool
+		queries queries.Querier
 	}
 	type args struct {
 		ctx context.Context
@@ -194,7 +198,7 @@ func TestProfileRepository_Read(t *testing.T) {
 		{
 			name: "read profile",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -206,7 +210,7 @@ func TestProfileRepository_Read(t *testing.T) {
 		{
 			name: "read non-existing profile",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -218,7 +222,7 @@ func TestProfileRepository_Read(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &ProfileRepository{
-				postgresDB: tt.fields.postgresDB,
+				queries: tt.fields.queries,
 			}
 			got, err := r.Read(tt.args.ctx, tt.args.id)
 			if (err != nil) != tt.wantErr {
@@ -238,10 +242,11 @@ func TestProfileRepository_Update(t *testing.T) {
 		truncateProfiles(t, testDB)
 		testDB.Close()
 	})
+	q := queries.New(testDB)
 	p := addTestProfile(t, testDB)
 
 	type fields struct {
-		postgresDB *pgxpool.Pool
+		queries queries.Querier
 	}
 	type args struct {
 		ctx     context.Context
@@ -256,7 +261,7 @@ func TestProfileRepository_Update(t *testing.T) {
 		{
 			name: "update profile",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -273,7 +278,7 @@ func TestProfileRepository_Update(t *testing.T) {
 		{
 			name: "update non-existing profile",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -291,7 +296,7 @@ func TestProfileRepository_Update(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &ProfileRepository{
-				postgresDB: tt.fields.postgresDB,
+				queries: tt.fields.queries,
 			}
 			if err := r.Update(tt.args.ctx, tt.args.profile); (err != nil) != tt.wantErr {
 				t.Errorf("Update() error = %v, wantErr %v", err, tt.wantErr)
@@ -306,10 +311,11 @@ func TestProfileRepository_Delete(t *testing.T) {
 		truncateProfiles(t, testDB)
 		testDB.Close()
 	})
+	q := queries.New(testDB)
 	p := addTestProfile(t, testDB)
 
 	type fields struct {
-		postgresDB *pgxpool.Pool
+		queries queries.Querier
 	}
 	type args struct {
 		ctx context.Context
@@ -324,7 +330,7 @@ func TestProfileRepository_Delete(t *testing.T) {
 		{
 			name: "delete profile",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -335,7 +341,7 @@ func TestProfileRepository_Delete(t *testing.T) {
 		{
 			name: "delete non-existing profile",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -347,7 +353,7 @@ func TestProfileRepository_Delete(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &ProfileRepository{
-				postgresDB: tt.fields.postgresDB,
+				queries: tt.fields.queries,
 			}
 			if err := r.Delete(tt.args.ctx, tt.args.id); (err != nil) != tt.wantErr {
 				t.Errorf("Delete() error = %v, wantErr %v", err, tt.wantErr)
@@ -362,11 +368,12 @@ func TestProfileRepository_Restore(t *testing.T) {
 		truncateProfiles(t, testDB)
 		testDB.Close()
 	})
+	q := queries.New(testDB)
 	p := addTestProfile(t, testDB)
 	dp := addTestDeletedProfile(t, testDB)
 
 	type fields struct {
-		postgresDB *pgxpool.Pool
+		queries queries.Querier
 	}
 	type args struct {
 		ctx context.Context
@@ -381,7 +388,7 @@ func TestProfileRepository_Restore(t *testing.T) {
 		{
 			name: "restore profile",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -392,7 +399,7 @@ func TestProfileRepository_Restore(t *testing.T) {
 		{
 			name: "restore non-existing profile",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -403,7 +410,7 @@ func TestProfileRepository_Restore(t *testing.T) {
 		{
 			name: "restore not deleted profile",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
@@ -415,7 +422,7 @@ func TestProfileRepository_Restore(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &ProfileRepository{
-				postgresDB: tt.fields.postgresDB,
+				queries: tt.fields.queries,
 			}
 			if err := r.Restore(tt.args.ctx, tt.args.id); (err != nil) != tt.wantErr {
 				t.Errorf("Restore() error = %v, wantErr %v", err, tt.wantErr)
@@ -430,11 +437,12 @@ func TestProfileRepository_List(t *testing.T) {
 		truncateProfiles(t, testDB)
 		testDB.Close()
 	})
+	q := queries.New(testDB)
 	p := addTestProfile(t, testDB)
 	dp := addTestDeletedProfile(t, testDB)
 
 	type fields struct {
-		postgresDB *pgxpool.Pool
+		queries queries.Querier
 	}
 	type args struct {
 		ctx context.Context
@@ -445,17 +453,22 @@ func TestProfileRepository_List(t *testing.T) {
 		fields  fields
 		args    args
 		want    []*model.Profile
-		want1   int
+		want1   int64
 		wantErr bool
 	}{
 		{
 			name: "list profiles without deleted",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
-				qp:  &dto.QueryParams{},
+				qp: &dto.QueryParams{
+					SortColumn:       "id",
+					SortOrder:        "asc",
+					PaginationLimit:  50,
+					PaginationOffset: 0,
+				},
 			},
 			want:    []*model.Profile{p},
 			want1:   1,
@@ -464,12 +477,16 @@ func TestProfileRepository_List(t *testing.T) {
 		{
 			name: "list profiles with deleted",
 			fields: fields{
-				postgresDB: testDB,
+				queries: q,
 			},
 			args: args{
 				ctx: t.Context(),
 				qp: &dto.QueryParams{
-					WithDeleted: true,
+					WithDeleted:      true,
+					SortColumn:       "id",
+					SortOrder:        "asc",
+					PaginationLimit:  50,
+					PaginationOffset: 0,
 				},
 			},
 			want:    []*model.Profile{p, dp},
@@ -480,7 +497,7 @@ func TestProfileRepository_List(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &ProfileRepository{
-				postgresDB: tt.fields.postgresDB,
+				queries: tt.fields.queries,
 			}
 			got, got1, err := r.List(tt.args.ctx, tt.args.qp)
 			if (err != nil) != tt.wantErr {

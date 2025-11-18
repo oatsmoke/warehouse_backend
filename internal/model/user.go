@@ -16,11 +16,3 @@ type User struct {
 	LastLoginAt  *time.Time `json:"last_login_at,omitempty"`
 	Employee     *Employee  `json:"employee,omitempty"`
 }
-
-func NewUser() *User {
-	return &User{
-		Employee: &Employee{
-			Department: &Department{},
-		},
-	}
-}

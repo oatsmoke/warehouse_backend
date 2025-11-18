@@ -45,21 +45,21 @@ services:
     volumes:
       - grafana_data:/var/lib/grafana
 
-  #  db_test:
-  #    image: postgres:latest
-  #    container_name: db_test
-  #    labels:
-  #      app: "db_test"
-  #    logging:
-  #      driver: json-file
-  #      options:
-  #        labels: "app"
-  #    ports:
-  #      - "55432:5432"
-  #    environment:
-  #      POSTGRES_USER: test
-  #      POSTGRES_PASSWORD: password
-  #      POSTGRES_DB: test
+  db_test:
+    image: postgres:latest
+    container_name: db_test
+    labels:
+      app: "db_test"
+    logging:
+      driver: json-file
+      options:
+        labels: "app"
+    ports:
+      - "55432:5432"
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: test
 
   kafka:
     image: apache/kafka:latest
