@@ -32,13 +32,13 @@ func ParseQueryParams(c *gin.Context) *dto.QueryParams {
 		}
 	}
 
-	qp.SortColumn = c.DefaultQuery("sort_by", defaultSortBy)
+	qp.SortColumn = strings.ToLower(c.DefaultQuery("sort_by", defaultSortBy))
 	qp.SortOrder = strings.ToLower(c.DefaultQuery("order", defaultOrder))
 	if qp.SortOrder != "asc" && qp.SortOrder != "desc" {
 		qp.SortOrder = defaultOrder
 	}
 
-	if n, err := strconv.ParseInt(c.Query("limit"), 10, 32); err != nil || n < 0 {
+	if n, err := strconv.ParseInt(c.Query("limit"), 10, 32); err != nil || n < 1 {
 		qp.PaginationLimit = defaultLimit
 	}
 

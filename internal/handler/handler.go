@@ -4,6 +4,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/env"
+	"github.com/oatsmoke/warehouse_backend/internal/lib/websocket"
 	"github.com/oatsmoke/warehouse_backend/internal/service"
 )
 
@@ -37,6 +38,8 @@ func New(service *service.Service) *Handler {
 
 func (h *Handler) InitRoutes() *gin.Engine {
 	router := gin.New()
+	hub := websocket.NewHub()
+	go hub.Run()
 
 	if err := router.SetTrustedProxies(nil); err != nil {
 		return nil
@@ -57,6 +60,9 @@ func (h *Handler) InitRoutes() *gin.Engine {
 
 	api := router.Group("/api") //, h.Auth.UserIdentity
 	{
+		api.GET("/ws", func(ctx *gin.Context) {
+			websocket.NewClient(ctx.Writer, ctx.Request, hub)
+		})
 		api.GET("/user", h.Auth.GetUser)
 
 		user := api.Group("/users")
