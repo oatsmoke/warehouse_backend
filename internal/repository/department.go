@@ -100,7 +100,7 @@ func (r *DepartmentRepository) List(ctx context.Context, qp *dto.QueryParams) ([
 	}
 
 	if len(req) < 1 {
-		return nil, 0, nil
+		return []*model.Department{}, 0, nil
 	}
 
 	list := make([]*model.Department, len(req))

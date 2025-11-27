@@ -9,7 +9,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	queries "github.com/oatsmoke/warehouse_backend/internal/db"
 	"github.com/oatsmoke/warehouse_backend/internal/dto"
-	"github.com/oatsmoke/warehouse_backend/internal/lib/role"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
 	"github.com/redis/go-redis/v9"
 )
@@ -57,10 +56,8 @@ type User interface {
 	List(ctx context.Context) ([]*model.User, error)
 	GetPasswordHash(ctx context.Context, id int64) (string, error)
 	SetPasswordHash(ctx context.Context, id int64, passwordHash string) error
-	SetRole(ctx context.Context, id int64, role role.Role) error
 	SetEnabled(ctx context.Context, id int64, enabled bool) error
 	SetLastLoginAt(ctx context.Context, id int64) error
-	SetEmployee(ctx context.Context, id, employeeID int64) error
 	GetByUsername(ctx context.Context, username string) (*model.User, error)
 }
 

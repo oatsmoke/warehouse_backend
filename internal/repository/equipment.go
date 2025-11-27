@@ -112,7 +112,7 @@ func (r *EquipmentRepository) List(ctx context.Context, qp *dto.QueryParams) ([]
 	}
 
 	if len(req) < 1 {
-		return nil, 0, nil
+		return []*model.Equipment{}, 0, nil
 	}
 
 	list := make([]*model.Equipment, len(req))

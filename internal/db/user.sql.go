@@ -22,7 +22,7 @@ type CreateUserParams struct {
 	Username     string      `db:"username" json:"username"`
 	PasswordHash string      `db:"password_hash" json:"password_hash"`
 	Email        string      `db:"email" json:"email"`
-	Role         string      `db:"role" json:"role"`
+	Role         int32       `db:"role" json:"role"`
 	EmployeeID   pgtype.Int8 `db:"employee_id" json:"employee_id"`
 }
 
@@ -69,7 +69,7 @@ type GetByUsernameUserRow struct {
 	Username     string             `db:"username" json:"username"`
 	PasswordHash string             `db:"password_hash" json:"password_hash"`
 	Email        string             `db:"email" json:"email"`
-	Role         string             `db:"role" json:"role"`
+	Role         int32              `db:"role" json:"role"`
 	Enabled      bool               `db:"enabled" json:"enabled"`
 	LastLoginAt  pgtype.Timestamptz `db:"last_login_at" json:"last_login_at"`
 }
@@ -126,7 +126,7 @@ type ListUserRow struct {
 	ID                 int64              `db:"id" json:"id"`
 	Username           string             `db:"username" json:"username"`
 	Email              string             `db:"email" json:"email"`
-	Role               string             `db:"role" json:"role"`
+	Role               int32              `db:"role" json:"role"`
 	Enabled            bool               `db:"enabled" json:"enabled"`
 	LastLoginAt        pgtype.Timestamptz `db:"last_login_at" json:"last_login_at"`
 	EmployeeID         pgtype.Int8        `db:"employee_id" json:"employee_id"`
@@ -196,7 +196,7 @@ type ReadUserRow struct {
 	ID                 int64              `db:"id" json:"id"`
 	Username           string             `db:"username" json:"username"`
 	Email              string             `db:"email" json:"email"`
-	Role               string             `db:"role" json:"role"`
+	Role               int32              `db:"role" json:"role"`
 	Enabled            bool               `db:"enabled" json:"enabled"`
 	LastLoginAt        pgtype.Timestamptz `db:"last_login_at" json:"last_login_at"`
 	EmployeeID         pgtype.Int8        `db:"employee_id" json:"employee_id"`
@@ -227,21 +227,6 @@ func (q *Queries) ReadUser(ctx context.Context, id int64) (*ReadUserRow, error) 
 		&i.DepartmentTitle,
 	)
 	return &i, err
-}
-
-const setEmployeeUser = `-- name: SetEmployeeUser :execresult
-UPDATE users
-SET employee_id = $1
-WHERE id = $2
-`
-
-type SetEmployeeUserParams struct {
-	EmployeeID pgtype.Int8 `db:"employee_id" json:"employee_id"`
-	ID         int64       `db:"id" json:"id"`
-}
-
-func (q *Queries) SetEmployeeUser(ctx context.Context, arg *SetEmployeeUserParams) (pgconn.CommandTag, error) {
-	return q.db.Exec(ctx, setEmployeeUser, arg.EmployeeID, arg.ID)
 }
 
 const setEnabledUser = `-- name: SetEnabledUser :execresult
@@ -284,35 +269,30 @@ func (q *Queries) SetPasswordHashUser(ctx context.Context, arg *SetPasswordHashU
 	return q.db.Exec(ctx, setPasswordHashUser, arg.PasswordHash, arg.ID)
 }
 
-const setRoleUser = `-- name: SetRoleUser :execresult
-UPDATE users
-SET role = $1
-WHERE id = $2
-`
-
-type SetRoleUserParams struct {
-	Role string `db:"role" json:"role"`
-	ID   int64  `db:"id" json:"id"`
-}
-
-func (q *Queries) SetRoleUser(ctx context.Context, arg *SetRoleUserParams) (pgconn.CommandTag, error) {
-	return q.db.Exec(ctx, setRoleUser, arg.Role, arg.ID)
-}
-
 const updateUser = `-- name: UpdateUser :execresult
 UPDATE users
-SET username = $1,
-    email    = $2
-WHERE id = $3
-  AND (username != $1 OR email != $2)
+SET username    = $1,
+    email       = $2,
+    role        = $3,
+    employee_id = $4
+WHERE id = $5
+  AND (username != $1 OR email != $2 OR role != $3 OR employee_id IS DISTINCT FROM $4)
 `
 
 type UpdateUserParams struct {
-	Username string `db:"username" json:"username"`
-	Email    string `db:"email" json:"email"`
-	ID       int64  `db:"id" json:"id"`
+	Username   string      `db:"username" json:"username"`
+	Email      string      `db:"email" json:"email"`
+	Role       int32       `db:"role" json:"role"`
+	EmployeeID pgtype.Int8 `db:"employee_id" json:"employee_id"`
+	ID         int64       `db:"id" json:"id"`
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg *UpdateUserParams) (pgconn.CommandTag, error) {
-	return q.db.Exec(ctx, updateUser, arg.Username, arg.Email, arg.ID)
+	return q.db.Exec(ctx, updateUser,
+		arg.Username,
+		arg.Email,
+		arg.Role,
+		arg.EmployeeID,
+		arg.ID,
+	)
 }

@@ -100,7 +100,7 @@ func (r *CompanyRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*m
 	}
 
 	if len(req) < 1 {
-		return nil, 0, nil
+		return []*model.Company{}, 0, nil
 	}
 
 	list := make([]*model.Company, len(req))

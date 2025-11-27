@@ -6,7 +6,6 @@ import (
 
 	"github.com/oatsmoke/warehouse_backend/internal/dto"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/jwt_auth"
-	"github.com/oatsmoke/warehouse_backend/internal/lib/role"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
 	"github.com/oatsmoke/warehouse_backend/internal/repository"
 )
@@ -52,9 +51,7 @@ type User interface {
 	List(ctx context.Context) ([]*model.User, error)
 	SetPassword(ctx context.Context, id int64, oldPassword, newPassword string) error
 	ResetPassword(ctx context.Context, id int64) error
-	SetRole(ctx context.Context, id int64, role role.Role) error
 	SetEnabled(ctx context.Context, id int64, enabled bool) error
-	SetEmployee(ctx context.Context, id, employeeID int64) error
 }
 
 type Employee interface {

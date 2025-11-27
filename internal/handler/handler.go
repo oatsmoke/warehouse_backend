@@ -1,9 +1,12 @@
 package handler
 
 import (
+	"net/http"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/env"
+	"github.com/oatsmoke/warehouse_backend/internal/lib/role"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/websocket"
 	"github.com/oatsmoke/warehouse_backend/internal/service"
 )
@@ -63,6 +66,9 @@ func (h *Handler) InitRoutes() *gin.Engine {
 		api.GET("/ws", func(ctx *gin.Context) {
 			websocket.NewClient(ctx.Writer, ctx.Request, hub)
 		})
+		api.GET("/roles", func(ctx *gin.Context) {
+			ctx.JSON(http.StatusOK, role.AllRole())
+		})
 		api.GET("/user", h.Auth.GetUser)
 
 		user := api.Group("/users")
@@ -74,9 +80,7 @@ func (h *Handler) InitRoutes() *gin.Engine {
 			user.GET("", h.User.List)
 			user.PUT("/:id/set_password", h.User.SetPassword)
 			user.PUT("/:id/reset_password", h.User.ResetPassword)
-			user.PUT("/:id/set_role", h.User.SetRole)
 			user.PUT("/:id/set_enabled", h.User.SetEnabled)
-			user.PUT("/:id/set_employee", h.User.SetEmployee)
 		}
 
 		employee := api.Group("/employees")

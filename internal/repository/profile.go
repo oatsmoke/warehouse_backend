@@ -108,7 +108,7 @@ func (r *ProfileRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*m
 	}
 
 	if len(req) < 1 {
-		return nil, 0, nil
+		return []*model.Profile{}, 0, nil
 	}
 
 	list := make([]*model.Profile, len(req))

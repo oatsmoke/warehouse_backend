@@ -86,7 +86,7 @@ type User struct {
 	Username     string             `db:"username" json:"username"`
 	PasswordHash string             `db:"password_hash" json:"password_hash"`
 	Email        string             `db:"email" json:"email"`
-	Role         string             `db:"role" json:"role"`
+	Role         int32              `db:"role" json:"role"`
 	Enabled      bool               `db:"enabled" json:"enabled"`
 	LastLoginAt  pgtype.Timestamptz `db:"last_login_at" json:"last_login_at"`
 	EmployeeID   pgtype.Int8        `db:"employee_id" json:"employee_id"`

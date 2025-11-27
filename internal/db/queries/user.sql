@@ -24,10 +24,12 @@ WHERE u.id = @id;
 
 -- name: UpdateUser :execresult
 UPDATE users
-SET username = @username,
-    email    = @email
+SET username    = @username,
+    email       = @email,
+    role        = @role,
+    employee_id = @employee_id
 WHERE id = @id
-  AND (username != @username OR email != @email);
+  AND (username != @username OR email != @email OR role != @role OR employee_id IS DISTINCT FROM @employee_id);
 
 -- name: DeleteUser :execresult
 DELETE
@@ -63,11 +65,6 @@ UPDATE users
 SET password_hash = @password_hash
 WHERE id = @id;
 
--- name: SetRoleUser :execresult
-UPDATE users
-SET role = @role
-WHERE id = @id;
-
 -- name: SetEnabledUser :execresult
 UPDATE users
 SET enabled = @enabled
@@ -76,11 +73,6 @@ WHERE id = @id;
 -- name: SetLastLoginAtUser :execresult
 UPDATE users
 SET last_login_at = now()
-WHERE id = @id;
-
--- name: SetEmployeeUser :execresult
-UPDATE users
-SET employee_id = @employee_id
 WHERE id = @id;
 
 -- name: GetByUsernameUser :one

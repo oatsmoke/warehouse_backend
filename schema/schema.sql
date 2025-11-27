@@ -48,7 +48,7 @@ create table users
     username      varchar(100) not null unique,
     password_hash varchar(100) not null,
     email         varchar(100) not null,
-    role          varchar(100) not null,
+    role          int          not null,
     enabled       boolean      not null default true,
     last_login_at timestamp with time zone,
     employee_id   bigint references employees (id) on delete restrict

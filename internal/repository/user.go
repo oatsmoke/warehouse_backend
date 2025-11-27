@@ -35,7 +35,7 @@ func (r *UserRepository) Create(ctx context.Context, user *model.User) (int64, e
 		Username:     user.Username,
 		PasswordHash: user.PasswordHash,
 		Email:        user.Email,
-		Role:         string(user.Role),
+		Role:         int32(user.Role),
 		EmployeeID:   employeeID,
 	})
 	if err != nil {
@@ -75,10 +75,20 @@ func (r *UserRepository) Read(ctx context.Context, id int64) (*model.User, error
 }
 
 func (r *UserRepository) Update(ctx context.Context, user *model.User) error {
+	var e pgtype.Int8
+	if user.Employee.ID != 0 {
+		e = pgtype.Int8{
+			Int64: user.Employee.ID,
+			Valid: true,
+		}
+	}
+
 	ct, err := r.queries.UpdateUser(ctx, &queries.UpdateUserParams{
-		ID:       user.ID,
-		Username: user.Username,
-		Email:    user.Email,
+		ID:         user.ID,
+		Username:   user.Username,
+		Email:      user.Email,
+		Role:       int32(user.Role),
+		EmployeeID: e,
 	})
 	if err != nil {
 		return logger.Error(logger.MsgFailedToUpdate, err)
@@ -111,7 +121,7 @@ func (r *UserRepository) List(ctx context.Context) ([]*model.User, error) {
 	}
 
 	if len(req) < 1 {
-		return nil, nil
+		return []*model.User{}, nil
 	}
 
 	list := make([]*model.User, len(req))
@@ -166,22 +176,6 @@ func (r *UserRepository) SetPasswordHash(ctx context.Context, id int64, password
 	return nil
 }
 
-func (r *UserRepository) SetRole(ctx context.Context, id int64, role role.Role) error {
-	ct, err := r.queries.SetRoleUser(ctx, &queries.SetRoleUserParams{
-		ID:   id,
-		Role: string(role),
-	})
-	if err != nil {
-		return logger.Error(logger.MsgFailedToUpdate, err)
-	}
-
-	if ct.RowsAffected() == 0 {
-		return logger.Error(logger.MsgFailedToUpdate, logger.ErrNoRowsAffected)
-	}
-
-	return nil
-}
-
 func (r *UserRepository) SetEnabled(ctx context.Context, id int64, enabled bool) error {
 	ct, err := r.queries.SetEnabledUser(ctx, &queries.SetEnabledUserParams{
 		ID:      id,
@@ -200,30 +194,6 @@ func (r *UserRepository) SetEnabled(ctx context.Context, id int64, enabled bool)
 
 func (r *UserRepository) SetLastLoginAt(ctx context.Context, id int64) error {
 	ct, err := r.queries.SetLastLoginAtUser(ctx, id)
-	if err != nil {
-		return logger.Error(logger.MsgFailedToUpdate, err)
-	}
-
-	if ct.RowsAffected() == 0 {
-		return logger.Error(logger.MsgFailedToUpdate, logger.ErrNoRowsAffected)
-	}
-
-	return nil
-}
-
-func (r *UserRepository) SetEmployee(ctx context.Context, id, employeeID int64) error {
-	var e pgtype.Int8
-	if employeeID != 0 {
-		e = pgtype.Int8{
-			Int64: employeeID,
-			Valid: true,
-		}
-	}
-
-	ct, err := r.queries.SetEmployeeUser(ctx, &queries.SetEmployeeUserParams{
-		ID:         id,
-		EmployeeID: e,
-	})
 	if err != nil {
 		return logger.Error(logger.MsgFailedToUpdate, err)
 	}

@@ -100,7 +100,7 @@ func (r *CategoryRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*
 	}
 
 	if len(req) < 1 {
-		return nil, 0, nil
+		return []*model.Category{}, 0, nil
 	}
 
 	list := make([]*model.Category, len(req))

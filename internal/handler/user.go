@@ -23,13 +23,13 @@ func NewUserHandler(userService service.User) *UserHandler {
 }
 
 func (h *UserHandler) Create(ctx *gin.Context) {
-	var req *dto.UserCreate
+	var req *dto.User
 	if err := ctx.BindJSON(&req); err != nil {
 		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
-	if req != nil && req.Role != "" && req.Role.IsValid() == false {
+	if req != nil && !req.Role.IsValid() {
 		logger.ResponseErr(ctx, logger.MsgFailedToValidate, logger.ErrInvalidRole, http.StatusBadRequest)
 		return
 	}
@@ -79,7 +79,7 @@ func (h *UserHandler) Update(ctx *gin.Context) {
 		return
 	}
 
-	var req *dto.UserUpdate
+	var req *dto.User
 	if err := ctx.BindJSON(&req); err != nil {
 		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
@@ -89,6 +89,10 @@ func (h *UserHandler) Update(ctx *gin.Context) {
 		ID:       id,
 		Username: req.Username,
 		Email:    req.Email,
+		Role:     req.Role,
+		Employee: &model.Employee{
+			ID: req.EmployeeID,
+		},
 	}
 
 	err = h.userService.Update(ctx, user)
@@ -163,33 +167,6 @@ func (h *UserHandler) ResetPassword(ctx *gin.Context) {
 	ctx.JSON(http.StatusNoContent, "")
 }
 
-func (h *UserHandler) SetRole(ctx *gin.Context) {
-	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
-	if err != nil {
-		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
-		return
-	}
-
-	var req *dto.UserRoleUpdate
-	if err := ctx.BindJSON(&req); err != nil {
-		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
-		return
-	}
-
-	if req != nil && req.Role.IsValid() == false {
-		logger.ResponseErr(ctx, logger.MsgFailedToValidate, logger.ErrInvalidRole, http.StatusBadRequest)
-		return
-	}
-
-	err = h.userService.SetRole(ctx, id, req.Role)
-	if err != nil {
-		logger.ResponseErr(ctx, logger.MsgFailedToUpdate, err, http.StatusInternalServerError)
-		return
-	}
-
-	ctx.JSON(http.StatusNoContent, "")
-}
-
 func (h *UserHandler) SetEnabled(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
@@ -204,28 +181,6 @@ func (h *UserHandler) SetEnabled(ctx *gin.Context) {
 	}
 
 	err = h.userService.SetEnabled(ctx, id, req.Enabled)
-	if err != nil {
-		logger.ResponseErr(ctx, logger.MsgFailedToUpdate, err, http.StatusInternalServerError)
-		return
-	}
-
-	ctx.JSON(http.StatusNoContent, "")
-}
-
-func (h *UserHandler) SetEmployee(ctx *gin.Context) {
-	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
-	if err != nil {
-		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
-		return
-	}
-
-	var req *dto.UserEmployeeUpdate
-	if err := ctx.BindJSON(&req); err != nil {
-		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
-		return
-	}
-
-	err = h.userService.SetEmployee(ctx, id, req.EmployeeID)
 	if err != nil {
 		logger.ResponseErr(ctx, logger.MsgFailedToUpdate, err, http.StatusInternalServerError)
 		return

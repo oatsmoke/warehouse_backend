@@ -137,7 +137,7 @@ CREATE TABLE "public"."users" (
   "username" character varying(100) NOT NULL,
   "password_hash" character varying(100) NOT NULL,
   "email" character varying(100) NOT NULL,
-  "role" character varying(100) NOT NULL,
+  "role" integer NOT NULL,
   "enabled" boolean NOT NULL DEFAULT true,
   "last_login_at" timestamptz NULL,
   "employee_id" bigint NULL,

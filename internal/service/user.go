@@ -8,7 +8,6 @@ import (
 	"github.com/oatsmoke/warehouse_backend/internal/lib/email"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/generate"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
-	"github.com/oatsmoke/warehouse_backend/internal/lib/role"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
 	"github.com/oatsmoke/warehouse_backend/internal/repository"
 	"golang.org/x/crypto/bcrypt"
@@ -27,25 +26,13 @@ func NewUserService(userRepository repository.User, employeeRepository repositor
 }
 
 func (s *UserService) Create(ctx context.Context, user *model.User) error {
-	employee := new(model.Employee)
-	var employeeID int64
-	if user != nil && user.Employee.ID != 0 {
+	name := user.Username
+	if user.Employee.ID != 0 {
 		read, err := s.employeeRepository.Read(ctx, user.Employee.ID)
 		if err != nil {
 			return err
 		}
-
-		employeeID = user.Employee.ID
-		employee = read
-	}
-
-	var username string
-	if user != nil && user.Username != "" {
-		username = user.Username
-	} else if employee != nil && employee.Phone != "" {
-		username = employee.Phone
-	} else {
-		username = fmt.Sprintf("user-%s", generate.RandString(10))
+		name = read.FirstName
 	}
 
 	password := generate.RandString(10)
@@ -53,49 +40,21 @@ func (s *UserService) Create(ctx context.Context, user *model.User) error {
 	if err != nil {
 		return logger.Error(logger.MsgFailedToGenerateHash, err)
 	}
+	user.PasswordHash = string(passwordHash)
 
-	var userEmail string
-	if user != nil {
-		userEmail = user.Email
-	}
-
-	var userRole role.Role
-	if user != nil && user.Role != "" {
-		userRole = user.Role
-	} else {
-		userRole = role.EmployeeRole
-	}
-
-	u := &model.User{
-		Username:     username,
-		PasswordHash: string(passwordHash),
-		Email:        userEmail,
-		Role:         userRole,
-		Employee: &model.Employee{
-			ID: employeeID,
-		},
-	}
-
-	id, err := s.userRepository.Create(ctx, u)
+	id, err := s.userRepository.Create(ctx, user)
 	if err != nil {
 		return err
 	}
 
-	var employeeFirstName string
-	if employee != nil {
-		employeeFirstName = employee.FirstName
-	}
-
 	sendTo := &email.SendTo{
-		Name:     employeeFirstName,
-		Email:    u.Email,
-		Username: username,
+		Name:     name,
+		Email:    user.Email,
+		Username: user.Username,
 		Password: password,
 	}
 
-	if err := email.Send([]*email.SendTo{sendTo}); err != nil {
-		return err
-	}
+	go email.Send([]*email.SendTo{sendTo})
 
 	logger.Info(fmt.Sprintf("user with id %d created", id))
 	return nil
@@ -192,20 +151,9 @@ func (s *UserService) ResetPassword(ctx context.Context, id int64) error {
 		Password: newPassword,
 	}
 
-	if err := email.Send([]*email.SendTo{sendTo}); err != nil {
-		return err
-	}
+	go email.Send([]*email.SendTo{sendTo})
 
 	logger.Info(fmt.Sprintf("user with id %d reset password", id))
-	return nil
-}
-
-func (s *UserService) SetRole(ctx context.Context, id int64, role role.Role) error {
-	if err := s.userRepository.SetRole(ctx, id, role); err != nil {
-		return err
-	}
-
-	logger.Info(fmt.Sprintf("user with id %d changed role to %s", id, role))
 	return nil
 }
 
@@ -215,14 +163,5 @@ func (s *UserService) SetEnabled(ctx context.Context, id int64, enabled bool) er
 	}
 
 	logger.Info(fmt.Sprintf("user with id %d set enabled to %t", id, enabled))
-	return nil
-}
-
-func (s *UserService) SetEmployee(ctx context.Context, id, employeeID int64) error {
-	if err := s.userRepository.SetEmployee(ctx, id, employeeID); err != nil {
-		return err
-	}
-
-	logger.Info(fmt.Sprintf("user with id %d set employee id %d", id, employeeID))
 	return nil
 }

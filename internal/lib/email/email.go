@@ -42,7 +42,7 @@ func Send(data []*SendTo) error {
 
 		message := mail.NewMsg()
 
-		if err := message.FromFormat("System", env.GetSmtpUser()); err != nil {
+		if err := message.FromFormat("WareHouse", env.GetSmtpUser()); err != nil {
 			return logger.Error(logger.MsgFailedToSetSenderAddress, err)
 		}
 
@@ -79,5 +79,6 @@ func Send(data []*SendTo) error {
 		return logger.Error(logger.MsgFailedToSendMail, err)
 	}
 
+	logger.Info("email sent")
 	return nil
 }
