@@ -4,11 +4,11 @@ import (
 	"context"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	queries "github.com/oatsmoke/warehouse_backend/internal/db"
 	"github.com/oatsmoke/warehouse_backend/internal/dto"
+	"github.com/oatsmoke/warehouse_backend/internal/lib/jwt_auth"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
 	"github.com/redis/go-redis/v9"
 )
@@ -45,7 +45,7 @@ func New(postgresDB *pgxpool.Pool, redisDB *redis.Client, queries queries.Querie
 
 type Auth interface {
 	Get(ctx context.Context, key string) (bool, error)
-	Set(ctx context.Context, claims *jwt.RegisteredClaims, revoked bool) error
+	Set(ctx context.Context, claims *jwt_auth.CustomClaims, revoked bool) error
 }
 
 type User interface {

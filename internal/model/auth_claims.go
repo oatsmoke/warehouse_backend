@@ -1,8 +1,10 @@
 package model
 
-import "github.com/golang-jwt/jwt/v5"
+import (
+	"github.com/oatsmoke/warehouse_backend/internal/lib/jwt_auth"
+)
 
 type AuthClaims struct {
-	RegisteredClaims *jwt.RegisteredClaims `json:"registered_claims"`
-	Revoked          bool                  `json:"revoked"`
+	RegisteredClaims *jwt_auth.CustomClaims `json:"registered_claims"`
+	Revoked          bool                   `json:"revoked"`
 }

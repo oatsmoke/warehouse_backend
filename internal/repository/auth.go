@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/env"
+	"github.com/oatsmoke/warehouse_backend/internal/lib/jwt_auth"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
 	"github.com/redis/go-redis/v9"
@@ -37,7 +37,7 @@ func (r *AuthRepository) Get(ctx context.Context, key string) (bool, error) {
 	return value.Revoked, nil
 }
 
-func (r *AuthRepository) Set(ctx context.Context, claims *jwt.RegisteredClaims, revoked bool) error {
+func (r *AuthRepository) Set(ctx context.Context, claims *jwt_auth.CustomClaims, revoked bool) error {
 	value := &model.AuthClaims{
 		RegisteredClaims: claims,
 		Revoked:          revoked,

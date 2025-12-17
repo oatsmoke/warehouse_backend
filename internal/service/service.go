@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/oatsmoke/warehouse_backend/internal/dto"
@@ -48,7 +49,7 @@ type User interface {
 	Read(ctx context.Context, id int64) (*model.User, error)
 	Update(ctx context.Context, user *model.User) error
 	Delete(ctx context.Context, id int64) error
-	List(ctx context.Context) ([]*model.User, error)
+	List(ctx context.Context) ([]*dto.UserResponse, error)
 	SetPassword(ctx context.Context, id int64, oldPassword, newPassword string) error
 	ResetPassword(ctx context.Context, id int64) error
 	SetEnabled(ctx context.Context, id int64, enabled bool) error
@@ -138,4 +139,31 @@ type Company interface {
 	Delete(ctx context.Context, id int64) error
 	Restore(ctx context.Context, id int64) error
 	List(ctx context.Context, qp *dto.QueryParams) (*dto.ListResponse[[]*model.Company], error)
+}
+
+func ShortEmployeeName(lastName, firstName, middleName string) string {
+	if lastName == "" || firstName == "" {
+		return ""
+	}
+
+	var sb strings.Builder
+	sb.WriteString(lastName)
+	sb.WriteByte(' ')
+	sb.WriteRune(firstRune(firstName))
+	sb.WriteByte('.')
+
+	if middleName != "" {
+		sb.WriteByte(' ')
+		sb.WriteRune(firstRune(middleName))
+		sb.WriteByte('.')
+	}
+
+	return sb.String()
+}
+
+func firstRune(str string) rune {
+	for _, s := range str {
+		return s
+	}
+	return 0
 }

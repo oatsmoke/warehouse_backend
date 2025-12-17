@@ -4,11 +4,21 @@ import (
 	"github.com/oatsmoke/warehouse_backend/internal/lib/role"
 )
 
-type User struct {
-	Username   string    `json:"username,omitempty"`
+type UserRequest struct {
+	Username   string    `json:"username,omitempty" binding:"required"`
 	Email      string    `json:"email,omitempty" binding:"required"`
-	Role       role.Role `json:"role,omitempty"`
+	Role       role.Role `json:"role,omitempty" binding:"required"`
 	EmployeeID int64     `json:"employee_id,omitempty"`
+}
+
+type UserResponse struct {
+	ID           int64  `json:"id,omitempty"`
+	Username     string `json:"username,omitempty"`
+	Email        string `json:"email,omitempty"`
+	Role         string `json:"role,omitempty"`
+	Enabled      bool   `json:"enabled,omitempty"`
+	LastLoginAt  string `json:"last_login_at,omitempty"`
+	EmployeeName string `json:"employee_name,omitempty"`
 }
 
 type UserPasswordUpdate struct {

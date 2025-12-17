@@ -61,7 +61,7 @@ func (h *Handler) InitRoutes() *gin.Engine {
 		auth.POST("/login", h.Auth.Login)
 	}
 
-	api := router.Group("/api") //, h.Auth.UserIdentity
+	api := router.Group("/api", h.Auth.UserIdentity)
 	{
 		api.GET("/ws", func(ctx *gin.Context) {
 			websocket.NewClient(ctx.Writer, ctx.Request, hub)
@@ -128,11 +128,11 @@ func (h *Handler) InitRoutes() *gin.Engine {
 
 		company := api.Group("/companies")
 		{
-			company.POST("", h.Company.Create)
-			company.GET("/:id", h.Company.Read)
-			company.PUT("/:id", h.Company.Update)
-			company.DELETE("/:id", h.Company.Delete)
-			company.PUT("/:id/restore", h.Company.Restore)
+			company.POST("", h.Auth.AdminAccess, h.Company.Create)
+			company.GET("/:id", h.Auth.AdminAccess, h.Company.Read)
+			company.PUT("/:id", h.Auth.AdminAccess, h.Company.Update)
+			company.DELETE("/:id", h.Auth.AdminAccess, h.Company.Delete)
+			company.PUT("/:id/restore", h.Auth.AdminAccess, h.Company.Restore)
 			company.GET("", h.Company.List)
 		}
 

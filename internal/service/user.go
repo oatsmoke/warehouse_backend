@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/oatsmoke/warehouse_backend/internal/dto"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/email"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/generate"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
@@ -90,14 +91,32 @@ func (s *UserService) Delete(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (s *UserService) List(ctx context.Context) ([]*model.User, error) {
+func (s *UserService) List(ctx context.Context) ([]*dto.UserResponse, error) {
 	list, err := s.userRepository.List(ctx)
 	if err != nil {
 		return nil, err
 	}
 
+	userRes := make([]*dto.UserResponse, 0, len(list))
+	for _, user := range list {
+		u := &dto.UserResponse{
+			ID:           user.ID,
+			Username:     user.Username,
+			Email:        user.Email,
+			Role:         user.Role.String(),
+			Enabled:      user.Enabled,
+			EmployeeName: ShortEmployeeName(user.Employee.LastName, user.Employee.FirstName, user.Employee.MiddleName),
+		}
+
+		if user.LastLoginAt != nil {
+			u.LastLoginAt = user.LastLoginAt.Format("02.01.2006 15:04:05")
+		}
+
+		userRes = append(userRes, u)
+	}
+
 	logger.Info(fmt.Sprintf("%d user listed", len(list)))
-	return list, nil
+	return userRes, nil
 }
 
 func (s *UserService) SetPassword(ctx context.Context, id int64, oldPassword, newPassword string) error {

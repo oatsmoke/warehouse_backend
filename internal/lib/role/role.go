@@ -15,10 +15,10 @@ const UndefinedRole = "undefined"
 var roles = [...]string{
 	"",
 	"root",
-	"admin",
-	"governing",
-	"employee",
-	"user",
+	"Администратор",
+	"Управляющий",
+	"Сотрудник",
+	"Пользователь",
 }
 
 func (r Role) IsValid() bool {

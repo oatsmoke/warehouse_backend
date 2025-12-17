@@ -9,18 +9,26 @@ import (
 	"github.com/oatsmoke/warehouse_backend/internal/lib/env"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/generate"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
+	"github.com/oatsmoke/warehouse_backend/internal/lib/role"
 )
 
-type Token struct {
-	UserID  int64
-	Access  string
-	Refresh string
+type CustomClaims struct {
+	Role string `json:"role"`
+	*jwt.RegisteredClaims
 }
 
-func (t *Token) New(userId int64) (*jwt.RegisteredClaims, error) {
-	strUserId := strconv.FormatInt(userId, 10)
+type Token struct {
+	UserID   int64
+	UserRole role.Role
+	Access   string
+	Refresh  string
+}
 
-	if err := t.setAccess(strUserId); err != nil {
+func (t *Token) New(userID int64, userRole role.Role) (*CustomClaims, error) {
+	strUserId := strconv.FormatInt(userID, 10)
+	strRole := strconv.FormatInt(int64(userRole), 10)
+
+	if err := t.setAccess(strUserId, strRole); err != nil {
 		return nil, err
 	}
 
@@ -29,22 +37,26 @@ func (t *Token) New(userId int64) (*jwt.RegisteredClaims, error) {
 		return nil, err
 	}
 
-	t.UserID = userId
+	t.UserID = userID
+	t.UserRole = userRole
 
 	return claims, nil
 }
 
-func (t *Token) setAccess(userId string) error {
+func (t *Token) setAccess(userId, role string) error {
 	accessTTL, err := strconv.Atoi(env.GetAccessTtl())
 	if err != nil {
 		return logger.Error(logger.MsgFailedToConvert, err)
 	}
 
-	claims := &jwt.RegisteredClaims{
-		Subject:   userId,
-		Audience:  []string{"user-agent"},
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Duration(accessTTL) * time.Second)),
-		ID:        generate.RandString(10),
+	claims := &CustomClaims{
+		Role: role,
+		RegisteredClaims: &jwt.RegisteredClaims{
+			Subject:   userId,
+			Audience:  []string{"web-app"},
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Duration(accessTTL) * time.Second)),
+			ID:        generate.RandString(10),
+		},
 	}
 
 	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(env.GetSigningKey()))
@@ -56,17 +68,19 @@ func (t *Token) setAccess(userId string) error {
 	return nil
 }
 
-func (t *Token) setRefresh(userId string) (*jwt.RegisteredClaims, error) {
+func (t *Token) setRefresh(userId string) (*CustomClaims, error) {
 	refreshTTL, err := strconv.Atoi(env.GetRefreshTtl())
 	if err != nil {
 		return nil, logger.Error(logger.MsgFailedToConvert, err)
 	}
 
-	claims := &jwt.RegisteredClaims{
-		Subject:   userId,
-		Audience:  []string{"user-agent"},
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Duration(refreshTTL) * time.Second)),
-		ID:        generate.RandString(10),
+	claims := &CustomClaims{
+		RegisteredClaims: &jwt.RegisteredClaims{
+			Subject:   userId,
+			Audience:  []string{"web-app"},
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Duration(refreshTTL) * time.Second)),
+			ID:        generate.RandString(10),
+		},
 	}
 
 	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(env.GetSigningKey()))
@@ -78,8 +92,8 @@ func (t *Token) setRefresh(userId string) (*jwt.RegisteredClaims, error) {
 	return claims, nil
 }
 
-func CheckToken(token string) (*jwt.RegisteredClaims, error) {
-	t, err := jwt.ParseWithClaims(token, &jwt.RegisteredClaims{}, checkMethod)
+func CheckToken(token string) (*CustomClaims, error) {
+	t, err := jwt.ParseWithClaims(token, &CustomClaims{}, checkMethod)
 	if err != nil {
 		return nil, logger.Error(logger.MsgFailedToParse, err)
 	}
@@ -88,7 +102,7 @@ func CheckToken(token string) (*jwt.RegisteredClaims, error) {
 		return nil, logger.Error(logger.MsgFailedToValidate, logger.ErrInvalidToken)
 	}
 
-	claims, ok := t.Claims.(*jwt.RegisteredClaims)
+	claims, ok := t.Claims.(*CustomClaims)
 	if !ok {
 		return nil, logger.Error(logger.MsgFailedToValidate, logger.ErrInvalidClaims)
 	}

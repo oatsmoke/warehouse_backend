@@ -9,6 +9,7 @@ import (
 	"github.com/oatsmoke/warehouse_backend/internal/dto"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/jwt_auth"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
+	"github.com/oatsmoke/warehouse_backend/internal/lib/role"
 	"github.com/oatsmoke/warehouse_backend/internal/repository"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -42,7 +43,7 @@ func (s *AuthService) AuthUser(ctx context.Context, login *dto.UserLogin) (*jwt_
 	}
 
 	token := &jwt_auth.Token{}
-	claims, err := token.New(user.ID)
+	claims, err := token.New(user.ID, user.Role)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +75,7 @@ func (s *AuthService) CheckToken(ctx context.Context, token *jwt_auth.Token) (*j
 		}
 
 		if revoked {
-			return nil, logger.Error(logger.MsgAuthorizationDenied, logger.ErrTokenHasBeenRevoked)
+			return nil, logger.Error(logger.MsgAuthenticationFailed, logger.ErrTokenHasBeenRevoked)
 		}
 
 		if err := s.authRepository.Set(ctx, claimsRefresh, true); err != nil {
@@ -86,7 +87,12 @@ func (s *AuthService) CheckToken(ctx context.Context, token *jwt_auth.Token) (*j
 			return nil, logger.Error(logger.MsgFailedToConvert, err)
 		}
 
-		newClaims, err := token.New(userId)
+		user, err := s.userRepository.Read(ctx, userId)
+		if err != nil {
+			return nil, logger.Error(logger.MsgFailedToGet, err)
+		}
+
+		newClaims, err := token.New(user.ID, user.Role)
 		if err != nil {
 			return nil, err
 		}
@@ -100,7 +106,13 @@ func (s *AuthService) CheckToken(ctx context.Context, token *jwt_auth.Token) (*j
 			return nil, logger.Error(logger.MsgFailedToConvert, err)
 		}
 
+		userRole, err := strconv.ParseInt(claimsAccess.Role, 10, 64)
+		if err != nil {
+			return nil, logger.Error(logger.MsgFailedToConvert, err)
+		}
+
 		token.UserID = userId
+		token.UserRole = role.Role(userRole)
 	}
 
 	return token, nil

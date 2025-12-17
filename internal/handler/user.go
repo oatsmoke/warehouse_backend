@@ -23,7 +23,7 @@ func NewUserHandler(userService service.User) *UserHandler {
 }
 
 func (h *UserHandler) Create(ctx *gin.Context) {
-	var req *dto.User
+	var req *dto.UserRequest
 	if err := ctx.BindJSON(&req); err != nil {
 		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
@@ -79,7 +79,7 @@ func (h *UserHandler) Update(ctx *gin.Context) {
 		return
 	}
 
-	var req *dto.User
+	var req *dto.UserRequest
 	if err := ctx.BindJSON(&req); err != nil {
 		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return

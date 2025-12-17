@@ -128,12 +128,13 @@ var (
 	ErrTokenHasBeenRevoked     = errors.New("token has been revoked")
 	ErrWrongPassword           = errors.New("wrong password")
 	ErrUserIdNotFound          = errors.New("user id not found")
+	ErrUserRoleNotFound        = errors.New("user role not found")
 	ErrInvalidRole             = errors.New("invalid role")
 )
 
 const (
 	MsgAuthenticationFailed        = "authentication failed"
-	MsgAuthorizationDenied         = "authorization denied"
+	MsgAccessDenied                = "access denied"
 	MsgFailedToInsert              = "failed to insert"
 	MsgFailedToSelect              = "failed to select"
 	MsgFailedToUpdate              = "failed to update"
