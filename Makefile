@@ -7,6 +7,5 @@ migrate_diff:
 migrate_apply:
 	atlas migrate apply --env $(ENV)
 
-init_env:
-	$env:POSTGRES_DSN = "postgres://root:password@localhost:5432/wh?sslmode=disable"
-	$env:TEST_POSTGRES_DSN = "postgres://test:password@localhost:55432/test?sslmode=disable"
+#$env:POSTGRES_DSN = "postgres://root:password@localhost:5432/wh?sslmode=disable"
+#$env:TEST_POSTGRES_DSN = "postgres://test:password@localhost:55432/test?sslmode=disable"

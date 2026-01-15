@@ -13,24 +13,26 @@ import (
 )
 
 const createEquipment = `-- name: CreateEquipment :one
-INSERT INTO equipments (serial_number, profile_id)
-VALUES ($1, $2)
-RETURNING id, serial_number, profile_id, deleted_at
+INSERT INTO equipments (serial_number, profile_id, company_id)
+VALUES ($1, $2, $3)
+RETURNING id, serial_number, profile_id, deleted_at, company_id
 `
 
 type CreateEquipmentParams struct {
 	SerialNumber string `db:"serial_number" json:"serial_number"`
 	ProfileID    int64  `db:"profile_id" json:"profile_id"`
+	CompanyID    int64  `db:"company_id" json:"company_id"`
 }
 
 func (q *Queries) CreateEquipment(ctx context.Context, arg *CreateEquipmentParams) (*Equipment, error) {
-	row := q.db.QueryRow(ctx, createEquipment, arg.SerialNumber, arg.ProfileID)
+	row := q.db.QueryRow(ctx, createEquipment, arg.SerialNumber, arg.ProfileID, arg.CompanyID)
 	var i Equipment
 	err := row.Scan(
 		&i.ID,
 		&i.SerialNumber,
 		&i.ProfileID,
 		&i.DeletedAt,
+		&i.CompanyID,
 	)
 	return &i, err
 }
@@ -134,13 +136,16 @@ const readEquipment = `-- name: ReadEquipment :one
 SELECT e.id,
        e.serial_number,
        e.deleted_at,
-       p.id    as profile_id,
-       p.title as profile_title,
-       c.id    as category_id,
-       c.title as category_title
+       co.id    as company_id,
+       co.title as company_title,
+       p.id     as profile_id,
+       p.title  as profile_title,
+       ca.id    as category_id,
+       ca.title as category_title
 FROM equipments e
+         INNER JOIN companies co on co.id = e.company_id
          INNER JOIN profiles p ON p.id = e.profile_id
-         INNER JOIN categories c ON c.id = p.category_id
+         INNER JOIN categories ca ON ca.id = p.category_id
 WHERE e.id = $1
 `
 
@@ -148,6 +153,8 @@ type ReadEquipmentRow struct {
 	ID            int64              `db:"id" json:"id"`
 	SerialNumber  string             `db:"serial_number" json:"serial_number"`
 	DeletedAt     pgtype.Timestamptz `db:"deleted_at" json:"deleted_at"`
+	CompanyID     int64              `db:"company_id" json:"company_id"`
+	CompanyTitle  string             `db:"company_title" json:"company_title"`
 	ProfileID     int64              `db:"profile_id" json:"profile_id"`
 	ProfileTitle  string             `db:"profile_title" json:"profile_title"`
 	CategoryID    int64              `db:"category_id" json:"category_id"`
@@ -161,6 +168,8 @@ func (q *Queries) ReadEquipment(ctx context.Context, id int64) (*ReadEquipmentRo
 		&i.ID,
 		&i.SerialNumber,
 		&i.DeletedAt,
+		&i.CompanyID,
+		&i.CompanyTitle,
 		&i.ProfileID,
 		&i.ProfileTitle,
 		&i.CategoryID,
@@ -182,18 +191,28 @@ func (q *Queries) RestoreEquipment(ctx context.Context, id int64) (pgconn.Comman
 
 const updateEquipment = `-- name: UpdateEquipment :execresult
 UPDATE equipments
-SET serial_number = $1,
-    profile_id    = $2
-WHERE id = $3
-  AND (serial_number != $1 OR profile_id != $2)
+SET company_id    = $1,
+    profile_id    = $2,
+    serial_number = $3
+
+WHERE id = $4
+  AND (company_id != $1 OR
+       profile_id != $2 OR
+       serial_number != $3)
 `
 
 type UpdateEquipmentParams struct {
-	SerialNumber string `db:"serial_number" json:"serial_number"`
+	CompanyID    int64  `db:"company_id" json:"company_id"`
 	ProfileID    int64  `db:"profile_id" json:"profile_id"`
+	SerialNumber string `db:"serial_number" json:"serial_number"`
 	ID           int64  `db:"id" json:"id"`
 }
 
 func (q *Queries) UpdateEquipment(ctx context.Context, arg *UpdateEquipmentParams) (pgconn.CommandTag, error) {
-	return q.db.Exec(ctx, updateEquipment, arg.SerialNumber, arg.ProfileID, arg.ID)
+	return q.db.Exec(ctx, updateEquipment,
+		arg.CompanyID,
+		arg.ProfileID,
+		arg.SerialNumber,
+		arg.ID,
+	)
 }

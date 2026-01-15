@@ -166,15 +166,16 @@ func (h *Handler) InitRoutes() *gin.Engine {
 			equipment.GET("", h.Equipment.List)
 		}
 
-		location := api.Group("/location")
+		location := api.Group("/locations")
 		{
-			location.POST("/transferTo", h.Location.TransferTo)
-			location.POST("/delete", h.Location.Delete)
-			location.POST("/getById", h.Location.GetById)
-			location.POST("/getByIds", h.Location.GetByIds)
-			location.POST("/getHistory", h.Location.GetHistory)
-			location.POST("/getByLocation", h.Location.GetByLocation)
-			location.POST("/reportByCategory", h.Location.ReportByCategory)
+			location.GET("", h.Location.List)
+			//location.POST("/transferTo", h.Location.TransferTo)
+			//location.POST("/delete", h.Location.Delete)
+			//location.POST("/getById", h.Location.GetById)
+			//location.POST("/getByIds", h.Location.GetByIds)
+			//location.POST("/getHistory", h.Location.GetHistory)
+			//location.POST("/getByLocation", h.Location.GetByLocation)
+			//location.POST("/reportByCategory", h.Location.ReportByCategory)
 		}
 	}
 

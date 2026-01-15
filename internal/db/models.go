@@ -48,13 +48,13 @@ type Equipment struct {
 	SerialNumber string             `db:"serial_number" json:"serial_number"`
 	ProfileID    int64              `db:"profile_id" json:"profile_id"`
 	DeletedAt    pgtype.Timestamptz `db:"deleted_at" json:"deleted_at"`
+	CompanyID    int64              `db:"company_id" json:"company_id"`
 }
 
 type Location struct {
 	ID               int64              `db:"id" json:"id"`
 	EquipmentID      int64              `db:"equipment_id" json:"equipment_id"`
-	EmployeeID       int64              `db:"employee_id" json:"employee_id"`
-	CompanyID        int64              `db:"company_id" json:"company_id"`
+	UserID           int64              `db:"user_id" json:"user_id"`
 	MoveAt           pgtype.Timestamptz `db:"move_at" json:"move_at"`
 	MoveCode         string             `db:"move_code" json:"move_code"`
 	MoveType         pgtype.Text        `db:"move_type" json:"move_type"`

@@ -122,11 +122,12 @@ func (h *AuthHandler) EmployeeAccess(ctx *gin.Context) {
 }
 
 func getUserId(ctx *gin.Context) (int64, error) {
-	if userId, ok := ctx.Get("userId"); !ok {
+	userId, ok := ctx.Get("userId")
+	if !ok {
 		return 0, logger.Error(logger.MsgFailedToGet, logger.ErrUserIdNotFound)
-	} else {
-		return userId.(int64), nil
 	}
+
+	return userId.(int64), nil
 }
 
 func checkRole(ctx *gin.Context, access role.Role) (bool, error) {

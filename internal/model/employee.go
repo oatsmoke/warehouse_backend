@@ -13,6 +13,6 @@ type Employee struct {
 }
 
 //type RequestEmployee struct {
-//	Ids          []int64 `json:"ids"`
+//	IDs          []int64 `json:"ids"`
 //	DepartmentId int64   `json:"department_id"`
 //}

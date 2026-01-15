@@ -94,7 +94,7 @@ func (r *ContractRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*
 	req, err := r.queries.ListContract(ctx, &queries.ListContractParams{
 		WithDeleted:      qp.WithDeleted,
 		Search:           qp.Search,
-		Ids:              qp.Ids,
+		Ids:              qp.IDs,
 		SortColumn:       qp.SortColumn,
 		SortOrder:        qp.SortOrder,
 		PaginationLimit:  qp.PaginationLimit,

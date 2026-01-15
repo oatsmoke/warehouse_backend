@@ -14,13 +14,22 @@ create table profiles
 );
 create index idx_profiles_category on profiles (category_id);
 
+create table companies
+(
+    id         bigserial primary key,
+    title      varchar(100) not null unique,
+    deleted_at timestamp with time zone
+);
+
 create table equipments
 (
     id            bigserial primary key,
-    serial_number varchar(100)                                       not null unique,
-    profile_id    bigint references profiles (id) on delete restrict not null,
+    company_id    bigint references companies (id) on delete restrict not null,
+    profile_id    bigint references profiles (id) on delete restrict  not null,
+    serial_number varchar(100)                                        not null unique,
     deleted_at    timestamp with time zone
 );
+create index idx_equipments_company on equipments (company_id);
 create index idx_equipments_profile on equipments (profile_id);
 
 create table departments
@@ -63,20 +72,12 @@ create table contracts
     deleted_at timestamp with time zone
 );
 
-create table companies
-(
-    id         bigserial primary key,
-    title      varchar(100) not null unique,
-    deleted_at timestamp with time zone
-);
-
 create table locations
 (
     id                 bigserial primary key,
     equipment_id       bigint references equipments (id) on delete restrict not null,
-    employee_id        bigint references employees (id) on delete restrict  not null,
-    company_id         bigint references companies (id) on delete restrict  not null,
-    move_at            timestamp with time zone                             not null default now(),
+    user_id            bigint references users (id) on delete restrict      not null,
+    move_at            timestamp with time zone                             not null,
     move_code          varchar(100)                                         not null,
     move_type          varchar(100),
     price              varchar(100),
@@ -89,8 +90,7 @@ create table locations
     comment            varchar(100)
 );
 create index idx_locations_equipment on locations (equipment_id);
-create index idx_locations_employee on locations (employee_id);
-create index idx_locations_company on locations (company_id);
+create index idx_locations_user on locations (user_id);
 create index idx_locations_move_at on locations (move_at);
 create index idx_locations_from_department on locations (from_department_id);
 create index idx_locations_from_employee on locations (from_employee_id);

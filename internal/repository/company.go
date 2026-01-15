@@ -89,7 +89,7 @@ func (r *CompanyRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*m
 	req, err := r.queries.ListCompany(ctx, &queries.ListCompanyParams{
 		WithDeleted:      qp.WithDeleted,
 		Search:           qp.Search,
-		Ids:              qp.Ids,
+		Ids:              qp.IDs,
 		SortColumn:       qp.SortColumn,
 		SortOrder:        qp.SortOrder,
 		PaginationLimit:  qp.PaginationLimit,

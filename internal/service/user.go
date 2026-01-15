@@ -105,7 +105,7 @@ func (s *UserService) List(ctx context.Context) ([]*dto.UserResponse, error) {
 			Email:        user.Email,
 			Role:         user.Role.String(),
 			Enabled:      user.Enabled,
-			EmployeeName: ShortEmployeeName(user.Employee.LastName, user.Employee.FirstName, user.Employee.MiddleName),
+			EmployeeName: shortEmployeeName(user.Employee.LastName, user.Employee.FirstName, user.Employee.MiddleName),
 		}
 
 		if user.LastLoginAt != nil {

@@ -11,6 +11,7 @@ import (
 )
 
 type Querier interface {
+	AddToStorage(ctx context.Context, arg *AddToStorageParams) (pgconn.CommandTag, error)
 	CreateCategory(ctx context.Context, title string) (*Category, error)
 	CreateCompany(ctx context.Context, title string) (*Company, error)
 	CreateContract(ctx context.Context, arg *CreateContractParams) (*Contract, error)
@@ -35,8 +36,10 @@ type Querier interface {
 	ListDepartment(ctx context.Context, arg *ListDepartmentParams) ([]*ListDepartmentRow, error)
 	ListEmployee(ctx context.Context, arg *ListEmployeeParams) ([]*ListEmployeeRow, error)
 	ListEquipment(ctx context.Context, arg *ListEquipmentParams) ([]*ListEquipmentRow, error)
+	ListEquipmentFromLocation(ctx context.Context, toDepartmentID int64) ([]*ListEquipmentFromLocationRow, error)
 	ListProfile(ctx context.Context, arg *ListProfileParams) ([]*ListProfileRow, error)
 	ListUser(ctx context.Context) ([]*ListUserRow, error)
+	MoveToLocation(ctx context.Context, arg *MoveToLocationParams) (pgconn.CommandTag, error)
 	ReadCategory(ctx context.Context, id int64) (*Category, error)
 	ReadCompany(ctx context.Context, id int64) (*Company, error)
 	ReadContract(ctx context.Context, id int64) (*Contract, error)

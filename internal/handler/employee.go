@@ -240,7 +240,7 @@ func (h *EmployeeHandler) SetDepartment(ctx *gin.Context) {
 //		return
 //	}
 //
-//	employees, err := h.serviceEmployee.GetByDepartment(ctx, request.Ids, request.DepartmentId)
+//	employees, err := h.serviceEmployee.GetByDepartment(ctx, request.IDs, request.DepartmentId)
 //	if err != nil {
 //		logger.ResponseErr(ctx, err, http.StatusInternalServerError)
 //		return

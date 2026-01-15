@@ -1,13 +1,11 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/oatsmoke/warehouse_backend/internal/lib/list_filter"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/logger"
-	"github.com/oatsmoke/warehouse_backend/internal/model"
 	"github.com/oatsmoke/warehouse_backend/internal/service"
 )
 
@@ -21,138 +19,150 @@ func NewLocationHandler(locationService service.Location) *LocationHandler {
 	}
 }
 
-// TransferTo is equipment transfer to
-func (h *LocationHandler) TransferTo(ctx *gin.Context) {
-	userId, err := getUserId(ctx)
+func (h *LocationHandler) List(ctx *gin.Context) {
+	req := list_filter.ParseQueryParams(ctx)
+
+	res, err := h.LocationService.List(ctx, req.ParamID)
 	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusUnauthorized)
+		logger.ResponseErr(ctx, logger.MsgFailedToGet, err, http.StatusInternalServerError)
 		return
 	}
 
-	var request []*model.RequestLocation
-	if err := ctx.BindJSON(&request); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
-		return
-	}
-
-	if err := h.LocationService.TransferTo(ctx, userId, request); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
-		return
-	}
-
-	logger.InfoInConsole("transferred")
-	ctx.JSON(http.StatusOK, "")
-}
-
-// Delete is equipment location delete
-func (h *LocationHandler) Delete(ctx *gin.Context) {
-	var location *model.Location
-	if err := ctx.BindJSON(&location); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
-		return
-	}
-
-	if err := h.LocationService.Delete(ctx, location.ID); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
-		return
-	}
-
-	logger.InfoInConsole(fmt.Sprintf("%d, deleted", location.ID))
-	ctx.JSON(http.StatusOK, "")
-}
-
-// GetById is equipment get by id
-func (h *LocationHandler) GetById(ctx *gin.Context) {
-	var equipment *model.Equipment
-	if err := ctx.BindJSON(&equipment); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
-		return
-	}
-
-	res, err := h.LocationService.GetById(ctx, equipment.ID)
-	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
-		return
-	}
-
-	logger.InfoInConsole(fmt.Sprintf("%d, get", equipment.ID))
 	ctx.JSON(http.StatusOK, res)
 }
 
-// GetByIds is equipment get by ids
-func (h *LocationHandler) GetByIds(ctx *gin.Context) {
-	var request []int64
-	if err := ctx.BindJSON(&request); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
-		return
-	}
-
-	res, err := h.LocationService.GetByIds(ctx, request)
-	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
-		return
-	}
-
-	logger.InfoInConsole(fmt.Sprintf("%d, get", request))
-	ctx.JSON(http.StatusOK, res)
-}
-
-// GetHistory is equipment get history
-func (h *LocationHandler) GetHistory(ctx *gin.Context) {
-	var location *model.Location
-	if err := ctx.BindJSON(&location); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
-		return
-	}
-
-	res, err := h.LocationService.GetHistory(ctx, location.Equipment.ID)
-	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
-		return
-	}
-
-	logger.InfoInConsole(fmt.Sprintf("%d, get", location.Equipment.ID))
-	ctx.JSON(http.StatusOK, res)
-}
-
-// GetByLocation is equipment get by location
-func (h *LocationHandler) GetByLocation(ctx *gin.Context) {
-	location := new(model.Location)
-	location.ToDepartment = new(model.Department)
-	location.ToEmployee = new(model.Employee)
-	location.ToContract = new(model.Contract)
-	if err := ctx.BindJSON(&location); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
-		return
-	}
-
-	res, err := h.LocationService.GetByLocation(ctx, location.ToDepartment.ID, location.ToEmployee.ID, location.ToContract.ID)
-	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
-		return
-	}
-
-	logger.InfoInConsole(fmt.Sprintf("sent location - department: %d, employee: %d, contract: %d", location.ToDepartment.ID, location.ToEmployee.ID, location.ToContract.ID))
-	ctx.JSON(http.StatusOK, res)
-}
-
-// ReportByCategory is equipment report by category
-func (h *LocationHandler) ReportByCategory(ctx *gin.Context) {
-	request := struct {
-		DepartmentId int64      `json:"departmentId"`
-		Date         *time.Time `json:"date"`
-	}{}
-	if err := ctx.BindJSON(&request); err != nil {
-		logger.ErrResponse(ctx, err, http.StatusBadRequest)
-		return
-	}
-
-	res, err := h.LocationService.ReportByCategory(ctx, request.DepartmentId, request.Date)
-	if err != nil {
-		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
-		return
-	}
-
-	logger.InfoInConsole("sent report")
-	ctx.JSON(http.StatusOK, res)
-}
+//// TransferTo is equipment transfer to
+//func (h *LocationHandler) TransferTo(ctx *gin.Context) {
+//	userId, err := getUserId(ctx)
+//	if err != nil {
+//		logger.ErrResponse(ctx, err, http.StatusUnauthorized)
+//		return
+//	}
+//
+//	var request []*model.RequestLocation
+//	if err := ctx.BindJSON(&request); err != nil {
+//		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+//		return
+//	}
+//
+//	if err := h.LocationService.TransferTo(ctx, userId, request); err != nil {
+//		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+//		return
+//	}
+//
+//	logger.InfoInConsole("transferred")
+//	ctx.JSON(http.StatusOK, "")
+//}
+//
+//// Delete is equipment location delete
+//func (h *LocationHandler) Delete(ctx *gin.Context) {
+//	var location *model.Location
+//	if err := ctx.BindJSON(&location); err != nil {
+//		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+//		return
+//	}
+//
+//	if err := h.LocationService.Delete(ctx, location.ID); err != nil {
+//		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+//		return
+//	}
+//
+//	logger.InfoInConsole(fmt.Sprintf("%d, deleted", location.ID))
+//	ctx.JSON(http.StatusOK, "")
+//}
+//
+//// GetById is equipment get by id
+//func (h *LocationHandler) GetById(ctx *gin.Context) {
+//	var equipment *model.Equipment
+//	if err := ctx.BindJSON(&equipment); err != nil {
+//		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+//		return
+//	}
+//
+//	res, err := h.LocationService.GetById(ctx, equipment.ID)
+//	if err != nil {
+//		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+//		return
+//	}
+//
+//	logger.InfoInConsole(fmt.Sprintf("%d, get", equipment.ID))
+//	ctx.JSON(http.StatusOK, res)
+//}
+//
+//// GetByIds is equipment get by ids
+//func (h *LocationHandler) GetByIds(ctx *gin.Context) {
+//	var request []int64
+//	if err := ctx.BindJSON(&request); err != nil {
+//		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+//		return
+//	}
+//
+//	res, err := h.LocationService.GetByIds(ctx, request)
+//	if err != nil {
+//		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+//		return
+//	}
+//
+//	logger.InfoInConsole(fmt.Sprintf("%d, get", request))
+//	ctx.JSON(http.StatusOK, res)
+//}
+//
+//// GetHistory is equipment get history
+//func (h *LocationHandler) GetHistory(ctx *gin.Context) {
+//	var location *model.Location
+//	if err := ctx.BindJSON(&location); err != nil {
+//		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+//		return
+//	}
+//
+//	res, err := h.LocationService.GetHistory(ctx, location.Equipment.ID)
+//	if err != nil {
+//		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+//		return
+//	}
+//
+//	logger.InfoInConsole(fmt.Sprintf("%d, get", location.Equipment.ID))
+//	ctx.JSON(http.StatusOK, res)
+//}
+//
+//// GetByLocation is equipment get by location
+//func (h *LocationHandler) GetByLocation(ctx *gin.Context) {
+//	location := new(model.Location)
+//	location.ToDepartment = new(model.Department)
+//	location.ToEmployee = new(model.Employee)
+//	location.ToContract = new(model.Contract)
+//	if err := ctx.BindJSON(&location); err != nil {
+//		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+//		return
+//	}
+//
+//	res, err := h.LocationService.GetByLocation(ctx, location.ToDepartment.ID, location.ToEmployee.ID, location.ToContract.ID)
+//	if err != nil {
+//		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+//		return
+//	}
+//
+//	logger.InfoInConsole(fmt.Sprintf("sent location - department: %d, employee: %d, contract: %d", location.ToDepartment.ID, location.ToEmployee.ID, location.ToContract.ID))
+//	ctx.JSON(http.StatusOK, res)
+//}
+//
+//// ReportByCategory is equipment report by category
+//func (h *LocationHandler) ReportByCategory(ctx *gin.Context) {
+//	request := struct {
+//		DepartmentId int64      `json:"departmentId"`
+//		Date         *time.Time `json:"date"`
+//	}{}
+//	if err := ctx.BindJSON(&request); err != nil {
+//		logger.ErrResponse(ctx, err, http.StatusBadRequest)
+//		return
+//	}
+//
+//	res, err := h.LocationService.ReportByCategory(ctx, request.DepartmentId, request.Date)
+//	if err != nil {
+//		logger.ErrResponse(ctx, err, http.StatusInternalServerError)
+//		return
+//	}
+//
+//	logger.InfoInConsole("sent report")
+//	ctx.JSON(http.StatusOK, res)
+//}

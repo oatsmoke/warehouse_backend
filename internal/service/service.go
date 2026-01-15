@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 	"strings"
-	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/oatsmoke/warehouse_backend/internal/dto"
 	"github.com/oatsmoke/warehouse_backend/internal/lib/jwt_auth"
 	"github.com/oatsmoke/warehouse_backend/internal/model"
@@ -32,7 +32,7 @@ func New(repository *repository.Repository) *Service {
 		Department: NewDepartmentService(repository.Department),
 		Category:   NewCategoryService(repository.Category),
 		Profile:    NewProfileService(repository.Profile),
-		Equipment:  NewEquipmentService(repository.Equipment),
+		Equipment:  NewEquipmentService(repository.Equipment, repository.Location),
 		Location:   NewLocationService(repository.Location, repository.Replace, repository.Category),
 		Contract:   NewContractService(repository.Contract),
 		Company:    NewCompanyService(repository.Company),
@@ -104,7 +104,7 @@ type Profile interface {
 }
 
 type Equipment interface {
-	Create(ctx context.Context, equipment *model.Equipment) error
+	Create(ctx context.Context, userId int64, req *dto.CreateEquipmentRequest) error
 	Read(ctx context.Context, id int64) (*model.Equipment, error)
 	Update(ctx context.Context, equipment *model.Equipment) error
 	Delete(ctx context.Context, id int64) error
@@ -113,14 +113,15 @@ type Equipment interface {
 }
 
 type Location interface {
-	AddToStorage(ctx context.Context, date *time.Time, equipmentId, employeeId, companyId int64) error
-	TransferTo(ctx context.Context, EmployeeId int64, requests []*model.RequestLocation) error
-	Delete(ctx context.Context, id int64) error
-	GetById(ctx context.Context, equipmentId int64) (*model.Location, error)
-	GetByIds(ctx context.Context, equipmentIds []int64) ([]*model.Location, error)
-	GetHistory(ctx context.Context, equipmentId int64) ([]*model.Location, error)
-	GetByLocation(ctx context.Context, toDepartment, toEmployee, toContract int64) ([]*model.Location, error)
-	ReportByCategory(ctx context.Context, departmentId int64, date *time.Time) (*model.Report, error)
+	List(ctx context.Context, toDepartmentID int64) (*dto.ListResponse[[]*model.Equipment], error)
+	//AddToStorage(ctx context.Context, date *time.Time, equipmentId, employeeId, companyId int64) error
+	//TransferTo(ctx context.Context, EmployeeId int64, requests []*model.RequestLocation) error
+	//Delete(ctx context.Context, id int64) error
+	//GetById(ctx context.Context, equipmentId int64) (*model.Location, error)
+	//GetByIds(ctx context.Context, equipmentIds []int64) ([]*model.Location, error)
+	//GetHistory(ctx context.Context, equipmentId int64) ([]*model.Location, error)
+	//GetByLocation(ctx context.Context, toDepartment, toEmployee, toContract int64) ([]*model.Location, error)
+	//ReportByCategory(ctx context.Context, departmentId int64, date *time.Time) (*model.Report, error)
 }
 
 type Contract interface {
@@ -141,7 +142,7 @@ type Company interface {
 	List(ctx context.Context, qp *dto.QueryParams) (*dto.ListResponse[[]*model.Company], error)
 }
 
-func ShortEmployeeName(lastName, firstName, middleName string) string {
+func shortEmployeeName(lastName, firstName, middleName string) string {
 	if lastName == "" || firstName == "" {
 		return ""
 	}
@@ -166,4 +167,17 @@ func firstRune(str string) rune {
 		return s
 	}
 	return 0
+}
+
+func toPGTypeInt8(id int64) pgtype.Int8 {
+	var value pgtype.Int8
+
+	if id != 0 {
+		value = pgtype.Int8{
+			Int64: id,
+			Valid: true,
+		}
+	}
+
+	return value
 }

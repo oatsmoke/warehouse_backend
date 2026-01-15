@@ -14,6 +14,7 @@ const (
 	defaultOrder             = "asc"
 	defaultOffset      int32 = 0
 	defaultLimit       int32 = 50
+	defaultParamID     int64 = 0
 )
 
 func ParseQueryParams(c *gin.Context) *dto.QueryParams {
@@ -27,7 +28,7 @@ func ParseQueryParams(c *gin.Context) *dto.QueryParams {
 	if len(ids) > 0 {
 		for _, id := range ids {
 			if parsedId, err := strconv.ParseInt(id, 10, 64); err == nil {
-				qp.Ids = append(qp.Ids, parsedId)
+				qp.IDs = append(qp.IDs, parsedId)
 			}
 		}
 	}
@@ -40,10 +41,22 @@ func ParseQueryParams(c *gin.Context) *dto.QueryParams {
 
 	if n, err := strconv.ParseInt(c.Query("limit"), 10, 32); err != nil || n < 1 {
 		qp.PaginationLimit = defaultLimit
+	} else {
+		qp.PaginationLimit = int32(n)
 	}
 
 	if n, err := strconv.ParseInt(c.Query("offset"), 10, 32); err != nil || n < 0 {
 		qp.PaginationOffset = defaultOffset
+	} else {
+		qp.PaginationOffset = int32(n)
+	}
+
+	qp.Param = c.Query("param")
+
+	if n, err := strconv.ParseInt(c.Query("param_id"), 10, 64); err != nil || n < 0 {
+		qp.ParamID = defaultParamID
+	} else {
+		qp.ParamID = n
 	}
 
 	return qp

@@ -24,26 +24,19 @@ func NewEquipmentHandler(equipmentService service.Equipment) *EquipmentHandler {
 }
 
 func (h *EquipmentHandler) Create(ctx *gin.Context) {
-	//userId, err := getUserId(ctx)
-	//if err != nil {
-	//	logger.ResponseErr(ctx, err, http.StatusUnauthorized)
-	//	return
-	//}
+	userId, err := getUserId(ctx)
+	if err != nil {
+		logger.ResponseErr(ctx, "", err, http.StatusUnauthorized)
+		return
+	}
 
-	var req *dto.Equipment
+	var req *dto.CreateEquipmentRequest
 	if err := ctx.BindJSON(&req); err != nil {
 		logger.ResponseErr(ctx, logger.MsgFailedToParse, err, http.StatusBadRequest)
 		return
 	}
 
-	equipment := &model.Equipment{
-		SerialNumber: req.SerialNumber,
-		Profile: &model.Profile{
-			ID: req.ProfileID,
-		},
-	}
-
-	if err := h.equipmentService.Create(ctx, equipment); err != nil {
+	if err := h.equipmentService.Create(ctx, userId, req); err != nil {
 		if errors.Is(err, logger.ErrAlreadyExists) {
 			logger.ResponseErr(ctx, logger.ErrAlreadyExists.Error(), err, http.StatusConflict)
 			return
@@ -102,11 +95,14 @@ func (h *EquipmentHandler) Update(ctx *gin.Context) {
 	}
 
 	equipment := &model.Equipment{
-		ID:           id,
-		SerialNumber: req.SerialNumber,
+		ID: id,
+		Company: &model.Company{
+			ID: req.CompanyID,
+		},
 		Profile: &model.Profile{
 			ID: req.ProfileID,
 		},
+		SerialNumber: req.SerialNumber,
 	}
 
 	if err := h.equipmentService.Update(ctx, equipment); err != nil {

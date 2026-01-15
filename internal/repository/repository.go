@@ -35,7 +35,7 @@ func New(postgresDB *pgxpool.Pool, redisDB *redis.Client, queries queries.Querie
 		Department: NewDepartmentRepository(queries),
 		Category:   NewCategoryRepository(queries),
 		Profile:    NewProfileRepository(queries),
-		Equipment:  NewEquipmentRepository(queries),
+		Equipment:  NewEquipmentRepository(postgresDB),
 		Location:   NewLocationRepository(postgresDB),
 		Contract:   NewContractRepository(queries),
 		Company:    NewCompanyRepository(queries),
@@ -112,7 +112,7 @@ type Profile interface {
 }
 
 type Equipment interface {
-	Create(ctx context.Context, equipment *model.Equipment) (int64, error)
+	Create(ctx context.Context, equipment *queries.CreateEquipmentParams, location *queries.AddToStorageParams) (int64, error)
 	Read(ctx context.Context, id int64) (*model.Equipment, error)
 	Update(ctx context.Context, equipment *model.Equipment) error
 	Delete(ctx context.Context, id int64) error
@@ -121,25 +121,27 @@ type Equipment interface {
 }
 
 type Location interface {
-	AddToStorage(ctx context.Context, date *time.Time, equipmentId, employeeId, companyId int64) error
-	TransferToStorage(ctx context.Context, date *time.Time, code string, equipmentId, employeeId, companyId int64, nowLocation []interface{}) (int64, error)
-	TransferToDepartment(ctx context.Context, date *time.Time, code string, equipmentId, employeeId, companyId, toDepartment int64, nowLocation []interface{}) (int64, error)
-	TransferToEmployee(ctx context.Context, date *time.Time, code string, equipmentId, employeeId, companyId, toEmployee int64, nowLocation []interface{}) (int64, error)
-	TransferToEmployeeInDepartment(ctx context.Context, date *time.Time, code string, equipmentId, employeeId, companyId, toDepartment, toEmployee int64, nowLocation []interface{}) (int64, error)
-	TransferToContract(ctx context.Context, date *time.Time, code string, equipmentId, employeeId, companyId, toContract int64, transferType string, price string, nowLocation []interface{}) (int64, error)
-	Delete(ctx context.Context, id int64) error
-	GetById(ctx context.Context, equipmentId int64) (*model.Location, error)
-	GetHistory(ctx context.Context, equipmentId int64) ([]*model.Location, error)
-	GetLocationNow(ctx context.Context, equipmentId int64) ([]interface{}, error)
-	GetByLocationStorage(ctx context.Context) ([]*model.Location, error)
-	GetByLocationDepartment(ctx context.Context, toDepartment int64) ([]*model.Location, error)
-	GetByLocationEmployee(ctx context.Context, toEmployee int64) ([]*model.Location, error)
-	GetByLocationContract(ctx context.Context, toContract int64) ([]*model.Location, error)
-	GetByLocationDepartmentEmployee(ctx context.Context, toDepartment, toEmployee int64) ([]*model.Location, error)
-	RemainderByCategory(ctx context.Context, categoryId, departmentId int64, date *time.Time) ([]*model.Location, error)
-	TransferByCategory(ctx context.Context, categoryId, departmentId int64, fromDate, toDate *time.Time, code string) ([]*model.Location, error)
-	ToDepartmentTransferByCategory(ctx context.Context, categoryId, departmentId int64, fromDate, toDate *time.Time) ([]*model.Location, error)
-	FromDepartmentTransferByCategory(ctx context.Context, categoryId, departmentId int64, fromDate, toDate *time.Time) ([]*model.Location, error)
+	Move(ctx context.Context, location *queries.MoveToLocationParams) error
+	List(ctx context.Context, toDepartmentID int64) ([]*model.Equipment, int64, error)
+	//AddToStorage(ctx context.Context, date *time.Time, equipmentId, employeeId, companyId int64) error
+	//TransferToStorage(ctx context.Context, date *time.Time, code string, equipmentId, employeeId, companyId int64, nowLocation []interface{}) (int64, error)
+	//TransferToDepartment(ctx context.Context, date *time.Time, code string, equipmentId, employeeId, companyId, toDepartment int64, nowLocation []interface{}) (int64, error)
+	//TransferToEmployee(ctx context.Context, date *time.Time, code string, equipmentId, employeeId, companyId, toEmployee int64, nowLocation []interface{}) (int64, error)
+	//TransferToEmployeeInDepartment(ctx context.Context, date *time.Time, code string, equipmentId, employeeId, companyId, toDepartment, toEmployee int64, nowLocation []interface{}) (int64, error)
+	//TransferToContract(ctx context.Context, date *time.Time, code string, equipmentId, employeeId, companyId, toContract int64, transferType string, price string, nowLocation []interface{}) (int64, error)
+	//Delete(ctx context.Context, id int64) error
+	//GetById(ctx context.Context, equipmentId int64) (*model.Location, error)
+	//GetHistory(ctx context.Context, equipmentId int64) ([]*model.Location, error)
+	//GetLocationNow(ctx context.Context, equipmentId int64) ([]interface{}, error)
+	//GetByLocationStorage(ctx context.Context) ([]*model.Location, error)
+	//GetByLocationDepartment(ctx context.Context, toDepartment int64) ([]*model.Location, error)
+	//GetByLocationEmployee(ctx context.Context, toEmployee int64) ([]*model.Location, error)
+	//GetByLocationContract(ctx context.Context, toContract int64) ([]*model.Location, error)
+	//GetByLocationDepartmentEmployee(ctx context.Context, toDepartment, toEmployee int64) ([]*model.Location, error)
+	//RemainderByCategory(ctx context.Context, categoryId, departmentId int64, date *time.Time) ([]*model.Location, error)
+	//TransferByCategory(ctx context.Context, categoryId, departmentId int64, fromDate, toDate *time.Time, code string) ([]*model.Location, error)
+	//ToDepartmentTransferByCategory(ctx context.Context, categoryId, departmentId int64, fromDate, toDate *time.Time) ([]*model.Location, error)
+	//FromDepartmentTransferByCategory(ctx context.Context, categoryId, departmentId int64, fromDate, toDate *time.Time) ([]*model.Location, error)
 }
 
 type Contract interface {

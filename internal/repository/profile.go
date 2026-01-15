@@ -97,7 +97,7 @@ func (r *ProfileRepository) List(ctx context.Context, qp *dto.QueryParams) ([]*m
 	req, err := r.queries.ListProfile(ctx, &queries.ListProfileParams{
 		WithDeleted:      qp.WithDeleted,
 		Search:           qp.Search,
-		Ids:              qp.Ids,
+		Ids:              qp.IDs,
 		SortColumn:       qp.SortColumn,
 		SortOrder:        qp.SortOrder,
 		PaginationLimit:  qp.PaginationLimit,
